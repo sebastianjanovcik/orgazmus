@@ -1,0 +1,12 @@
+vygeneruj mi kod pre index.php, style.css, script.js, pre stranku to do list.
+hlavna stranka bude rozdelena na tri horizontalne časti:
+ v lavej časti bude zoznam možností (today, calendar, upcoming, a cast lists v ktorej bude zoznam projektov vytvorenych uzivatelom. napr. work, school...)
+
+ v strednej casti bude vyzobrazeny sekcia na ktoru sme klikli v lavej casti:
+    today- velky napis today- pri tom pocet uloch na dnesok, pod tym bude zoznam uloh ktore mame v databaze na dnesny datum a pri nich moznost si odkliknut ci uz su hotove, pripadne ich jednotlivo vymazat ci upravit.
+
+    calendar- velky napis calendar, pod tym bude graficky vyzobrazeny kalendar v ktorom bude farebne vyznacene udalosti pri kazdom dni(nejaka farebna bodka podla listu v ktorom sa ta uloha nachadza. napr work bude pod farbou cervena). ked uzivatel klikne na nejaky den, tak to zobrazi udalost na dani den pod kalendarom
+
+    upcoming - hore napis upcoming a pod tym zoznam udalosti ktore este len nastanu. funkcie to bude mat take ako today sekcia, cize uzivatel si bude moct upravovat jednotlive udalosti, mazat ich atd.
+    
+prava cast bude urcena na vytvaranie novych udalosti, tato sekcia sa zobrazi az po kliknuti na tlacidlo + vpravo dole. tato sekcia bude obsahovat nadpis task, pole na zadanie mena pre danu uloha ktoru zada uzivatel, vacsie pole na popis danej ulohy. moznost zaradenia do listu(work, school atd), vybratie datumu udalosti(defaultne na dnesok), a tlacitko vytvorit na vytvorenie udalosti. tato cast sa zobrazi aj ked bude chciet uzivatel upravit danu udalost.
