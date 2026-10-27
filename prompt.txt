@@ -1,12 +1,48 @@
-vygeneruj mi kod pre index.php, style.css, script.js, pre stranku to do list.
-hlavna stranka bude rozdelena na tri horizontalne časti:
- v lavej časti bude zoznam možností (today, calendar, upcoming, a cast lists v ktorej bude zoznam projektov vytvorenych uzivatelom. napr. work, school...)
+﻿Vygeneruj prompt pre vývojár s tymito programovacími jakykmi na pár A4 + napíš vysvetlívky prečo a ako si urobil:
+- php (8.5)
+- css (Bootstrap 5)
+- html
+- js (Query)
+- MySQL (použi na komunikáciu rest api + Json)
 
- v strednej casti bude vyzobrazeny sekcia na ktoru sme klikli v lavej casti:
-    today- velky napis today- pri tom pocet uloch na dnesok, pod tym bude zoznam uloh ktore mame v databaze na dnesny datum a pri nich moznost si odkliknut ci uz su hotove, pripadne ich jednotlivo vymazat ci upravit.
+Cieľ: vytvor stránku so zoznamom úloh (to-do list). Mobilefirst.
 
-    calendar- velky napis calendar, pod tym bude graficky vyzobrazeny kalendar v ktorom bude farebne vyznacene udalosti pri kazdom dni(nejaka farebna bodka podla listu v ktorom sa ta uloha nachadza. napr work bude pod farbou cervena). ked uzivatel klikne na nejaky den, tak to zobrazi udalost na dani den pod kalendarom
+## Rozloženie stránky
 
-    upcoming - hore napis upcoming a pod tym zoznam udalosti ktore este len nastanu. funkcie to bude mat take ako today sekcia, cize uzivatel si bude moct upravovat jednotlive udalosti, mazat ich atd.
-    
-prava cast bude urcena na vytvaranie novych udalosti, tato sekcia sa zobrazi az po kliknuti na tlacidlo + vpravo dole. tato sekcia bude obsahovat nadpis task, pole na zadanie mena pre danu uloha ktoru zada uzivatel, vacsie pole na popis danej ulohy. moznost zaradenia do listu(work, school atd), vybratie datumu udalosti(defaultne na dnesok), a tlacitko vytvorit na vytvorenie udalosti. tato cast sa zobrazi aj ked bude chciet uzivatel upravit danu udalost.
+Stránka bude rozdelená na tri časti + navbar:
+
+### Navbar
+- Bude rozdelený na tri časti (20%, 60%, 20%)
+- v ľavej časti rozbalovacie menu (burger) v strede logo a v pravej zvonček s notifikácjami
+
+
+### Ľavý panel – navigácia
+- Možnosti: Today, Calendar a Upcoming.
+- Sekcia Lists so zoznamom používateľom vytvorených zoznamov, napríklad Work a School.
+    - V sekcii lists bude + na ktoré keď sa klikne sa vytvorí nový list s možnosťou vytvorenia jeho mena a farby
+    - Keď sa klikne na niektorý z tých listov tak sa vyzobrazí v strede Lable s názvami listov a a pod lejblom s nejakou farbou
+      úlohy  
+
+### Stredný panel – obsah
+Zobrazuje sekciu, ktorú si používateľ vybral v ľavom paneli.
+
+#### Today
+- Zobraz nadpis „Today“ a počet úloh naplánovaných na dnešný deň.
+- Pod nadpisom zobraz úlohy s dnešným dátumom.
+- Pri každej úlohe umožni označenie ako hotovej, úpravu a vymazanie.
+
+#### Calendar
+- Zobraz nadpis „Calendar“ a grafický kalendár.
+- Dni s úlohami vizuálne označ farebnou bodkou podľa zoznamu, do ktorého úloha patrí (napríklad Work bude červenou farbou).
+- Po kliknutí na deň zobraz pod kalendárom úlohy naplánované na tento deň.
+
+#### Upcoming
+- Zobraz nadpis „Upcoming“ a zoznam budúcich úloh.
+- Pri každej úlohe umožni označenie ako hotovej, úpravu a vymazanie, rovnako ako v sekcii Today.
+
+### Pravý panel – vytvorenie a úprava úlohy
+- Panel sa otvorí po kliknutí na tlačidlo „+“ v pravom dolnom rohu.
+- Obsahuje nadpis „Task“, pole na názov úlohy, väčšie pole na jej popis, výber zoznamu (napríklad Work alebo School) a výber dátumu.
+- Dátum je predvolene nastavený na dnešný deň.
+- Tlačidlo „Vytvoriť“ uloží novú úlohu.
+- Rovnaký panel sa použije aj pri úprave existujúcej úlohy.
