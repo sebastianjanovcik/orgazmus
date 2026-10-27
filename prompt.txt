@@ -5,7 +5,7 @@
 - js (Query)
 - MySQL (použi na komunikáciu rest api + Json)
 
-Cieľ: vytvor stránku so zoznamom úloh (to-do list). Mobilefirst.
+Cieľ: vytvor stránku so zoznamom úloh (to-do list). Mobilefirst. Na stranke bude vyber jazyka = slovencina a cestina
 
 ## Rozloženie stránky
 
