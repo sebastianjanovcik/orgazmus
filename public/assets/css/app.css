@@ -69,7 +69,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .notification-button { margin-left: auto; }
 
 /* Desktop ponecháva navigáciu viditeľnú; na menších šírkach ju otvorí panel. */
-.sidebar { position: sticky; top: 72px; display: flex; flex-direction: column; align-self: start; height: calc(100vh - 72px); padding: 30px 16px 20px; border-right: 1px solid var(--line); }
+.sidebar { position: sticky; top: 72px; display: flex; flex-direction: column; align-self: stretch; min-height: calc(100vh - 72px); padding: 30px 16px 20px; border-right: 1px solid var(--line); }
 .sidebar-heading { padding: 0 12px 12px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
 .nav-list { display: grid; gap: 4px; }
 .nav-link { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 8px 12px; border-radius: 14px; color: var(--muted); font-size: 14px; font-weight: 570; transition: color .18s, background .18s, transform .18s; }
