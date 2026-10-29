@@ -1,0 +1,14 @@
+version: 1
+id: b16a2ed4-bffa-4d6f-ab7a-7fab2877a0dd
+name: Tasko API
+slug: tasko-api
+protocol: http
+port: 4500
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
+generatedFrom:
+  type: collection
+  mode: static
+  path: ../../collections/Tasko API.postman_collection.json
