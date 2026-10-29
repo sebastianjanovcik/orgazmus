@@ -2,7 +2,7 @@
 
 ## Účel projektu
 
-Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html` je aktuálny interaktívny návrh rozhrania a `index.php` je zatiaľ iba minimálna PHP stránka. Pri implementácii zachovávaj funkcie a vizuálne správanie dohodnuté v prototype a v projektových podkladoch.
+Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html` je aktuálny interaktívny návrh rozhrania a `public/index.php` je zatiaľ iba minimálna PHP stránka. Verejný koreň webu je `public/`; pôvodná koreňová skúšobná stránka je odložená v `trash/legacy-root-index.php`. Pri implementácii zachovávaj funkcie a vizuálne správanie dohodnuté v prototype a v projektových podkladoch.
 
 ## Jazyk a komunikácia
 
