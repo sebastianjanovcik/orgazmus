@@ -99,7 +99,8 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .summary-card div span { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .summary-icon { display: grid; flex: none; width: 36px; height: 36px; place-items: center; border-radius: 12px; font-size: 17px; font-weight: 700; }
 .icon-green { color: #279754; background: rgba(53, 166, 91, .13); }.icon-amber { color: #d8902e; background: rgba(236, 168, 69, .15); }.icon-violet { color: #8064cb; background: rgba(132, 105, 207, .15); }
-.task-section { margin-top: 25px; }
+/* Väčší odstup oddeľuje skupiny úloh a pomáha rýchlo rozlíšiť ich termíny. */
+.task-section { margin-top: 36px; }
 .section-heading { display: flex; align-items: center; gap: 10px; margin: 0 2px 12px; }
 .section-heading h2 { margin: 0; font-size: 16px; font-weight: 750; }
 .section-count { color: var(--muted); font-size: 12px; }
@@ -116,8 +117,8 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .priority { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 650; }
 .priority-high { color: #bd7533; background: rgba(236, 156, 71, .15); }.priority-medium { color: #8370c0; background: rgba(132, 112, 192, .14); }.priority-critical { color: #c94e54; background: rgba(217, 83, 89, .14); }
 .task-date { flex: none; padding-top: 3px; color: var(--muted); font-size: 11px; }
-.upcoming-section { margin-top: 29px; }
-.fab { position: fixed; z-index: 4; right: max(34px, calc((100vw - 260px - 720px) / 2 - 16px)); bottom: calc(28px + env(safe-area-inset-bottom)); display: grid; width: 60px; height: 60px; place-items: center; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #56c977, #25964e); box-shadow: 0 10px 28px rgba(47, 165, 87, .38), inset 0 1px rgba(255,255,255,.5); cursor: pointer; font-size: 32px; font-weight: 300; line-height: 1; }
+.upcoming-section { margin-top: 40px; }
+.fab { position: fixed; z-index: 4; right: max(34px, calc((100vw - 260px - 720px) / 2 - 16px)); bottom: calc(28px + env(safe-area-inset-bottom)); display: grid; width: 60px; height: 60px; place-items: center; padding: 0 0 4px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #56c977, #25964e); box-shadow: 0 10px 28px rgba(47, 165, 87, .38), inset 0 1px rgba(255,255,255,.5); cursor: pointer; font-size: 32px; font-weight: 300; line-height: 1; }
 
 /* Panely zdieľajú sklenený vzhľad a dostatočne veľké formulárové ovládanie. */
 .panel { position: fixed; z-index: 9; display: flex; flex-direction: column; color: var(--ink); background: var(--surface-solid); }
@@ -170,17 +171,19 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
     #main-content { padding: 23px 16px calc(96px + env(safe-area-inset-bottom)); }
     .page-heading { align-items: center; margin-top: 2px; }
     .page-subtitle { max-width: 255px; font-size: 13px; }
-    .filter-button { width: 44px; padding: 0; overflow: hidden; gap: 0; font-size: 0; }
-    .filter-button:first-letter { font-size: 19px; }
+    /* Na mobile ponecháme ikonu aj názov filtra, aby ovládanie ostalo zrozumiteľné. */
+    .filter-button { flex: none; width: auto; min-width: 44px; padding: 0 12px; gap: 7px; white-space: nowrap; }
     .summary-grid { --bs-gutter-x: .5rem; --bs-gutter-y: .5rem; margin-bottom: 27px; }
     .summary-card { display: grid; justify-items: start; gap: 7px; padding: 11px 9px; border-radius: 16px; }
     .summary-icon { width: 30px; height: 30px; }
     .summary-card strong { font-size: 20px; }
     .summary-card div span { white-space: normal; font-size: 10px; line-height: 1.2; }
+    .task-section { margin-top: 30px; }
+    .upcoming-section { margin-top: 36px; }
     .task-card { gap: 10px; padding: 13px 12px; border-radius: 17px; }
     .task-check { width: 25px; height: 25px; }
     .task-date { max-width: 46px; text-align: right; }
-    .fab { right: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 58px; height: 58px; }
+    .fab { right: 10px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 58px; height: 58px; }
     .sheet { inset: 10px 0 0; width: 100%; border-radius: 27px 27px 0 0; }
     .panel-form { padding-right: 17px; padding-left: 17px; }
     .auth-shell { flex-direction: column; margin: 24px auto; padding: 0 16px; }
