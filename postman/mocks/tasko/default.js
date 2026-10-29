@@ -5,12 +5,22 @@ const http = require('http');
 const PORT = process.env.PORT || 4500;
 
 const server = http.createServer((req, res) => {
+  // Lokálny mock povoľuje požiadavky z vývojového webu a preflight pre JSON hlavičky.
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mock-response-name, x-api-key');
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    return res.end();
+  }
   const url = new URL(req.url || '', 'http://localhost');
   const pathname = url.pathname;
+  const exampleName = req.headers['x-mock-response-name'];
+  const namedStatus = { unauthenticated: '401', invalid_credentials: '401', plan_limit: '403', premium_required: '403', not_found: '404', email_taken: '409', name_taken: '409', validation_failed: '422', comment_too_deep: '422' };
 
   // @endpoint POST /api/auth/register
   if (req.method === 'POST' && pathname === '/api/auth/register') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "E-mail už existuje" — when x-mock-response-code: 409
     if (requestedStatusCode === '409') {
@@ -31,7 +41,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint POST /api/auth/login
   if (req.method === 'POST' && pathname === '/api/auth/login') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Nesprávne prihlasovacie údaje" — when x-mock-response-code: 401
     if (requestedStatusCode === '401') {
@@ -64,7 +74,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint PATCH /api/me/password
   if (req.method === 'PATCH' && pathname === '/api/me/password') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Nesprávne aktuálne heslo" — when x-mock-response-code: 422
     if (requestedStatusCode === '422') {
@@ -79,7 +89,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint PATCH /api/me/plan
   if (req.method === 'PATCH' && pathname === '/api/me/plan') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Zakázané mimo demo režimu" — when x-mock-response-code: 403
     if (requestedStatusCode === '403') {
@@ -94,13 +104,17 @@ const server = http.createServer((req, res) => {
 
   // @endpoint GET /api/projects
   if (req.method === 'GET' && pathname === '/api/projects') {
+    if (exampleName === 'unauthenticated') {
+      res.writeHead(401, {"Content-Type":"application/json; charset=utf-8"});
+      return res.end(JSON.stringify({"error":{"code":"unauthenticated","message":"Prihlásenie je potrebné.","fields":{}}}));
+    }
     res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":[{"id":10,"name":"Práca","description":"Pracovné úlohy","icon":"briefcase","color":"#6558d3","task_count":2,"done_count":1}]}));
+    return res.end(JSON.stringify({"data":[{"id":10,"name":"Práca","description":"Pracovné úlohy","icon":"briefcase","color":"#6558d3","task_count":3,"done_count":1},{"id":11,"name":"Domov","description":"Domáce úlohy","icon":"house","color":"#e28a42","task_count":2,"done_count":0},{"id":12,"name":"Škola","description":"Školské úlohy","icon":"book","color":"#4188c7","task_count":1,"done_count":0}]}));
   }
 
   // @endpoint POST /api/projects
   if (req.method === 'POST' && pathname === '/api/projects') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Limit plánu" — when x-mock-response-code: 403
     if (requestedStatusCode === '403') {
@@ -121,7 +135,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint GET /api/projects/{{id}}
   if (req.method === 'GET' && /^\/api\/projects\/([^/]+)$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Projekt sa nenašiel" — when x-mock-response-code: 404
     if (requestedStatusCode === '404') {
@@ -142,7 +156,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint DELETE /api/projects/{{id}}
   if (req.method === 'DELETE' && /^\/api\/projects\/([^/]+)$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Posledný projekt" — when x-mock-response-code: 409
     if (requestedStatusCode === '409') {
@@ -157,7 +171,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint GET /api/tasks
   if (req.method === 'GET' && pathname === '/api/tasks') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Neplatný filter" — when x-mock-response-code: 400
     if (requestedStatusCode === '400') {
@@ -172,7 +186,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint POST /api/tasks
   if (req.method === 'POST' && pathname === '/api/tasks') {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Neplatná úloha" — when x-mock-response-code: 422
     if (requestedStatusCode === '422') {
@@ -223,7 +237,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint GET /api/tasks/{{id}}/comments
   if (req.method === 'GET' && /^\/api\/tasks\/([^/]+)\/comments$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Vyžaduje Premium" — when x-mock-response-code: 403
     if (requestedStatusCode === '403') {
@@ -238,7 +252,7 @@ const server = http.createServer((req, res) => {
 
   // @endpoint POST /api/tasks/{{id}}/comments
   if (req.method === 'POST' && /^\/api\/tasks\/([^/]+)\/comments$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
     // "Komentár by prekročil hĺbku" — when x-mock-response-code: 422
     if (requestedStatusCode === '422') {
