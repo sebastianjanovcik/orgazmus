@@ -1,0 +1,11 @@
+# Lokálna konfigurácia môže obsahovať prihlasovacie údaje.
+/config/config.php
+/config/*.local.php
+
+# Do Gitu nepatria logy, dočasné súbory ani nastavenia editorov.
+*.log
+/tmp/
+/.idea/
+/.vscode/
+Thumbs.db
+.DS_Store
