@@ -14,7 +14,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 - Dokončuj kroky v uvedenom poradí. Ak krok nefunguje podľa kritérií dokončenia v podkladovom dokumente, začni ďalší.
 - Na konci každého kroku skontroluj zmenu v prehliadači alebo API, potom skontroluj `git status` a diff. Podľa projektových pravidiel patrí každý ukončený krok do samostatného commitu a pushu.
-- Do repozitára neukladaj heslá, Postman kľúče ani `config/config.php`. Knižnice v `assets/` neupravuj; nové vendor súbory pridávaj iba vtedy, ak to konkrétny krok vyžaduje.
+- Do repozitára neukladaj heslá, Postman kľúče ani `config/config.php`. Aplikácia používa knižnice z `public/assets/vendor/`; pôvodné varianty v `trash/assets/` sú archív a nové vendor súbory pridávaj iba vtedy, ak to konkrétny krok vyžaduje.
 - Komentáre k novému zložitému kódu píš po slovensky a vysvetli nimi zámer alebo obmedzenie.
 
 # Fáza 1 – Frontend s Postman mock serverom
@@ -245,7 +245,7 @@ V každom kroku najprv skontroluj, či výstupy predchádzajúceho kroku existuj
 
 ## F1 – Príprava repozitára: podúlohy a kontrola
 
-1. Skontrolovať aktuálny Git stav a zachovať existujúce súbory; identifikovať aktuálne lokálne knižnice v `assets/`.
+1. Skontrolovať aktuálny Git stav a zachovať existujúce súbory; porovnať pôvodné knižnice v `trash/assets/` s aktívnymi súbormi v `public/assets/vendor/`.
 2. Navrhnúť cieľové priečinky `public/`, `public/api/`, `includes/`, `config/`, `db/` a `docs/`; zdokumentovať, čo bude verejne dostupné cez webserver.
 3. Pripraviť `.gitignore` pre tajnú konfiguráciu, logy a IDE súbory a `README.md` s účelom projektu.
 4. Založiť vstupnú stránku, aplikačné CSS/JS a logo; vybrať lokálne verzie Bootstrapu, jQuery a FullCalendar a zapísať pôvod/verziu.

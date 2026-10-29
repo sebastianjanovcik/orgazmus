@@ -17,7 +17,7 @@ Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html
 - Na začiatku implementácie projektu si prečítaj `To-do_list_postup_vyvoja_krokzakrokomv4.docx`, vytvor podľa neho konkrétny plán krokov a počas práce sa ním riaď. Pri každom kroku skontroluj jeho predpoklady a nadväznosti; odchýlku od plánu najprv vysvetli používateľovi a plán aktualizuj podľa nových zistení alebo jeho pokynov.
 - Zmeny ukladaj do Gitu po rozumných, dokončených fázach. Po dokončení každého kroku plánu vytvor samostatný commit a bezprostredne ho pushni do nakonfigurovaného vzdialeného repozitára; jednotlivé kroky nespájaj do jedného neskoršieho commitu. Pred commitom skontroluj `git status` a diff, do commitu zahrň iba zmeny patriace k danému kroku a nikdy neprepisuj ani neodstraňuj cudzie či nesúvisiace zmeny. Ak commit alebo push zlyhá, zachovaj zmeny, zisti príčinu a oznám stav; nepokračuj tak, aby sa kroky potichu hromadili bez commitov.
 - Rob malé, sústredené zmeny súvisiace so zadaním. Nepridávaj závislosti ani framework bez potreby a dohody.
-- Súbory v `assets/` sú lokálne dodané knižnice Bootstrapu a jQuery. Neupravuj ich ako súčasť bežnej práce na aplikácii.
+- Aplikácia načítava knižnice z `public/assets/vendor/`. Pôvodné varianty Bootstrapu v `trash/assets/` sú iba archív; neupravuj ich ani na ne neodkazuj z aplikácie.
 - `To-do wireframe.html` považuj za návrhový/prototypový podklad. Pred prenášaním jeho kódu do aplikácie skontroluj, či zadanie žiada zmenu prototypu alebo produkčnej stránky.
 - Nezavádzaj databázovú schému, autentifikáciu ani externé služby bez opory v zadaní alebo projektových podkladoch.
 

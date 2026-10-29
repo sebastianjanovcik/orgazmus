@@ -24,6 +24,7 @@ interaktívne funkcie budú doplnené v ďalších krokoch plánu.
 - `config/` – lokálna konfigurácia; skutočné tajomstvá sa neukladajú do Gitu.
 - `db/` – databázová schéma a vývojové SQL skripty.
 - `docs/` – plán a technická dokumentácia.
-- `assets/` – lokálne dodané knižnice; ich pôvodné súbory sa nemenia.
+- `public/assets/` – štýly, logo a lokálne knižnice, ktoré používa stránka.
+- `trash/` – odložené súbory zachované mimo aplikácie; ich obsah sa nenačítava.
 
 Verzie nástrojov a knižníc sú uvedené v [VERSIONS.md](VERSIONS.md).
