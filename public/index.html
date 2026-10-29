@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="sk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="/assets/img/tasko.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <title>Tasko – Všetky úlohy</title>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="topbar" aria-label="Horná lišta">
+            <button class="icon-button menu-toggle" type="button" aria-label="Otvoriť menu" aria-controls="navigation-drawer" data-action="menu-toggle">☰</button>
+            <a class="brand" href="#tasks" aria-label="Tasko – úvodná stránka"><img src="/assets/img/tasko.svg" alt="" width="36" height="36"><span>task<span class="brand-accent">o</span></span></a>
+            <button class="icon-button notification-button" type="button" aria-label="Notifikácie" data-action="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a2 2 0 0 0 3.4 0"/></svg><span class="notification-dot" aria-hidden="true"></span></button>
+            <button class="avatar" type="button" aria-label="Otvoriť profil: Jana Nová" data-action="profile-open">JN</button>
+        </header>
+
+        <aside class="sidebar" id="side-menu" aria-label="Hlavná navigácia">
+            <div class="sidebar-heading" data-i18n="menu">Menu</div>
+            <nav class="nav-list">
+                <a class="nav-link is-active" href="#tasks" aria-current="page" data-action="navigate" data-i18n="all_tasks"><span class="nav-icon" aria-hidden="true">☷</span>Všetky úlohy</a>
+                <a class="nav-link" href="#projects" data-action="navigate" data-i18n="projects"><span class="nav-icon" aria-hidden="true">▦</span>Projekty</a>
+                <a class="nav-link" href="#calendar" data-action="navigate" data-i18n="calendar"><span class="nav-icon" aria-hidden="true">▣</span>Kalendár</a>
+                <a class="nav-link" href="#done" data-action="navigate" data-i18n="done"><span class="nav-icon" aria-hidden="true">✓</span>Hotové</a>
+                <a class="nav-link" href="#stats" data-action="navigate" data-i18n="stats"><span class="nav-icon" aria-hidden="true">▥</span>Štatistiky</a>
+                <a class="nav-link" href="#settings" data-action="navigate" data-i18n="settings"><span class="nav-icon" aria-hidden="true">⚙</span>Nastavenia</a>
+            </nav>
+            <div class="sidebar-projects"><div class="sidebar-heading" data-i18n="my_projects">Moje projekty</div>
+                <a class="project-link" href="#project-1"><span class="project-dot dot-purple"></span>Práca <span class="project-count">3</span></a>
+                <a class="project-link" href="#project-2"><span class="project-dot dot-orange"></span>Domov <span class="project-count">2</span></a>
+                <a class="project-link" href="#project-3"><span class="project-dot dot-blue"></span>Škola <span class="project-count">1</span></a>
+            </div>
+            <button class="add-project" type="button" data-action="project-open">＋ <span data-i18n="add_project">Pridať projekt</span></button>
+        </aside>
+
+        <main id="main-content">
+            <div class="content-wrap" id="view">
+                <div class="page-heading"><div><p class="eyebrow" data-i18n="today_overview">PREHĽAD DŇA</p><h1 id="page-title" data-i18n="all_tasks">Všetky úlohy</h1><p class="page-subtitle">Máš pred sebou skvelý deň. Tu je tvoj plán.</p></div><button class="filter-button" type="button" data-action="filter">☷ <span data-i18n="filter">Filtrovať</span></button></div>
+                <section class="summary-grid row row-cols-3 g-2" aria-label="Súhrn úloh">
+                    <article class="summary-card col"><span class="summary-icon icon-green" aria-hidden="true">✓</span><div><strong>6</strong><span data-i18n="tasks_today">Úlohy dnes</span></div></article>
+                    <article class="summary-card col"><span class="summary-icon icon-amber" aria-hidden="true">◷</span><div><strong>2</strong><span data-i18n="due_soon">Blížiaci sa termín</span></div></article>
+                    <article class="summary-card col"><span class="summary-icon icon-violet" aria-hidden="true">▤</span><div><strong>3</strong><span data-i18n="active_projects">Aktívne projekty</span></div></article>
+                </section>
+                <section class="task-section" aria-labelledby="today-heading"><div class="section-heading"><h2 id="today-heading" data-i18n="today">Dnes</h2><span class="section-count">3 úlohy</span></div>
+                    <article class="task-card"><button class="task-check" type="button" aria-label="Označiť úlohu Pripraviť prezentáciu ako hotovú" data-action="task-complete"></button><div class="task-main"><button class="task-title" type="button" data-action="task-edit">Pripraviť prezentáciu</button><p class="task-description">Dokončiť posledné snímky a skontrolovať podklady.</p><div class="task-meta"><span class="meta-project"><i class="project-dot dot-purple"></i>Práca</span><span class="priority priority-high">Vysoká priorita</span></div></div><time class="task-date" datetime="2026-10-29">Dnes</time></article>
+                    <article class="task-card"><button class="task-check" type="button" aria-label="Označiť úlohu Nákup na víkend ako hotovú" data-action="task-complete"></button><div class="task-main"><button class="task-title" type="button" data-action="task-edit">Nákup na víkend</button><p class="task-description">Ovocie, zelenina a pár vecí na raňajky.</p><div class="task-meta"><span class="meta-project"><i class="project-dot dot-orange"></i>Domov</span><span class="priority priority-medium">Stredná priorita</span></div></div><time class="task-date" datetime="2026-10-29">Dnes</time></article>
+                    <article class="task-card"><button class="task-check" type="button" aria-label="Označiť úlohu Zavolať klientovi ako hotovú" data-action="task-complete"></button><div class="task-main"><button class="task-title" type="button" data-action="task-edit">Zavolať klientovi</button><p class="task-description">Prebrať ďalší postup k návrhu.</p><div class="task-meta"><span class="meta-project"><i class="project-dot dot-purple"></i>Práca</span><span class="priority priority-critical">Kritická priorita</span></div></div><time class="task-date" datetime="2026-10-29">Dnes</time></article>
+                </section>
+                <section class="task-section upcoming-section" aria-labelledby="upcoming-heading"><div class="section-heading"><h2 id="upcoming-heading" data-i18n="upcoming">Nasledujúce</h2><span class="section-count">2 úlohy</span></div>
+                    <article class="task-card"><button class="task-check" type="button" aria-label="Označiť úlohu Odovzdať seminárku ako hotovú" data-action="task-complete"></button><div class="task-main"><button class="task-title" type="button" data-action="task-edit">Odovzdať seminárku</button><p class="task-description">Finálna kontrola citácií a formátovania.</p><div class="task-meta"><span class="meta-project"><i class="project-dot dot-blue"></i>Škola</span><span class="priority priority-medium">Stredná priorita</span></div></div><time class="task-date" datetime="2026-10-31">Sobota</time></article>
+                </section>
+            </div>
+        </main>
+
+        <button class="fab" type="button" aria-label="Pridať úlohu" data-action="task-create">＋</button>
+        <!-- Samostatné vrstvy panelov dostanú obsluhu a správu fokusu v kroku F4. -->
+        <button class="scrim" type="button" tabindex="-1" aria-label="Zavrieť menu alebo okno" data-action="overlay-close"></button>
+        <section class="drawer panel" id="navigation-drawer" aria-labelledby="drawer-heading" aria-hidden="true"><div class="panel-header"><button class="icon-button" type="button" aria-label="Zavrieť menu" data-action="menu-close">×</button><h2 id="drawer-heading" data-i18n="menu">Menu</h2></div><nav class="nav-list"><a class="nav-link is-active" href="#tasks" data-action="navigate">☷　Všetky úlohy</a><a class="nav-link" href="#projects" data-action="navigate">▦　Projekty</a><a class="nav-link" href="#calendar" data-action="navigate">▣　Kalendár</a><a class="nav-link" href="#done" data-action="navigate">✓　Hotové</a><a class="nav-link" href="#stats" data-action="navigate">▥　Štatistiky</a><a class="nav-link" href="#settings" data-action="navigate">⚙　Nastavenia</a></nav></section>
+
+        <section class="sheet panel" id="task-panel" role="dialog" aria-modal="true" aria-labelledby="task-panel-title" aria-hidden="true"><div class="panel-header"><button class="icon-button" type="button" aria-label="Späť" data-action="panel-close">←</button><h2 id="task-panel-title" data-i18n="new_task">Nová úloha</h2></div><form class="panel-form"><label for="task-name" data-i18n="task_name">Názov úlohy</label><input id="task-name" name="title" type="text" placeholder="Čo treba urobiť?" autocomplete="off"><label for="task-priority" data-i18n="priority">Priorita</label><select id="task-priority" name="priority"><option>Nízka</option><option selected>Stredná</option><option>Vysoká</option><option>Kritická</option></select><label for="task-project" data-i18n="project">Projekt</label><select id="task-project" name="project"><option>Práca</option><option>Domov</option><option>Škola</option></select><label for="task-due-date" data-i18n="due_date">Termín</label><input id="task-due-date" name="due_date" type="date"><label for="task-description" data-i18n="description">Popis</label><textarea id="task-description" name="description" rows="4" placeholder="Doplň podrobnosti"></textarea></form><div class="panel-actions"><button class="button button-primary" type="button" data-action="task-save" data-i18n="save">Uložiť</button><button class="button button-quiet" type="button" data-action="panel-close" data-i18n="cancel">Zrušiť</button></div></section>
+
+        <section class="sheet panel" id="project-panel" role="dialog" aria-modal="true" aria-labelledby="project-panel-title" aria-hidden="true"><div class="panel-header"><button class="icon-button" type="button" aria-label="Späť" data-action="panel-close">←</button><h2 id="project-panel-title" data-i18n="new_project">Nový projekt</h2></div><form class="panel-form"><label for="project-name" data-i18n="project_name">Názov projektu</label><input id="project-name" name="name" type="text" placeholder="Napríklad Práca"><label for="project-description" data-i18n="description">Popis</label><textarea id="project-description" name="description" rows="3" placeholder="Krátky popis projektu"></textarea><span class="field-label" data-i18n="icon">Ikona</span><div class="icon-picker" role="group" aria-label="Vyber ikonu projektu"><button type="button" aria-label="Práca">💼</button><button type="button" aria-label="Domov">🏠</button><button type="button" aria-label="Škola">🎓</button><button type="button" aria-label="Nápad">💡</button><button type="button" aria-label="Cieľ">🎯</button><button type="button" aria-label="Poznámka">📌</button></div></form><div class="panel-actions"><button class="button button-primary" type="button" data-action="project-save" data-i18n="save">Uložiť</button><button class="button button-quiet" type="button" data-action="panel-close" data-i18n="cancel">Zrušiť</button></div></section>
+
+        <section class="sheet panel" id="profile-panel" role="dialog" aria-modal="true" aria-labelledby="profile-panel-title" aria-hidden="true"><div class="panel-header"><button class="icon-button" type="button" aria-label="Späť" data-action="panel-close">←</button><h2 id="profile-panel-title" data-i18n="profile">Profil</h2></div><form class="panel-form"><div class="profile-preview" aria-hidden="true">JN</div><label for="profile-name" data-i18n="name">Meno</label><input id="profile-name" name="name" type="text" value="Jana Nová" autocomplete="name"><h3 data-i18n="change_password">Zmena hesla</h3><p class="helper-text" data-i18n="password_optional">Ak heslo meniť nechceš, nechaj polia prázdne.</p><label for="current-password" data-i18n="current_password">Aktuálne heslo</label><input id="current-password" name="current_password" type="password" autocomplete="current-password"><label for="new-password" data-i18n="new_password">Nové heslo</label><input id="new-password" name="new_password" type="password" autocomplete="new-password"></form><div class="panel-actions"><button class="button button-primary" type="button" data-action="profile-save" data-i18n="save">Uložiť</button><button class="button button-quiet" type="button" data-action="panel-close" data-i18n="cancel">Zrušiť</button></div></section>
+
+        <section class="auth-shell" aria-label="Prihlásenie a registrácia"><form class="auth-card" id="login-form"><img src="/assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="login">Prihlásenie</h2><p class="helper-text">Vitaj späť. Prihlás sa do svojho účtu.</p><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="login-password">Heslo</label><input id="login-password" type="password" autocomplete="current-password" placeholder="Zadaj heslo"><button class="button button-primary" type="button" data-action="login-submit" data-i18n="login_submit">Prihlásiť sa</button><button class="text-button" type="button" data-action="show-register" data-i18n="create_account">Vytvoriť účet</button></form><form class="auth-card" id="register-form"><img src="/assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="register">Registrácia</h2><p class="helper-text">Vytvor si účet a usporiadaj si svoje úlohy.</p><label for="register-name" data-i18n="name">Meno</label><input id="register-name" type="text" autocomplete="name" placeholder="Meno a priezvisko"><label for="register-email">E-mail</label><input id="register-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="register-password">Heslo</label><input id="register-password" type="password" autocomplete="new-password" placeholder="Aspoň 8 znakov"><button class="button button-primary" type="button" data-action="register-submit" data-i18n="register_submit">Vytvoriť účet</button><button class="text-button" type="button" data-action="show-login" data-i18n="back_to_login">Už máš účet? Prihlás sa</button></form></section>
+        <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    </div>
+    <!-- Lokálne knižnice zostávajú v poradí určenom plánom F3. -->
+    <script src="/assets/vendor/jquery/jquery.min.js"></script>
+    <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/vendor/fullcalendar/index.global.min.js"></script>
+    <script src="/assets/js/app.js"></script>
+</body>
+</html>
