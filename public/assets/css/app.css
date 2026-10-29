@@ -92,7 +92,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spacing: -.045em; line-height: 1.15; }
 .page-subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
 .filter-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 15px; border: 1px solid var(--glass-border); border-radius: 999px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); cursor: pointer; font-size: 13px; }
-.summary-grid { margin-bottom: 32px; }
+/* Karty majú od seba viac miesta, aby sa ich súhrny na desktope ľahšie čítali. */
+.summary-grid { --bs-gutter-x: 1.5rem; margin-bottom: 32px; }
 .summary-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 15px 12px; border: 1px solid var(--glass-border); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
 .summary-card > div { display: grid; gap: 1px; min-width: 0; }
 .summary-card strong { font-size: 22px; line-height: 1.2; }
@@ -118,7 +119,8 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .priority-high { color: #bd7533; background: rgba(236, 156, 71, .15); }.priority-medium { color: #8370c0; background: rgba(132, 112, 192, .14); }.priority-critical { color: #c94e54; background: rgba(217, 83, 89, .14); }
 .task-date { flex: none; padding-top: 3px; color: var(--muted); font-size: 11px; }
 .upcoming-section { margin-top: 40px; }
-.fab { position: fixed; z-index: 4; right: max(34px, calc((100vw - 260px - 720px) / 2 - 16px)); bottom: calc(28px + env(safe-area-inset-bottom)); display: grid; width: 60px; height: 60px; place-items: center; padding: 0 0 4px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #56c977, #25964e); box-shadow: 0 10px 28px rgba(47, 165, 87, .38), inset 0 1px rgba(255,255,255,.5); cursor: pointer; font-size: 32px; font-weight: 300; line-height: 1; }
+/* Na veľkej obrazovke sa FAB drží pevného odstupu od pravého okraja viewportu. */
+.fab { position: fixed; z-index: 4; right: 34px; bottom: calc(28px + env(safe-area-inset-bottom)); display: grid; width: 60px; height: 60px; place-items: center; padding: 0 0 4px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #56c977, #25964e); box-shadow: 0 10px 28px rgba(47, 165, 87, .38), inset 0 1px rgba(255,255,255,.5); cursor: pointer; font-size: 32px; font-weight: 300; line-height: 1; }
 
 /* Panely zdieľajú sklenený vzhľad a dostatočne veľké formulárové ovládanie. */
 .panel { position: fixed; z-index: 9; display: flex; flex-direction: column; color: var(--ink); background: var(--surface-solid); }
