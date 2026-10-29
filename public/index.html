@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
-    <link rel="icon" href="/assets/img/tasko.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/vendor/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="icon" href="assets/img/tasko.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="assets/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/app.css">
     <title>Tasko – Všetky úlohy</title>
 </head>
 <body>
     <div class="app-shell">
         <header class="topbar" aria-label="Horná lišta">
             <button class="icon-button menu-toggle" type="button" aria-label="Otvoriť menu" aria-controls="navigation-drawer" data-action="menu-toggle">☰</button>
-            <a class="brand" href="#tasks" aria-label="Tasko – úvodná stránka"><img src="/assets/img/tasko.svg" alt="" width="36" height="36"><span>task<span class="brand-accent">o</span></span></a>
+            <a class="brand" href="#tasks" aria-label="Tasko – úvodná stránka"><img src="assets/img/tasko.svg" alt="" width="36" height="36"><span>task<span class="brand-accent">o</span></span></a>
             <button class="icon-button notification-button" type="button" aria-label="Notifikácie" data-action="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a2 2 0 0 0 3.4 0"/></svg><span class="notification-dot" aria-hidden="true"></span></button>
             <button class="avatar" type="button" aria-label="Otvoriť profil: Jana Nová" data-action="profile-open">JN</button>
         </header>
@@ -66,13 +66,13 @@
 
         <section class="sheet panel" id="profile-panel" role="dialog" aria-modal="true" aria-labelledby="profile-panel-title" aria-hidden="true"><div class="panel-header"><button class="icon-button" type="button" aria-label="Späť" data-action="panel-close">←</button><h2 id="profile-panel-title" data-i18n="profile">Profil</h2></div><form class="panel-form"><div class="profile-preview" aria-hidden="true">JN</div><label for="profile-name" data-i18n="name">Meno</label><input id="profile-name" name="name" type="text" value="Jana Nová" autocomplete="name"><h3 data-i18n="change_password">Zmena hesla</h3><p class="helper-text" data-i18n="password_optional">Ak heslo meniť nechceš, nechaj polia prázdne.</p><label for="current-password" data-i18n="current_password">Aktuálne heslo</label><input id="current-password" name="current_password" type="password" autocomplete="current-password"><label for="new-password" data-i18n="new_password">Nové heslo</label><input id="new-password" name="new_password" type="password" autocomplete="new-password"></form><div class="panel-actions"><button class="button button-primary" type="button" data-action="profile-save" data-i18n="save">Uložiť</button><button class="button button-quiet" type="button" data-action="panel-close" data-i18n="cancel">Zrušiť</button></div></section>
 
-        <section class="auth-shell" aria-label="Prihlásenie a registrácia"><form class="auth-card" id="login-form"><img src="/assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="login">Prihlásenie</h2><p class="helper-text">Vitaj späť. Prihlás sa do svojho účtu.</p><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="login-password">Heslo</label><input id="login-password" type="password" autocomplete="current-password" placeholder="Zadaj heslo"><button class="button button-primary" type="button" data-action="login-submit" data-i18n="login_submit">Prihlásiť sa</button><button class="text-button" type="button" data-action="show-register" data-i18n="create_account">Vytvoriť účet</button></form><form class="auth-card" id="register-form"><img src="/assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="register">Registrácia</h2><p class="helper-text">Vytvor si účet a usporiadaj si svoje úlohy.</p><label for="register-name" data-i18n="name">Meno</label><input id="register-name" type="text" autocomplete="name" placeholder="Meno a priezvisko"><label for="register-email">E-mail</label><input id="register-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="register-password">Heslo</label><input id="register-password" type="password" autocomplete="new-password" placeholder="Aspoň 8 znakov"><button class="button button-primary" type="button" data-action="register-submit" data-i18n="register_submit">Vytvoriť účet</button><button class="text-button" type="button" data-action="show-login" data-i18n="back_to_login">Už máš účet? Prihlás sa</button></form></section>
+        <section class="auth-shell" aria-label="Prihlásenie a registrácia"><form class="auth-card" id="login-form"><img src="assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="login">Prihlásenie</h2><p class="helper-text">Vitaj späť. Prihlás sa do svojho účtu.</p><label for="login-email">E-mail</label><input id="login-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="login-password">Heslo</label><input id="login-password" type="password" autocomplete="current-password" placeholder="Zadaj heslo"><button class="button button-primary" type="button" data-action="login-submit" data-i18n="login_submit">Prihlásiť sa</button><button class="text-button" type="button" data-action="show-register" data-i18n="create_account">Vytvoriť účet</button></form><form class="auth-card" id="register-form"><img src="assets/img/tasko.svg" alt="" width="44" height="44"><h2 data-i18n="register">Registrácia</h2><p class="helper-text">Vytvor si účet a usporiadaj si svoje úlohy.</p><label for="register-name" data-i18n="name">Meno</label><input id="register-name" type="text" autocomplete="name" placeholder="Meno a priezvisko"><label for="register-email">E-mail</label><input id="register-email" type="email" autocomplete="email" placeholder="meno@priklad.sk"><label for="register-password">Heslo</label><input id="register-password" type="password" autocomplete="new-password" placeholder="Aspoň 8 znakov"><button class="button button-primary" type="button" data-action="register-submit" data-i18n="register_submit">Vytvoriť účet</button><button class="text-button" type="button" data-action="show-login" data-i18n="back_to_login">Už máš účet? Prihlás sa</button></form></section>
         <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
     <!-- Lokálne knižnice zostávajú v poradí určenom plánom F3. -->
-    <script src="/assets/vendor/jquery/jquery.min.js"></script>
-    <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/assets/vendor/fullcalendar/index.global.min.js"></script>
-    <script src="/assets/js/app.js"></script>
+    <script src="assets/vendor/jquery/jquery.min.js"></script>
+    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/fullcalendar/index.global.min.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>
