@@ -29,6 +29,7 @@ Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html
 - Pri PHP zachovaj čitateľné odsadenie a oddeľ prezentačnú vrstvu od aplikačnej logiky, keď sa projekt začne rozširovať.
 - Všetky hodnoty pochádzajúce od používateľa pri výstupe do HTML escapuj; pri SQL používaj parametrizované dotazy.
 - Interaktívne prvky označ sémantickým HTML a zabezpeč použiteľnosť klávesnicou a na mobilných obrazovkách.
+- Vo formulároch s tlačidlami „Uložiť“ a „Zrušiť“ umiestni „Zrušiť“ vľavo a primárne „Uložiť“ vpravo; rovnaké poradie zachovaj aj v poradí prvkov v HTML.
 - Nezapisuj heslá, tokeny ani iné tajomstvá do repozitára.
 
 ## Overovanie zmien
