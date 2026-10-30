@@ -1,0 +1,6 @@
+# Statické súbory sa môžu uložiť, ale pred použitím sa vždy overí ich aktuálnosť.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|css|js|svg|png|jpg|jpeg|gif|webp|ico|woff2?)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>
