@@ -135,6 +135,10 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 # Fáza 2 – PHP REST API a MySQL
 
+## Zaznamenaná požiadavka pre backend
+
+- Zoznam úloh na hlavnej obrazovke treba po napojení PHP API radiť podľa priority (najvyššia prvá) alebo podľa zostávajúceho času do termínu. Rozhodnutie o predvolenom radení a prípadnom prepínači treba premietnuť do backendového endpointu zoznamu úloh a kontraktu v `docs/api.md`. Táto úprava zatiaľ nie je implementovaná vo fronte ani backende podľa aktuálneho zadania.
+
 **Cieľ fázy:** Nahradiť mock bezpečným a trvalým backendom. Až po overení kontraktu sa frontend prepne zmenou `apiBase`.
 
 ## B1 – Databáza a ukážkové údaje
