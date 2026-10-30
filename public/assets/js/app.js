@@ -50,6 +50,32 @@
 
     const state = { routeSequence: 0, user: null, projects: [], authReady: false };
 
+    /* Používateľská voľba témy sa uloží lokálne; režim systém preberie nastavenie zariadenia. */
+    const theme = {
+        key: 'tasko.theme',
+        preference: 'system',
+        init() {
+            try {
+                const saved = window.localStorage.getItem(this.key);
+                if (['system', 'light', 'dark'].includes(saved)) this.preference = saved;
+            } catch (_) { /* Aplikácia funguje aj v prehliadači s vypnutým lokálnym úložiskom. */ }
+            this.apply();
+        },
+        apply() {
+            if (this.preference === 'system') document.documentElement.removeAttribute('data-theme');
+            else document.documentElement.dataset.theme = this.preference;
+            const selector = document.getElementById('theme-preference');
+            if (selector) selector.value = this.preference;
+        },
+        set(preference) {
+            if (!['system', 'light', 'dark'].includes(preference)) return;
+            this.preference = preference;
+            this.apply();
+            try { window.localStorage.setItem(this.key, preference); }
+            catch (_) { ui.showToast('Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', 'error'); }
+        }
+    };
+
     /* Pri rýchlom prepínaní obrazoviek smie vykresliť výsledok iba posledná požiadavka. */
     const router = {
         tasksMarkup: null,
@@ -85,7 +111,10 @@
             if (view) {
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
-                else if (!page.auth) {
+                else if (route.name === 'settings') {
+                    view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1><p class="page-subtitle">Prispôsob si vzhľad aplikácie.</p></div></div><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">Vzhľad</h2><p>Vyber, ako sa má Tasko zobrazovať.</p><label for="theme-preference">Farebný režim</label><select id="theme-preference"><option value="system">Automaticky podľa zariadenia</option><option value="light">Svetlý</option><option value="dark">Tmavý</option></select></section>`;
+                    theme.apply();
+                } else if (!page.auth) {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1>${title}</h1><p class="page-subtitle">Obsah tejto obrazovky sa pripravuje.</p></div></div>`;
                 }
             }
@@ -375,11 +404,16 @@
         auth.submit(this);
     });
 
+    $(document).on('change', '#theme-preference', function () {
+        theme.set(this.value);
+    });
+
     $(document).on('keydown', (event) => {
         if (event.key === 'Escape') ui.closePanels();
     });
 
-    window.Tasko = { i18n, api, state, router, ui, views, components, profile };
+    window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme };
+    theme.init();
     i18n.apply();
     views.init();
 }(window.jQuery, window, document));

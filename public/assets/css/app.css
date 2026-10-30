@@ -8,8 +8,10 @@
     --ink: #252735;
     --muted: #777b8b;
     --line: rgba(120, 126, 150, .15);
-    --accent: #35a65b;
-    --accent-soft: rgba(53, 166, 91, .12);
+    --accent: #277e48;
+    --accent-contrast: #fff;
+    --accent-soft: rgba(39, 126, 72, .12);
+    --danger: #b8323d;
     --shadow: 0 12px 34px rgba(41, 49, 85, .08), inset 0 1px rgba(255, 255, 255, .9);
     --blur: blur(22px) saturate(170%);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -28,7 +30,9 @@
         --muted: #a0a3b3;
         --line: rgba(210, 215, 240, .12);
         --accent: #54ce78;
+        --accent-contrast: #102016;
         --accent-soft: rgba(84, 206, 120, .15);
+        --danger: #ff9299;
         --shadow: 0 12px 34px rgba(0, 0, 0, .24), inset 0 1px rgba(255, 255, 255, .1);
     }
 }
@@ -43,7 +47,9 @@
     --muted: #a0a3b3;
     --line: rgba(210, 215, 240, .12);
     --accent: #54ce78;
+    --accent-contrast: #102016;
     --accent-soft: rgba(84, 206, 120, .15);
+    --danger: #ff9299;
     --shadow: 0 12px 34px rgba(0, 0, 0, .24), inset 0 1px rgba(255, 255, 255, .1);
 }
 
@@ -143,7 +149,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .panel-form textarea { resize: vertical; }
 .panel-actions { display: flex; gap: 10px; padding: 14px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 .button { display: inline-flex; min-height: 48px; flex: 1; align-items: center; justify-content: center; padding: 10px 16px; border: 0; border-radius: 14px; cursor: pointer; font-weight: 700; }
-.button-primary { color: #fff; background: var(--accent); }.button-quiet { color: var(--ink); background: var(--accent-soft); }
+.button-primary { color: var(--accent-contrast); background: var(--accent); }.button-quiet { color: var(--ink); background: var(--accent-soft); }
 .icon-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .icon-picker button { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); cursor: pointer; font-size: 21px; }
 .profile-preview { display: grid; width: 76px; height: 76px; margin: 10px auto 4px; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #6e82dc, #9471c9); font-size: 25px; font-weight: 750; }
@@ -151,9 +157,14 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .profile-plan { color: var(--ink); font-weight: 700; }
 .plan-rules { margin: 18px 0 8px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .demo-plan-toggle { width: 100%; margin: 4px 0 12px; }
-.logout-profile-button { width: 100%; min-height: 46px; margin: 22px 0 8px; border: 1px solid color-mix(in srgb, #c43d48 35%, var(--line)); border-radius: 13px; color: #b8323d; background: transparent; cursor: pointer; font-weight: 700; }
+.logout-profile-button { width: 100%; min-height: 46px; margin: 22px 0 8px; border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line)); border-radius: 13px; color: var(--danger); background: transparent; cursor: pointer; font-weight: 700; }
 .logout-profile-button:disabled { cursor: wait; opacity: .65; }
-.field-error { display: block; min-height: 0; color: #c43d48; font-size: 12px; }
+.settings-card { padding: 22px; border: 1px solid var(--glass-border); border-radius: 20px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+.settings-card h2 { margin: 0; font-size: 18px; }
+.settings-card p { margin: 5px 0 16px; color: var(--muted); font-size: 14px; }
+.settings-card label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 650; }
+.settings-card select { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
+.field-error { display: block; min-height: 0; color: var(--danger); font-size: 12px; }
 .field-error:not(:empty) { margin: 5px 2px 0; }
 /* Štyri voľby kopírujú wireframe: názov je nad farebným kruhom a výber je viditeľný aj klávesnicou. */
 .priority-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -175,7 +186,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .helper-text { margin: 4px 0; color: var(--muted); font-size: 13px; }
 .scrim { position: fixed; z-index: 8; inset: 0; border: 0; background: rgba(15, 17, 28, .28); opacity: 0; pointer-events: none; transition: opacity .2s; }
 .scrim.is-visible { opacity: 1; pointer-events: auto; }
-.toast { position: fixed; z-index: 12; right: 20px; bottom: 20px; left: 20px; width: fit-content; max-width: calc(100% - 40px); margin: auto; padding: 10px 17px; border: 1px solid var(--glass-border); border-radius: 999px; color: #fff; background: rgba(36, 38, 49, .88); opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity .2s, transform .2s; }
+.toast { position: fixed; z-index: 12; right: 20px; bottom: 20px; left: 20px; width: fit-content; max-width: calc(100% - 40px); margin: auto; padding: 10px 17px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--surface-solid); box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity .2s, transform .2s; }
 .toast.is-visible { opacity: 1; transform: translateY(0); }
 
 /* Prihlasovacie pohľady sú pripravené ako samostatné kontajnery pre F4–F5. */
@@ -195,9 +206,9 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .auth-card .button { width: 100%; margin-top: 22px; }
 .text-button { min-height: 44px; margin-top: 8px; border: 0; color: var(--accent); background: none; cursor: pointer; font-size: 13px; font-weight: 650; }
 /* Chyby zostávajú pri poli a súčasne sa oznamujú cez aria-describedby/alert. */
-.field-error, .form-error { min-height: 0; margin: 4px 2px 0; color: #c83f49; font-size: 12px; }
+.field-error, .form-error { min-height: 0; margin: 4px 2px 0; color: var(--danger); font-size: 12px; }
 .field-error:empty, .form-error:empty { display: none; }
-.auth-card [aria-invalid="true"] { border-color: #c83f49; }
+.auth-card [aria-invalid="true"], .panel-form [aria-invalid="true"] { border-color: var(--danger); }
 .password-notice { margin-top: 16px; padding: 10px 12px; border-radius: 12px; color: var(--ink); background: var(--accent-soft); }
 .auth-card button:disabled { cursor: wait; opacity: .65; }
 

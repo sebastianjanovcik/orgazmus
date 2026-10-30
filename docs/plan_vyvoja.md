@@ -121,6 +121,8 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 **Čo sa urobí:** Zvonček zobrazí upozornenia, nastavenia ponúknu vzhľad a prepínač slovenčina/čeština. Texty budú napojené na slovník podľa kľúčov.
 
+**Zmena poradia:** Na žiadosť používateľa sa výber témy (automatická, svetlá a tmavá) implementuje už pred F7 spolu s úpravami farieb komponentov. V F13 sa táto voľba znovu neimplementuje; zostáva ju zahrnúť do kontroly oboch tém spolu s ostatnými nastaveniami.
+
 **Výstupy:** Funkčné nastavenia jazyka a témy a zobrazenie notifikácií.
 
 **Pre juniora:** Slovníky s kľúčmi sú stabilnejšie než hľadanie a nahrádzanie hotových viet. Jazyk a vzhľad sú osobné nastavenia prehliadača, preto sa môžu uložiť lokálne.
@@ -377,7 +379,7 @@ V každom kroku najprv skontroluj, či výstupy predchádzajúceho kroku existuj
 
 1. Rozšíriť slovník o všetky texty aplikácie v slovenčine a češtine; pri chýbajúcom kľúči mať bezpečný fallback.
 2. Prepínať jazyk bez obnovenia stránky a uložiť preferenciu lokálne.
-3. Doplniť prepnutie svetlej/tmavej/automatickej témy a uložiť voľbu.
+3. Overiť prepnutie svetlej/tmavej/automatickej témy a uloženie voľby, ktoré bolo na žiadosť používateľa implementované pred F7.
 4. Zobraziť zvonček s počtom upozornení a panelom úloh po termíne alebo na dnes.
 5. Aktualizovať dnešný dátum a notifikácie po polnoci, ak aplikácia zostane otvorená.
 
