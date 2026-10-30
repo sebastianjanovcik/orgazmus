@@ -148,8 +148,97 @@
             return this.localDateStr(date);
         },
         initials(name) {
-            const words = String(name || '').trim().split(/\s+/).filter(Boolean);
-            return words.length ? `${words[0][0]}${words.length > 1 ? words[words.length - 1][0] : ''}`.toLocaleUpperCase('sk') : '';
+            const words = String(name || '').normalize('NFC').trim().split(/\s+/u).filter(Boolean);
+            return words.length ? `${Array.from(words[0])[0]}${words.length > 1 ? Array.from(words[words.length - 1])[0] : ''}`.toLocaleUpperCase('sk') : '';
+        }
+    };
+
+    /* Profilové prvky sa odvodzujú z API používateľa, aby avatar aj plán zostali po prihlásení súdržné. */
+    const profile = {
+        render() {
+            const user = state.user;
+            if (!user) return;
+            const premium = user.plan === 'premium';
+            const initials = components.initials(user.name) || '?';
+            const avatar = document.querySelector('.avatar');
+            const preview = document.querySelector('.profile-preview');
+            if (avatar) {
+                avatar.textContent = initials;
+                avatar.setAttribute('aria-label', `Otvoriť profil: ${user.name}${premium ? ', Premium' : ''}`);
+                avatar.classList.toggle('is-premium', premium);
+                avatar.dataset.plan = user.plan;
+            }
+            if (preview) preview.textContent = initials;
+            const form = document.getElementById('profile-form');
+            if (form) {
+                form.elements.name.value = user.name || '';
+                form.querySelector('.profile-email').textContent = user.email || '';
+                form.querySelector('.profile-plan').textContent = premium ? '👑 Premium' : 'Standard';
+                const toggle = form.querySelector('.demo-plan-toggle');
+                const demoMode = Boolean((window.TASKO_CONFIG || {}).demoMode);
+                toggle.hidden = !demoMode;
+                toggle.textContent = premium ? 'Prepnúť na Standard (demo)' : 'Vyskúšať Premium (demo)';
+            }
+        },
+        clearErrors() {
+            const form = document.getElementById('profile-form');
+            form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
+            form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+        },
+        showErrors(fields) {
+            const form = document.getElementById('profile-form');
+            Object.entries(fields || {}).forEach(([name, message]) => {
+                const input = form.elements[name];
+                const error = document.getElementById(`profile-${name.replaceAll('_', '-')}-error`);
+                if (input) input.setAttribute('aria-invalid', 'true');
+                if (error) error.textContent = message;
+            });
+            const firstInvalid = form.querySelector('[aria-invalid="true"]');
+            if (firstInvalid) firstInvalid.focus();
+        },
+        async save(button) {
+            const form = document.getElementById('profile-form');
+            this.clearErrors();
+            const name = form.elements.name.value.trim();
+            const currentPassword = form.elements.current_password.value;
+            const newPassword = form.elements.new_password.value;
+            const fields = {};
+            if (!name || name.length > 60) fields.name = 'Meno musí mať 1 až 60 znakov.';
+            if (Boolean(currentPassword) !== Boolean(newPassword)) {
+                fields[currentPassword ? 'new_password' : 'current_password'] = 'Vyplň obe polia na zmenu hesla.';
+            } else if (newPassword && newPassword.length < 8) {
+                fields.new_password = 'Heslo musí mať aspoň 8 znakov.';
+            }
+            if (Object.keys(fields).length) return this.showErrors(fields);
+            button.disabled = true;
+            try {
+                if (name !== state.user.name) state.user = await api.request('PATCH', '/api/me', { name });
+                if (currentPassword && newPassword) {
+                    await api.request('PATCH', '/api/me/password', { current_password: currentPassword, new_password: newPassword });
+                }
+                this.render();
+                form.elements.current_password.value = '';
+                form.elements.new_password.value = '';
+                ui.showToast('Profil bol uložený.');
+            } catch (error) {
+                if (error.status === 422) this.showErrors(error.fields);
+                else ui.showToast(error.message || 'Profil sa nepodarilo uložiť.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        },
+        async togglePlan(button) {
+            const nextPlan = state.user.plan === 'premium' ? 'standard' : 'premium';
+            button.disabled = true;
+            try {
+                state.user = await api.request('PATCH', '/api/me/plan', { plan: nextPlan });
+                this.render();
+                ui.showToast(`Plán bol prepnutý na ${nextPlan === 'premium' ? 'Premium' : 'Standard'} (demo).`);
+            } catch (error) {
+                ui.showToast(error.message || 'Plán sa nepodarilo zmeniť.', 'error');
+            } finally {
+                button.disabled = false;
+            }
         }
     };
 
@@ -159,6 +248,7 @@
             document.body.classList.add('auth-checking');
             api.request('GET', '/api/me').then((user) => {
                 state.user = user;
+                profile.render();
             }).catch((error) => {
                 if (error.status !== 401) ui.showToast('Nepodarilo sa overiť prihlásenie. Skús to znova.', 'error');
                 state.user = null;
@@ -216,6 +306,7 @@
                 .then((user) => {
                     state.user = user;
                     state.authReady = true;
+                    profile.render();
                     window.location.hash = 'tasks';
                     router.navigate();
                 })
@@ -262,7 +353,9 @@
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
         if (action === 'task-create') ui.openPanel('task-panel');
         if (action === 'project-open') ui.openPanel('project-panel');
-        if (action === 'profile-open') ui.openPanel('profile-panel');
+        if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
+        if (action === 'profile-save') profile.save(this);
+        if (action === 'plan-toggle') profile.togglePlan(this);
         if (action === 'show-register') window.location.hash = 'register';
         if (action === 'show-login') window.location.hash = 'login';
         if (action === 'logout') auth.logout(this);
@@ -270,7 +363,7 @@
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
         if (action === 'task-edit' || action === 'task-complete' || action === 'task-save' ||
-            action === 'project-save' || action === 'profile-save' || action === 'login-submit' ||
+            action === 'project-save' || action === 'login-submit' ||
             action === 'register-submit') {
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
@@ -286,7 +379,7 @@
         if (event.key === 'Escape') ui.closePanels();
     });
 
-    window.Tasko = { i18n, api, state, router, ui, views, components };
+    window.Tasko = { i18n, api, state, router, ui, views, components, profile };
     i18n.apply();
     views.init();
 }(window.jQuery, window, document));

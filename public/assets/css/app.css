@@ -66,6 +66,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .notification-button svg { width: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .notification-dot { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border: 2px solid var(--surface-solid); border-radius: 50%; background: #ed6269; }
 .avatar { display: grid; width: 42px; height: 42px; margin-left: 2px; place-items: center; border: 2px solid var(--glass-border); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #6e82dc, #9471c9); box-shadow: 0 5px 16px rgba(108, 111, 195, .25); cursor: pointer; font-size: 13px; font-weight: 750; }
+.avatar.is-premium { position: relative; border-color: #f1c75b; }
+.avatar.is-premium::after { content: "♛"; position: absolute; top: -7px; right: -7px; display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid var(--surface); border-radius: 50%; color: #5c4300; background: #ffd76a; font-size: 12px; }
 .notification-button { margin-left: auto; }
 
 /* Desktop ponecháva navigáciu viditeľnú; na menších šírkach ju otvorí panel. */
@@ -146,6 +148,12 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .icon-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .icon-picker button { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); cursor: pointer; font-size: 21px; }
 .profile-preview { display: grid; width: 76px; height: 76px; margin: 10px auto 4px; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #6e82dc, #9471c9); font-size: 25px; font-weight: 750; }
+.profile-email, .profile-plan { margin: 2px 0; color: var(--muted); text-align: center; }
+.profile-plan { color: var(--ink); font-weight: 700; }
+.plan-rules { margin: 18px 0 8px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.demo-plan-toggle { width: 100%; margin: 4px 0 12px; }
+.field-error { display: block; min-height: 0; color: #c43d48; font-size: 12px; }
+.field-error:not(:empty) { margin: 5px 2px 0; }
 /* Štyri voľby kopírujú wireframe: názov je nad farebným kruhom a výber je viditeľný aj klávesnicou. */
 .priority-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .panel-form .priority-option { position: relative; display: flex; min-width: 0; min-height: 58px; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; margin: 0; padding: 0; border: 0; border-radius: 0; color: var(--ink); background: transparent; cursor: pointer; font-size: 11px; font-weight: 650; text-align: center; box-shadow: none; }

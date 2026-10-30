@@ -3,6 +3,7 @@
  */
 const http = require('http');
 const PORT = process.env.PORT || 4500;
+const mockUser = { id: 1, email: 'jana@example.sk', name: 'Jana Nová', plan: 'standard' };
 
 const server = http.createServer((req, res) => {
   // Lokálny mock povoľuje požiadavky z vývojového webu a preflight pre JSON hlavičky.
@@ -36,7 +37,7 @@ const server = http.createServer((req, res) => {
 
     // "Úspešná odpoveď" — default
     res.writeHead(201, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nová","plan":"standard"}}));
+    return res.end(JSON.stringify({"data":mockUser}));
   }
 
   // @endpoint POST /api/auth/login
@@ -51,7 +52,7 @@ const server = http.createServer((req, res) => {
 
     // "Úspešná odpoveď" — default
     res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nová","plan":"standard"}}));
+    return res.end(JSON.stringify({"data":mockUser}));
   }
 
   // @endpoint POST /api/auth/logout
@@ -68,13 +69,19 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({"error":{"code":"unauthenticated","message":"Prihlásenie je potrebné.","fields":{}}}));
     }
     res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nová","plan":"standard"}}));
+    return res.end(JSON.stringify({"data":mockUser}));
   }
 
   // @endpoint PATCH /api/me
   if (req.method === 'PATCH' && pathname === '/api/me') {
-    res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nováková","plan":"standard"}}));
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try { mockUser.name = JSON.parse(body).name || mockUser.name; } catch (_) { /* Mock zostáva použiteľný aj pri neplatnom JSON. */ }
+      res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
+      res.end(JSON.stringify({"data":mockUser}));
+    });
+    return;
   }
 
   // @endpoint PATCH /api/me/password
@@ -102,9 +109,15 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({"error":{"code":"forbidden","message":"Zmena plánu je dostupná iba v demo režime.","fields":{}}}));
     }
 
-    // "Úspešná odpoveď" — default
-    res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nová","plan":"premium"}}));
+    // Demo prepínač vráti plán požadovaný klientom, aby bolo možné ukázať oba stavy.
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try { mockUser.plan = JSON.parse(body).plan === 'standard' ? 'standard' : 'premium'; } catch (_) { /* Použije sa predvolený demo plán. */ }
+      res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
+      res.end(JSON.stringify({"data":mockUser}));
+    });
+    return;
   }
 
   // @endpoint GET /api/projects
