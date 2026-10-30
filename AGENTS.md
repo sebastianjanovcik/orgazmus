@@ -31,6 +31,7 @@ Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html
 - Interaktívne prvky označ sémantickým HTML a zabezpeč použiteľnosť klávesnicou a na mobilných obrazovkách.
 - Vo formulároch s tlačidlami „Uložiť“ a „Zrušiť“ umiestni „Zrušiť“ vľavo a primárne „Uložiť“ vpravo; rovnaké poradie zachovaj aj v poradí prvkov v HTML.
 - Pri načítavaní obsahu zobraz skeleton, ktorého rozloženie a počet prvkov zodpovedajú načítavanej časti rozhrania; nepoužívaj jeden všeobecný spinner namiesto náhľadu výsledného obsahu.
+- Pred každým zmazaním vyžaduj dvojité potvrdenie používateľa, aby sa akcia nevykonala jediným kliknutím.
 - Nezapisuj heslá, tokeny ani iné tajomstvá do repozitára.
 
 ## Overovanie zmien
