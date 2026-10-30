@@ -27,13 +27,13 @@
             const headers = {};
             if (config.mockResponse) headers['x-mock-response-name'] = config.mockResponse;
             return new Promise((resolve, reject) => {
+                /* Bez vynúteného JSON typu prejde úspešne aj prázdna odpoveď 204. */
                 $.ajax({
                     url: `${String(config.apiBase || '').replace(/\/$/, '')}${url}`,
                     method,
                     headers,
                     contentType: data === undefined ? undefined : 'application/json; charset=utf-8',
-                    data: data === undefined ? undefined : JSON.stringify(data),
-                    dataType: 'json'
+                    data: data === undefined ? undefined : JSON.stringify(data)
                 }).done((response) => resolve(response && response.data))
                     .fail((xhr) => {
                         const error = xhr.responseJSON && xhr.responseJSON.error || {};
@@ -48,7 +48,7 @@
         }
     };
 
-    const state = { routeSequence: 0, user: null, projects: [] };
+    const state = { routeSequence: 0, user: null, projects: [], authReady: false };
 
     /* Pri rýchlom prepínaní obrazoviek smie vykresliť výsledok iba posledná požiadavka. */
     const router = {
@@ -66,6 +66,15 @@
         navigate() {
             const sequence = ++state.routeSequence;
             const route = this.current();
+            /* Aplikačné obrazovky sú súkromné; samotná kontrola prehliadača je len UX vrstva. */
+            if (state.authReady && !state.user && !['login', 'register'].includes(route.name)) {
+                window.location.hash = 'login';
+                return;
+            }
+            if (state.authReady && state.user && ['login', 'register'].includes(route.name)) {
+                window.location.hash = 'tasks';
+                return;
+            }
             const page = route.name === 'project' ? { title: 'project' } : (this.routes[route.name] || this.routes.tasks);
             const title = i18n.t(page.title);
             const heading = document.getElementById('page-title');
@@ -146,8 +155,103 @@
 
     const views = {
         init() {
-            router.navigate();
+            /* Po obnovení sa stav obnoví zo serverovej session, nie z localStorage. */
+            document.body.classList.add('auth-checking');
+            api.request('GET', '/api/me').then((user) => {
+                state.user = user;
+            }).catch((error) => {
+                if (error.status !== 401) ui.showToast('Nepodarilo sa overiť prihlásenie. Skús to znova.', 'error');
+                state.user = null;
+            }).finally(() => {
+                state.authReady = true;
+                document.body.classList.remove('auth-checking');
+                router.navigate();
+                const route = router.current();
+                const first = document.querySelector(route.name === 'register' ? '#register-name' : '#login-email');
+                if (!state.user && first) first.focus();
+            });
             window.addEventListener('hashchange', () => router.navigate());
+        }
+    };
+
+    /* Chyby API sa priradia ku konkrétnemu poľu; formulár ostane použiteľný aj pri všeobecnej chybe. */
+    const auth = {
+        clearErrors(form) {
+            form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
+            form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+            const summary = form.querySelector('.form-error');
+            if (summary) summary.textContent = '';
+        },
+        showErrors(form, fields) {
+            Object.entries(fields || {}).forEach(([name, message]) => {
+                const input = form.querySelector(`[name="${name}"]`);
+                if (!input) return;
+                input.setAttribute('aria-invalid', 'true');
+                const error = form.querySelector(`#${form.id.replace('-form', '')}-${name.replaceAll('_', '-')}-error`);
+                if (error) error.textContent = message;
+            });
+        },
+        setBusy(form, busy) {
+            const button = form.querySelector('[type="submit"]');
+            if (button) button.disabled = busy;
+            form.setAttribute('aria-busy', String(busy));
+        },
+        submit(form) {
+            this.clearErrors(form);
+            const nameInput = form.querySelector('[name="name"]');
+            if (nameInput) nameInput.setCustomValidity(nameInput.value.trim() ? '' : 'Zadaj svoje meno.');
+            if (!form.reportValidity()) return;
+            const values = Object.fromEntries(new FormData(form).entries());
+            if (form.id === 'register-form' && values.password !== values.password_confirm) {
+                this.showErrors(form, { password_confirm: 'Heslá sa nezhodujú.' });
+                form.elements.password_confirm.focus();
+                return;
+            }
+            const isRegister = form.id === 'register-form';
+            const payload = isRegister
+                ? { name: values.name.trim(), email: values.email.trim(), password: values.password }
+                : { email: values.email.trim(), password: values.password };
+            this.setBusy(form, true);
+            api.request('POST', isRegister ? '/api/auth/register' : '/api/auth/login', payload)
+                .then((user) => {
+                    state.user = user;
+                    state.authReady = true;
+                    window.location.hash = 'tasks';
+                    router.navigate();
+                })
+                .catch((error) => {
+                    if (error.status === 401) {
+                        const summary = form.querySelector('.form-error');
+                        if (summary) summary.textContent = 'Nesprávny e-mail alebo heslo.';
+                    } else if (error.status === 409 && error.code === 'email_taken') {
+                        this.showErrors(form, { email: 'Účet s týmto e-mailom už existuje.' });
+                        form.elements.email.focus();
+                    } else if (error.status === 422) {
+                        this.showErrors(form, error.fields);
+                        const firstInvalid = form.querySelector('[aria-invalid="true"]');
+                        if (firstInvalid) firstInvalid.focus();
+                        else if (form.querySelector('.form-error')) form.querySelector('.form-error').textContent = error.message;
+                    } else {
+                        const summary = form.querySelector('.form-error');
+                        if (summary) summary.textContent = error.message || 'Požiadavku sa nepodarilo dokončiť.';
+                    }
+                })
+                .finally(() => this.setBusy(form, false));
+        },
+        logout(button) {
+            button.disabled = true;
+            ui.closePanels();
+            api.request('POST', '/api/auth/logout', {}).catch(() => {
+                ui.showToast('Odhlásenie zo servera sa nepodarilo.', 'error');
+            }).finally(() => {
+                state.user = null;
+                state.authReady = true;
+                window.location.hash = 'login';
+                router.navigate();
+                const email = document.getElementById('login-email');
+                if (email) email.focus();
+                button.disabled = false;
+            });
         }
     };
 
@@ -161,6 +265,7 @@
         if (action === 'profile-open') ui.openPanel('profile-panel');
         if (action === 'show-register') window.location.hash = 'register';
         if (action === 'show-login') window.location.hash = 'login';
+        if (action === 'logout') auth.logout(this);
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
@@ -170,6 +275,11 @@
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
         }
+    });
+
+    $(document).on('submit', '#login-form, #register-form', function (event) {
+        event.preventDefault();
+        auth.submit(this);
     });
 
     $(document).on('keydown', (event) => {

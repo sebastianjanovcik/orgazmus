@@ -151,6 +151,11 @@ Mock prehráva prvý uložený úspešný príklad. Na vyžiadanie alternatívne
 chybovej ukážky pošli hlavičku `x-mock-response-code` s jej HTTP kódom,
 napríklad `x-mock-response-code: 403`.
 
+Frontend pri štarte volá `GET /api/me`. Lokálny mock pri tejto ceste predvolene
+vracia `401 unauthenticated`, aby sa dala predviesť prihlasovacia obrazovka.
+Pre ukážku už prihlásenej relácie pošli `x-mock-response-name: authenticated`;
+mock si však stav prihlásenia po obnovení stránky neuchováva.
+
 ```powershell
 postman mock run ./postman/mocks/tasko/config.yaml
 ```

@@ -62,6 +62,11 @@ const server = http.createServer((req, res) => {
 
   // @endpoint GET /api/me
   if (req.method === 'GET' && pathname === '/api/me') {
+    // Statelessný mock štandardne simuluje novú návštevu; hlavička umožní ukázať aj platnú reláciu.
+    if (exampleName !== 'authenticated') {
+      res.writeHead(401, {"Content-Type":"application/json; charset=utf-8"});
+      return res.end(JSON.stringify({"error":{"code":"unauthenticated","message":"Prihlásenie je potrebné.","fields":{}}}));
+    }
     res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
     return res.end(JSON.stringify({"data":{"id":1,"email":"jana@example.sk","name":"Jana Nová","plan":"standard"}}));
   }
