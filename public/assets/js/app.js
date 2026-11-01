@@ -371,19 +371,33 @@
             const item = this.items.find((entry) => String(entry.id) === article.dataset.commentId);
             if (item && Number(article.dataset.depth) < 5) article.append(this.makeForm(item.id));
         },
+        /* Hĺbku odvodzujeme z rodičovského reťazca, aby mock ID ani chybná hodnota depth nezmenili limit. */
+        depthOf(item) {
+            let depth = 0; let parentId = item.parent_id; const visited = new Set([String(item.id)]);
+            while (parentId != null) {
+                const key = String(parentId); if (visited.has(key)) return 6; visited.add(key);
+                const parent = this.items.find((entry) => String(entry.id) === key); if (!parent) return 0;
+                depth += 1; parentId = parent.parent_id;
+            }
+            return depth;
+        },
         /* Server zostáva autoritou pre validáciu aj hĺbku; lokálny záznam pomáha mocku bez trvalého úložiska. */
         async submit(form) {
             if (state.user?.plan !== 'premium') { this.renderLocked(); return; }
             const body = form.elements.body.value.trim(); if (!body) { form.elements.body.focus(); return; }
-            const parentId = form.dataset.parentId ? Number(form.dataset.parentId) : null; const button = form.querySelector('[type="submit"]'); button.disabled = true;
+            const parentId = form.dataset.parentId || null;
+            const parent = parentId == null ? null : this.items.find((item) => String(item.id) === parentId);
+            const depth = parent ? this.depthOf(parent) + 1 : 0;
+            const errorTarget = form.querySelector('.comment-form-error');
+            if (depth > 5) { if (errorTarget) errorTarget.textContent = 'Odpoveď už prekročila maximálnu hĺbku 5.'; return; }
+            const button = form.querySelector('[type="submit"]'); button.disabled = true;
             try {
-                const saved = await api.request('POST', `/api/tasks/${encodeURIComponent(this.taskId)}/comments`, { body, parent_id: parentId });
-                const parent = parentId == null ? null : this.items.find((item) => Number(item.id) === parentId);
+                const saved = await api.request('POST', `/api/tasks/${encodeURIComponent(this.taskId)}/comments`, { body, parent_id: parent ? (parent.apiId ?? parent.id) : null });
                 const collision = saved && this.items.some((item) => String(item.id) === String(saved.id));
-                this.items.push({ ...(saved || {}), id: collision || !saved?.id ? `local-${Date.now()}` : saved.id, task_id: this.taskId, parent_id: parentId, depth: parent ? Number(parent.depth) + 1 : 0, body, author: saved?.author || { name: state.user?.name || 'Ja' }, created_at: saved?.created_at || new Date().toISOString(), can_delete: saved?.can_delete ?? true });
+                this.items.push({ ...(saved || {}), id: collision || !saved?.id ? `local-${Date.now()}` : saved.id, apiId: saved?.id, task_id: this.taskId, parent_id: parentId, depth, body, author: saved?.author || { name: state.user?.name || 'Ja' }, created_at: saved?.created_at || new Date().toISOString(), can_delete: saved?.can_delete ?? true });
                 this.render();
             } catch (error) {
-                const target = form.querySelector('.comment-form-error');
+                const target = errorTarget;
                 if (target) target.textContent = error.code === 'comment_too_deep' ? 'Odpoveď už prekročila maximálnu hĺbku 5.' : error.message || 'Komentár sa nepodarilo pridať.';
                 button.disabled = false;
             }
@@ -398,9 +412,8 @@
             const replyWord = count === 1 ? 'odpoveď' : count >= 2 && count <= 4 ? 'odpovede' : 'odpovedí';
             const message = count ? `Odstránením komentára sa odstráni aj ${count} ${replyWord}. Pokračovať?` : 'Naozaj chceš odstrániť tento komentár?';
             if (!await ui.confirm(message, 'Odstrániť komentár?', 'Pokračovať')) return;
-            if (!await ui.confirm('Odstránenie je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
             button.disabled = true;
-            try { await api.request('DELETE', `/api/comments/${encodeURIComponent(item.id)}`); this.items = this.items.filter((entry) => !descendants.has(String(entry.id))); this.render(); }
+            try { await api.request('DELETE', `/api/comments/${encodeURIComponent(item.apiId ?? item.id)}`); this.items = this.items.filter((entry) => !descendants.has(String(entry.id))); this.render(); }
             catch (error) { button.disabled = false; ui.showToast(error.message || 'Komentár sa nepodarilo odstrániť.', 'error'); }
         }
     };
@@ -719,7 +732,6 @@
             const taskId = button.dataset.taskId || this.editingId;
             if (!taskId) return;
             if (!await ui.confirm('Naozaj chceš odstrániť túto úlohu?', 'Odstrániť úlohu?', 'Odstrániť')) return;
-            if (!await ui.confirm('Odstránenie je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
             button.disabled = true;
             try {
                 await api.request('DELETE', `/api/tasks/${taskId}`);
@@ -861,7 +873,6 @@
             const count = this.counts(project).total;
             const message = `Projekt „${project.name}“ obsahuje ${count} ${count === 1 ? 'úlohu' : count >= 2 && count <= 4 ? 'úlohy' : 'úloh'}. Zmazaním projektu sa odstránia aj tieto úlohy. Pokračovať?`;
             if (!await ui.confirm(message, 'Odstrániť projekt?', 'Pokračovať')) return;
-            if (!await ui.confirm('Odstránenie projektu aj úloh je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
             button.disabled = true;
             try {
                 await api.request('DELETE', `/api/projects/${project.id}`);
