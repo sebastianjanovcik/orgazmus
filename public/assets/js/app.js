@@ -48,7 +48,7 @@
         }
     };
 
-    const state = { routeSequence: 0, user: null, projects: [], authReady: false };
+    const state = { routeSequence: 0, user: null, projects: [], tasks: [], authReady: false };
 
     /* Používateľská voľba témy sa uloží lokálne; režim systém preberie nastavenie zariadenia. */
     const theme = {
@@ -103,8 +103,6 @@
             }
             const page = route.name === 'project' ? { title: 'project' } : (this.routes[route.name] || this.routes.tasks);
             const title = i18n.t(page.title);
-            const heading = document.getElementById('page-title');
-            if (heading) heading.textContent = title;
             document.title = `Tasko – ${title}`;
             document.body.classList.toggle('auth-route', Boolean(page.auth));
             const view = document.getElementById('view');
@@ -118,6 +116,9 @@
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1>${title}</h1><p class="page-subtitle">Obsah tejto obrazovky sa pripravuje.</p></div></div>`;
                 }
             }
+            /* Nadpis aktualizujeme až po obnove obsahu, aby sa do šablóny úloh neuložil názov inej trasy. */
+            const heading = document.getElementById('page-title');
+            if (heading) heading.textContent = title;
             document.querySelectorAll('.auth-card').forEach((card) => {
                 card.hidden = card.id === 'login-form' ? route.name !== 'login' : route.name !== 'register';
             });
@@ -127,6 +128,7 @@
                 if (active) link.setAttribute('aria-current', 'page');
                 else link.removeAttribute('aria-current');
             });
+            if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
             if (sequence !== state.routeSequence) return;
         }
     };
@@ -271,7 +273,177 @@
         }
     };
 
+    /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
+    const taskList = {
+        requestSequence: 0,
+        priorities: { 1: 'Nízka', 2: 'Stredná', 3: 'Vysoká', 4: 'Kritická' },
+        plainText(value) {
+            /* Popis API môže obsahovať povolené formátovanie; detail zoznamu ukáže iba jeho text. */
+            const parsed = new DOMParser().parseFromString(String(value || ''), 'text/html');
+            return parsed.body.textContent.trim();
+        },
+        dateLabel(value) {
+            if (!value) return 'Bez termínu';
+            const [year, month, day] = value.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            if (Number.isNaN(date.getTime())) return value;
+            if (value === components.today()) return 'Dnes';
+            if (value < components.today()) return `Po termíne · ${date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' })}`;
+            return date.toLocaleDateString('sk-SK', { weekday: 'short', day: 'numeric', month: 'short' });
+        },
+        makeCard(task, projects) {
+            /* Text používateľa vkladáme cez textContent a elementy, aby sa názov nikdy nespustil ako HTML. */
+            const priority = Math.min(4, Math.max(1, Number(task.priority) || 2));
+            const project = projects.get(Number(task.project_id));
+            const card = document.createElement('article');
+            card.className = `task-card${task.is_done ? ' is-done' : ''}${task.due_date && task.due_date < components.today() && !task.is_done ? ' is-overdue' : ''}`;
+            card.dataset.taskId = String(task.id);
+            const check = document.createElement('button');
+            check.type = 'button';
+            check.className = `task-check priority-${['low', 'medium', 'high', 'critical'][priority - 1]}`;
+            check.dataset.action = 'task-complete';
+            check.setAttribute('aria-label', `${task.is_done ? 'Znovu otvoriť' : 'Označiť ako hotovú'} úlohu ${task.title}`);
+            check.setAttribute('aria-pressed', String(Boolean(task.is_done)));
+            const main = document.createElement('div');
+            main.className = 'task-main';
+            const title = document.createElement('button');
+            title.type = 'button';
+            title.className = 'task-title';
+            title.dataset.action = 'task-detail';
+            title.textContent = task.title || '';
+            main.append(title);
+            const description = this.plainText(task.description);
+            if (description) {
+                const preview = document.createElement('p');
+                preview.className = 'task-description';
+                preview.textContent = description;
+                main.append(preview);
+            }
+            const meta = document.createElement('div');
+            meta.className = 'task-meta';
+            const priorityLabel = document.createElement('span');
+            priorityLabel.className = `priority priority-${['low', 'medium', 'high', 'critical'][priority - 1]}`;
+            priorityLabel.textContent = this.priorities[priority];
+            meta.append(priorityLabel);
+            if (project) {
+                const projectLabel = document.createElement('span');
+                projectLabel.className = 'meta-project';
+                const dot = document.createElement('i');
+                dot.className = 'project-dot';
+                dot.style.backgroundColor = project.color || '#6558d3';
+                dot.setAttribute('aria-hidden', 'true');
+                projectLabel.append(dot, document.createTextNode(project.name));
+                meta.append(projectLabel);
+            }
+            main.append(meta);
+            const due = document.createElement('time');
+            due.className = 'task-date';
+            due.dateTime = task.due_date || '';
+            due.textContent = this.dateLabel(task.due_date);
+            if (task.due_date && task.due_date < components.today() && !task.is_done) due.setAttribute('aria-label', `Po termíne: ${this.dateLabel(task.due_date)}`);
+            card.append(check, main, due);
+            return card;
+        },
+        render(tasks, projects) {
+            const open = tasks.filter((task) => !task.is_done);
+            const done = tasks.filter((task) => task.is_done);
+            const openList = document.getElementById('task-open-list');
+            const doneList = document.getElementById('task-done-list');
+            if (!openList || !doneList) return;
+            openList.replaceChildren();
+            doneList.replaceChildren();
+            open.forEach((task) => openList.append(this.makeCard(task, projects)));
+            done.forEach((task) => doneList.append(this.makeCard(task, projects)));
+            this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
+            this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
+            document.getElementById('open-task-count').textContent = String(open.length);
+            document.getElementById('overdue-task-count').textContent = String(open.filter((task) => task.due_date && task.due_date < components.today()).length);
+            document.getElementById('completed-task-count').textContent = String(done.length);
+            document.getElementById('open-section-count').textContent = `${open.length} ${open.length === 1 ? 'úloha' : 'úloh'}`;
+            document.getElementById('done-section-count').textContent = `${done.length} ${done.length === 1 ? 'úloha' : 'úloh'}`;
+        },
+        emptyState(container, count, message, id) {
+            if (count) return;
+            const empty = document.createElement('p');
+            empty.className = 'task-empty';
+            empty.id = id;
+            empty.textContent = message;
+            container.append(empty);
+        },
+        loading() {
+            ['task-open-list', 'task-done-list'].forEach((id) => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                const count = id === 'task-open-list' ? 3 : 1;
+                container.replaceChildren(...Array.from({ length: count }, () => {
+                    const row = document.createElement('div');
+                    row.className = 'task-skeleton';
+                    row.setAttribute('aria-hidden', 'true');
+                    return row;
+                }));
+            });
+            document.getElementById('open-section-count').textContent = 'Načítavam…';
+            document.getElementById('done-section-count').textContent = 'Načítavam…';
+        },
+        error(error) {
+            ['task-open-list', 'task-done-list'].forEach((id) => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                const box = document.createElement('div');
+                box.className = 'task-load-error';
+                const message = document.createElement('p');
+                message.textContent = error.message || 'Úlohy sa nepodarilo načítať.';
+                const retry = document.createElement('button');
+                retry.type = 'button';
+                retry.className = 'button button-quiet';
+                retry.dataset.action = 'tasks-retry';
+                retry.textContent = 'Skúsiť znova';
+                box.append(message, retry);
+                container.replaceChildren(box);
+            });
+            document.getElementById('open-section-count').textContent = 'Chyba';
+            document.getElementById('done-section-count').textContent = 'Chyba';
+        },
+        showDetail(task) {
+            const content = document.getElementById('task-detail-content');
+            const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
+            content.replaceChildren();
+            const title = document.createElement('h3');
+            title.textContent = task.title || '';
+            const description = document.createElement('p');
+            description.className = 'task-detail-description';
+            description.textContent = this.plainText(task.description) || 'Bez popisu.';
+            const facts = document.createElement('dl');
+            [[ 'Priorita', this.priorities[Math.min(4, Math.max(1, Number(task.priority) || 2))] ],
+                [ 'Projekt', project ? project.name : 'Bez projektu' ], [ 'Termín', this.dateLabel(task.due_date) ],
+                [ 'Stav', task.is_done ? 'Hotová' : 'Otvorená' ]].forEach(([label, value]) => {
+                const term = document.createElement('dt'); term.textContent = label;
+                const detail = document.createElement('dd'); detail.textContent = value;
+                facts.append(term, detail);
+            });
+            content.append(title, description, facts);
+            document.getElementById('task-detail-title').textContent = 'Detail úlohy';
+            ui.openPanel('task-detail-panel');
+        }
+    };
+
     const views = {
+        async loadTasks(routeSequence) {
+            const requestSequence = ++taskList.requestSequence;
+            taskList.loading();
+            try {
+                const [tasks, projects] = await Promise.all([
+                    api.request('GET', '/api/tasks'),
+                    api.request('GET', '/api/projects')
+                ]);
+                if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
+                state.projects = Array.isArray(projects) ? projects : [];
+                state.tasks = Array.isArray(tasks) ? tasks : [];
+                taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+            } catch (error) {
+                if (requestSequence === taskList.requestSequence && routeSequence === state.routeSequence) taskList.error(error);
+            }
+        },
         init() {
             /* Po obnovení sa stav obnoví zo serverovej session, nie z localStorage. */
             document.body.classList.add('auth-checking');
@@ -381,6 +553,11 @@
         if (action === 'menu-toggle') ui.openPanel('navigation-drawer');
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
         if (action === 'task-create') ui.openPanel('task-panel');
+        if (action === 'task-detail') {
+            const task = state.tasks.find((item) => String(item.id) === this.closest('.task-card')?.dataset.taskId);
+            if (task) taskList.showDetail(task);
+        }
+        if (action === 'tasks-retry') views.loadTasks(state.routeSequence);
         if (action === 'project-open') ui.openPanel('project-panel');
         if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
         if (action === 'profile-save') profile.save(this);
@@ -399,6 +576,13 @@
         }
     });
 
+    /* Kliknutie na voľnú časť karty otvorí detail; ovládací prvok stavu zostáva samostatný. */
+    $(document).on('click', '.task-card', function (event) {
+        if (event.target.closest('button')) return;
+        const task = state.tasks.find((item) => String(item.id) === this.dataset.taskId);
+        if (task) taskList.showDetail(task);
+    });
+
     $(document).on('submit', '#login-form, #register-form', function (event) {
         event.preventDefault();
         auth.submit(this);
@@ -412,7 +596,7 @@
         if (event.key === 'Escape') ui.closePanels();
     });
 
-    window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme };
+    window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList };
     theme.init();
     i18n.apply();
     views.init();

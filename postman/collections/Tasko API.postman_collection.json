@@ -1153,7 +1153,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/tasks?project_id=10&done=0",
+          "raw": "{{baseUrl}}/api/tasks",
           "host": [
             "{{baseUrl}}"
           ],
@@ -1161,18 +1161,7 @@
             "api",
             "tasks"
           ],
-          "query": [
-            {
-              "key": "project_id",
-              "value": "10",
-              "disabled": false
-            },
-            {
-              "key": "done",
-              "value": "0",
-              "disabled": false
-            }
-          ]
+          "query": []
         }
       },
       "response": [
