@@ -494,7 +494,7 @@
             if (task.is_done) {
                 // Hotovú úlohu možno z detailu odstrániť, ale jej obsah sa už nedá upraviť.
                 const remove = document.createElement('button');
-                remove.type = 'button'; remove.className = 'button button-quiet task-delete-button';
+                remove.type = 'button'; remove.className = 'button button-primary';
                 remove.dataset.action = 'task-delete'; remove.dataset.taskId = String(task.id);
                 remove.textContent = 'Odstrániť úlohu';
                 actions.append(remove);
