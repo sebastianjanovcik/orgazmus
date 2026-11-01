@@ -204,6 +204,37 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .settings-card p { margin: 5px 0 16px; color: var(--muted); font-size: 14px; }
 .settings-card label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 650; }
 .settings-card select { width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
+/* Projektové karty ukazujú farbu projektu, priebeh a rýchly prístup k úpravám. */
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
+.project-card { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; padding: 18px; border: 1px solid var(--glass-border); border-top: 3px solid var(--project-color, var(--accent)); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow); }
+.project-card-main { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 2px 12px; min-width: 0; color: var(--ink); }
+.project-card-icon { display: grid; width: 46px; height: 46px; grid-row: span 2; place-items: center; border-radius: 15px; background: color-mix(in srgb, var(--project-color, var(--accent)) 14%, var(--surface-solid)); font-size: 23px; }
+.project-card-title { align-self: end; font-size: 16px; font-weight: 750; overflow-wrap: anywhere; }
+.project-card-description { align-self: start; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.project-card-stats { grid-column: 1; color: var(--muted); font-size: 12px; }
+.project-card progress { grid-column: 1 / -1; width: 100%; height: 7px; accent-color: var(--project-color, var(--accent)); }
+.project-edit { grid-column: 2; grid-row: 2; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); cursor: pointer; }
+.project-limit-notice { margin: 0 0 18px; padding: 13px 16px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 14px; color: var(--muted); background: var(--accent-soft); font-size: 13px; }
+.project-limit-notice.is-limit-reached { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.project-empty { grid-column: 1 / -1; margin: 0; padding: 22px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); background: var(--surface); font-size: 13px; }
+.project-skeleton { min-height: 176px; border: 1px solid var(--glass-border); border-radius: 19px; background: linear-gradient(100deg, var(--surface) 20%, color-mix(in srgb, var(--ink) 7%, var(--surface)) 48%, var(--surface) 76%); background-size: 220% 100%; animation: task-skeleton-shimmer 1.4s infinite; }
+.project-detail-view { width: min(100%, 720px); margin: 0 auto; }
+.project-back { display: inline-block; margin: 0 0 18px; color: var(--accent); font-size: 13px; font-weight: 650; }
+.project-detail-heading { display: flex; align-items: center; gap: 14px; padding: 20px; border: 1px solid var(--glass-border); border-top: 3px solid var(--project-color, var(--accent)); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow); }
+.project-detail-heading > div { flex: 1; min-width: 0; }
+.project-detail-heading h2 { margin: 0; font-size: 23px; overflow-wrap: anywhere; }
+.project-detail-heading p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.project-detail-summary { margin: 16px 0 24px; color: var(--muted); font-size: 13px; }
+.project-task-heading { margin: 0 0 12px; font-size: 16px; }
+.project-link-icon { width: 18px; flex: none; text-align: center; }
+.project-link-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-limit-sidebar { margin: 6px 8px 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.add-project.is-limit-reached { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); color: var(--danger); }
+.project-panel-actions { align-items: center; }
+.project-panel-actions .action-spacer { flex: 1; }
+.project-panel-actions .button { flex: 0 1 120px; }
+.icon-picker button[aria-pressed="true"] { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
+.icon-picker button:focus-visible, .project-edit:focus-visible, .project-card-main:focus-visible, .project-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
 .field-error { display: block; min-height: 0; color: var(--danger); font-size: 12px; }
 .field-error:not(:empty) { margin: 5px 2px 0; }
 /* Štyri voľby kopírujú wireframe: názov je nad farebným kruhom a výber je viditeľný aj klávesnicou. */

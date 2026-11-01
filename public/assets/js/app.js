@@ -109,6 +109,8 @@
             if (view) {
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
+                else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
+                else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1><p class="page-subtitle">Prispôsob si vzhľad aplikácie.</p></div></div><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">Vzhľad</h2><p>Vyber, ako sa má Tasko zobrazovať.</p><label for="theme-preference">Farebný režim</label><select id="theme-preference"><option value="system">Automaticky podľa zariadenia</option><option value="light">Svetlý</option><option value="dark">Tmavý</option></select></section>`;
                     theme.apply();
@@ -129,6 +131,7 @@
                 else link.removeAttribute('aria-current');
             });
             if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
+            if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
             if (sequence !== state.routeSequence) return;
         }
     };
@@ -284,6 +287,7 @@
             try {
                 state.user = await api.request('PATCH', '/api/me/plan', { plan: nextPlan });
                 this.render();
+                projectManager.renderList();
                 ui.showToast(`Plán bol prepnutý na ${nextPlan === 'premium' ? 'Premium' : 'Standard'} (demo).`);
             } catch (error) {
                 ui.showToast(error.message || 'Plán sa nepodarilo zmeniť.', 'error');
@@ -616,6 +620,168 @@
         }
     };
 
+    /* Projekty používajú spoločný stav s úlohami, aby sa počty a limit nemenili medzi obrazovkami. */
+    const projectManager = {
+        icons: { briefcase: '💼', house: '🏠', book: '🎓', idea: '💡', target: '🎯', pin: '📌' },
+        colors: ['#6558d3', '#e28a42', '#4188c7', '#45a875', '#c45678', '#8a71d8', '#4e9b9b', '#bd9a36'],
+        editingId: null,
+        limitReached() {
+            return state.user?.plan !== 'premium' && state.projects.length >= 3;
+        },
+        explainLimit() {
+            ui.showToast('Plán Standard povoľuje najviac 3 projekty. Na vytvorenie ďalšieho projektu potrebuješ plán Premium.', 'error');
+        },
+        updateCreateButtons() {
+            const blocked = this.limitReached();
+            const explanation = document.getElementById('project-limit-sidebar');
+            if (explanation) {
+                explanation.hidden = !blocked;
+                explanation.textContent = blocked ? 'Plán Standard povoľuje 3 projekty. Ďalší projekt je dostupný v Premium.' : '';
+            }
+            document.querySelectorAll('[data-action="project-open"]').forEach((button) => {
+                /* Klik zostáva dostupný, aby aplikácia vedela povedať, prečo projekt nevytvorí. */
+                button.disabled = false;
+                button.classList.toggle('is-limit-reached', blocked);
+                button.title = blocked ? 'Plán Standard povoľuje najviac 3 projekty. Ďalší projekt vyžaduje Premium.' : '';
+            });
+        },
+        renderSidebar() {
+            const list = document.getElementById('sidebar-project-list');
+            if (!list) return;
+            list.replaceChildren();
+            state.projects.forEach((project) => {
+                const link = document.createElement('a');
+                link.className = 'project-link'; link.href = `#project-${encodeURIComponent(project.id)}`;
+                link.dataset.action = 'navigate';
+                const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = this.icons[project.icon] || '📁';
+                const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = project.name;
+                const count = document.createElement('span'); count.className = 'project-count'; count.textContent = String(Number(project.task_count) || 0);
+                link.append(icon, name, count); list.append(link);
+            });
+            this.updateCreateButtons();
+        },
+        counts(project) {
+            const tasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id));
+            const total = Number(project.task_count) || tasks.length;
+            const done = Number(project.done_count) || (tasks.length ? tasks.filter((task) => task.is_done).length : 0);
+            return { total, done, open: Math.max(0, total - done) };
+        },
+        renderList() {
+            const list = document.getElementById('project-list');
+            const notice = document.getElementById('project-limit-notice');
+            this.updateCreateButtons();
+            if (!list) return;
+            list.replaceChildren();
+            const standard = state.user?.plan !== 'premium';
+            if (notice) {
+                notice.hidden = !standard;
+                notice.textContent = standard ? `Plán Standard umožňuje najviac 3 projekty. Používaš ${state.projects.length} z 3.` : 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.';
+                notice.classList.toggle('is-limit-reached', standard && state.projects.length >= 3);
+            }
+            if (!state.projects.length) {
+                const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.'; list.append(empty); return;
+            }
+            state.projects.forEach((project) => {
+                const counts = this.counts(project);
+                const card = document.createElement('article'); card.className = 'project-card'; card.style.setProperty('--project-color', project.color || this.colors[0]);
+                const open = document.createElement('a'); open.className = 'project-card-main'; open.href = `#project-${encodeURIComponent(project.id)}`; open.dataset.action = 'navigate';
+                const icon = document.createElement('span'); icon.className = 'project-card-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = this.icons[project.icon] || '📁';
+                const title = document.createElement('span'); title.className = 'project-card-title'; title.textContent = project.name;
+                const desc = document.createElement('span'); desc.className = 'project-card-description'; desc.textContent = project.description || 'Bez popisu';
+                open.append(icon, title, desc);
+                const stats = document.createElement('div'); stats.className = 'project-card-stats'; stats.textContent = `${counts.done} z ${counts.total} hotových`;
+                const progress = document.createElement('progress'); progress.max = counts.total || 1; progress.value = counts.done; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
+                const edit = document.createElement('button'); edit.className = 'project-edit'; edit.type = 'button'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť'; edit.setAttribute('aria-label', `Upraviť projekt ${project.name}`);
+                card.append(open, stats, progress, edit); list.append(card);
+            });
+        },
+        open(project) {
+            if (!project && this.limitReached()) { this.explainLimit(); return; }
+            const form = document.getElementById('project-form');
+            if (!form) return;
+            this.editingId = project ? Number(project.id) : null;
+            form.reset(); form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
+            form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+            form.elements.name.value = project?.name || '';
+            form.elements.description.value = project?.description || '';
+            form.dataset.selectedIcon = project?.icon || 'briefcase';
+            form.querySelectorAll('[data-project-icon]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.projectIcon === form.dataset.selectedIcon)));
+            document.getElementById('project-panel-title').textContent = project ? 'Upraviť projekt' : 'Nový projekt';
+            const remove = document.querySelector('[data-action="project-delete"]');
+            remove.hidden = !project; remove.disabled = state.projects.length <= 1;
+            remove.title = state.projects.length <= 1 ? 'Posledný projekt nemožno odstrániť.' : '';
+            ui.openPanel('project-panel');
+        },
+        async save(button) {
+            /* Limit kontrolujeme aj pri odoslaní, aby ho neobišiel otvorený alebo zastaraný formulár. */
+            if (!this.editingId && this.limitReached()) { ui.closePanels(); this.explainLimit(); return; }
+            const form = document.getElementById('project-form');
+            const name = form.elements.name.value.trim();
+            const description = form.elements.description.value.trim();
+            const fields = {};
+            if (!name || name.length > 40) fields.name = 'Názov musí mať 1 až 40 znakov.';
+            if (description.length > 200) fields.description = 'Popis môže mať najviac 200 znakov.';
+            form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
+            form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+            Object.entries(fields).forEach(([key, message]) => { form.elements[key].setAttribute('aria-invalid', 'true'); document.getElementById(`project-${key}-error`).textContent = message; });
+            if (Object.keys(fields).length) { form.elements[Object.keys(fields)[0]].focus(); return; }
+            const payload = { name, description, icon: form.dataset.selectedIcon || 'briefcase' };
+            button.disabled = true;
+            try {
+                const saved = await api.request(this.editingId ? 'PATCH' : 'POST', this.editingId ? `/api/projects/${this.editingId}` : '/api/projects', payload);
+                const existingIndex = state.projects.findIndex((item) => Number(item.id) === this.editingId);
+                const idUsed = saved && state.projects.some((item) => Number(item.id) === Number(saved.id) && Number(item.id) !== this.editingId);
+                const fallbackId = this.editingId || (Math.max(0, ...state.projects.map((item) => Number(item.id) || 0)) + 1);
+                const returnedColorIsUsed = saved?.color && state.projects.some((item) => item.color === saved.color && Number(item.id) !== this.editingId);
+                const project = { ...(existingIndex >= 0 ? state.projects[existingIndex] : {}), ...(saved || {}), ...payload, id: idUsed || !saved?.id ? fallbackId : saved.id, color: saved?.color && !returnedColorIsUsed ? saved.color : state.projects[existingIndex]?.color || this.colors[state.projects.length % this.colors.length], task_count: saved?.task_count ?? state.projects[existingIndex]?.task_count ?? 0, done_count: saved?.done_count ?? state.projects[existingIndex]?.done_count ?? 0 };
+                if (existingIndex >= 0) state.projects[existingIndex] = project; else state.projects.push(project);
+                this.renderSidebar(); ui.closePanels(); this.renderList();
+                if (router.current().name === 'project' && Number(router.current().id) === Number(project.id)) this.renderDetail(project);
+                ui.showToast(this.editingId ? 'Projekt bol upravený.' : 'Projekt bol vytvorený.');
+            } catch (error) {
+                if (error.status === 422) Object.entries(error.fields || {}).forEach(([key, message]) => { const input = form.elements[key]; if (input) input.setAttribute('aria-invalid', 'true'); const target = document.getElementById(`project-${key}-error`); if (target) target.textContent = message; });
+                else ui.showToast(error.message || 'Projekt sa nepodarilo uložiť.', 'error');
+            } finally { button.disabled = false; }
+        },
+        async remove(button) {
+            const project = state.projects.find((item) => Number(item.id) === this.editingId);
+            if (!project || state.projects.length <= 1) return;
+            const count = this.counts(project).total;
+            const message = `Projekt „${project.name}“ obsahuje ${count} ${count === 1 ? 'úlohu' : count >= 2 && count <= 4 ? 'úlohy' : 'úloh'}. Zmazaním projektu sa odstránia aj tieto úlohy. Pokračovať?`;
+            if (!await ui.confirm(message, 'Odstrániť projekt?', 'Pokračovať')) return;
+            if (!await ui.confirm('Odstránenie projektu aj úloh je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
+            button.disabled = true;
+            try {
+                await api.request('DELETE', `/api/projects/${project.id}`);
+                state.projects = state.projects.filter((item) => Number(item.id) !== Number(project.id));
+                state.tasks = state.tasks.filter((task) => Number(task.project_id) !== Number(project.id));
+                this.renderSidebar(); ui.closePanels();
+                if (router.current().name === 'project') window.location.hash = 'projects'; else this.renderList();
+                ui.showToast('Projekt a jeho úlohy boli odstránené.');
+            } catch (error) { ui.showToast(error.code === 'last_project' ? 'Posledný projekt nemožno odstrániť.' : error.message || 'Projekt sa nepodarilo odstrániť.', 'error'); }
+            finally { button.disabled = false; }
+        },
+        renderDetail(project) {
+            const root = document.getElementById('project-detail-view'); if (!root) return;
+            const counts = this.counts(project);
+            root.replaceChildren();
+            const back = document.createElement('a'); back.href = '#projects'; back.dataset.action = 'navigate'; back.className = 'project-back'; back.textContent = '← Všetky projekty'; root.append(back);
+            const head = document.createElement('div'); head.className = 'project-detail-heading'; head.style.setProperty('--project-color', project.color || this.colors[0]);
+            const icon = document.createElement('span'); icon.className = 'project-card-icon'; icon.textContent = this.icons[project.icon] || '📁'; icon.setAttribute('aria-hidden', 'true');
+            const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || 'Bez popisu'; text.append(title, desc);
+            const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-quiet'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
+            const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
+            const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
+            const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
+            [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
+                const section = document.createElement('section'); section.className = 'task-section'; const h = document.createElement('h3'); h.className = 'project-task-heading'; h.textContent = `${label} (${tasks.length})`; section.append(h);
+                if (tasks.length) tasks.forEach((task) => section.append(taskList.makeCard(task, new Map(state.projects.map((item) => [Number(item.id), item])))));
+                else { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = label === 'Otvorené' ? 'V tomto projekte nie sú otvorené úlohy.' : 'Zatiaľ tu nie sú hotové úlohy.'; section.append(empty); }
+                root.append(section);
+            });
+        }
+    };
+
     const views = {
         async loadTasks(routeSequence) {
             const requestSequence = ++taskList.requestSequence;
@@ -628,9 +794,30 @@
                 if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
                 state.projects = Array.isArray(projects) ? projects : [];
                 state.tasks = Array.isArray(tasks) ? tasks : [];
+                projectManager.renderSidebar();
                 taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
             } catch (error) {
                 if (requestSequence === taskList.requestSequence && routeSequence === state.routeSequence) taskList.error(error);
+            }
+        },
+        async loadProjects(routeSequence, route) {
+            try {
+                const [projects, tasks] = await Promise.all([api.request('GET', '/api/projects'), api.request('GET', '/api/tasks')]);
+                if (routeSequence !== state.routeSequence) return;
+                state.projects = Array.isArray(projects) ? projects : [];
+                state.tasks = Array.isArray(tasks) ? tasks : [];
+                projectManager.renderSidebar();
+                if (route.name === 'projects') projectManager.renderList();
+                else {
+                    const cached = state.projects.find((item) => String(item.id) === String(route.id));
+                    if (!cached) { document.getElementById('project-detail-view').textContent = 'Projekt sa nenašiel.'; return; }
+                    try { await Promise.all([api.request('GET', `/api/projects/${encodeURIComponent(route.id)}`), api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`)]); }
+                    catch (_) { /* Detail zostane použiteľný z už načítaného zoznamu aj pri obmedzenom mocku. */ }
+                    if (routeSequence === state.routeSequence) projectManager.renderDetail(cached);
+                }
+            } catch (error) {
+                const target = document.getElementById(route.name === 'projects' ? 'project-list' : 'project-detail-view');
+                if (target) { target.replaceChildren(); const message = document.createElement('p'); message.className = 'project-empty'; message.textContent = error.message || 'Projekty sa nepodarilo načítať.'; target.append(message); }
             }
         },
         init() {
@@ -758,7 +945,13 @@
             taskList.complete(this);
         }
         if (action === 'tasks-retry') views.loadTasks(state.routeSequence);
-        if (action === 'project-open') ui.openPanel('project-panel');
+        if (action === 'project-open') projectManager.open(null);
+        if (action === 'project-edit') {
+            const project = state.projects.find((item) => Number(item.id) === Number(this.dataset.projectId));
+            if (project) projectManager.open(project);
+        }
+        if (action === 'project-delete') projectManager.remove(this);
+        if (action === 'project-save') projectManager.save(this);
         if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
         if (action === 'profile-save') profile.save(this);
         if (action === 'plan-toggle') profile.togglePlan(this);
@@ -768,8 +961,7 @@
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
-        if (action === 'project-save' || action === 'login-submit' ||
-            action === 'register-submit') {
+        if (action === 'login-submit' || action === 'register-submit') {
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
         }
@@ -790,6 +982,17 @@
     $(document).on('submit', '#task-form', function (event) {
         event.preventDefault();
         taskForm.save(this.querySelector('[type="submit"]'));
+    });
+
+    $(document).on('submit', '#project-form', function (event) {
+        event.preventDefault();
+        projectManager.save(document.querySelector('[data-action="project-save"]'));
+    });
+
+    $(document).on('click', '[data-project-icon]', function () {
+        const form = document.getElementById('project-form');
+        form.dataset.selectedIcon = this.dataset.projectIcon;
+        form.querySelectorAll('[data-project-icon]').forEach((button) => button.setAttribute('aria-pressed', String(button === this)));
     });
 
     /* Editor povoľuje formátovanie cez toolbar, no obsah vložený zvonka zmení na obyčajný text. */
