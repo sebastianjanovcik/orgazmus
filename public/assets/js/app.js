@@ -943,7 +943,10 @@
                     initialView: 'dayGridMonth', locale, firstDay: 1, height: 'auto', dayMaxEvents: 3,
                     headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
                     events: [],
-                    datesSet: (info) => this.loadCalendarRange(info, routeSequence),
+                    datesSet: (info) => {
+                        this.updateTodayButton(info.view);
+                        this.loadCalendarRange(info, routeSequence);
+                    },
                     dateClick: (info) => this.openCalendarDay(info.dateStr),
                     eventClick: (info) => {
                         const task = state.tasks.find((item) => String(item.id) === String(info.event.id));
@@ -1023,6 +1026,12 @@
             if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Na tento deň nie sú naplánované žiadne úlohy.'; list.append(empty); return; }
             const projects = new Map(state.projects.map((project) => [Number(project.id), project]));
             tasks.forEach((task) => list.append(taskList.makeCard(task, projects)));
+        },
+        updateTodayButton(view) {
+            const button = document.querySelector('#task-calendar .fc-today-button');
+            if (!button) return;
+            const displayedMonth = components.localDateStr(view.currentStart).slice(0, 7);
+            button.hidden = displayedMonth === components.today().slice(0, 7);
         },
         openCalendarDay(date) {
             this.selectCalendarDay(date);

@@ -258,6 +258,9 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 #task-calendar { --fc-page-bg-color: transparent; --fc-neutral-bg-color: var(--accent-soft); --fc-border-color: var(--line); --fc-button-bg-color: var(--surface-solid); --fc-button-border-color: var(--line); --fc-button-text-color: var(--ink); --fc-button-hover-bg-color: var(--accent-soft); --fc-button-hover-border-color: var(--accent); --fc-button-active-bg-color: var(--accent); --fc-button-active-border-color: var(--accent); --fc-today-bg-color: var(--accent-soft); --fc-event-border-color: transparent; color: var(--ink); }
 #task-calendar .fc-toolbar-title { font-size: clamp(17px, 3vw, 22px); text-transform: capitalize; }
 #task-calendar .fc-button { min-height: 38px; border-radius: 11px; box-shadow: none; }
+#task-calendar .fc-button-group { gap: 7px; }
+#task-calendar .fc-button-group > .fc-button { margin: 0 !important; border-radius: 11px; }
+#task-calendar .fc-today-button[hidden] { display: none; }
 #task-calendar .fc-daygrid-day-number { color: var(--ink); text-decoration: none; }
 #task-calendar .fc-daygrid-day { cursor: pointer; }
 #task-calendar .fc-daygrid-day.has-overdue-task { background: color-mix(in srgb, var(--danger) 8%, transparent); }
