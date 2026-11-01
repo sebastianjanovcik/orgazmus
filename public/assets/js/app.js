@@ -297,6 +297,114 @@
         }
     };
 
+    /* Plochý zoznam API sa skladá do stromu; text používateľa sa vždy vkladá cez textContent. */
+    const commentThreads = {
+        taskId: null, items: [], container: null, requestSequence: 0,
+        /* Štandardný plán zostane zamknutý; poradové číslo zabráni starej odpovedi prepísať novšiu úlohu. */
+        async load(taskId) {
+            this.taskId = Number(taskId); const sequence = ++this.requestSequence; this.container = document.getElementById('task-comments');
+            if (!this.container) return;
+            if (state.user?.plan !== 'premium') { this.renderLocked(); return; }
+            this.container.setAttribute('aria-busy', 'true'); this.container.innerHTML = '<div class="comment-skeleton" aria-hidden="true"></div>';
+            try {
+                const items = await api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}/comments`);
+                if (sequence !== this.requestSequence || this.taskId !== Number(taskId) || !this.container?.isConnected) return;
+                this.items = Array.isArray(items) ? items : []; this.render();
+            } catch (error) {
+                if (sequence !== this.requestSequence || this.taskId !== Number(taskId) || !this.container?.isConnected) return;
+                if (error.status === 403 || error.code === 'premium_required') this.renderLocked();
+                else this.renderError(error);
+            }
+        },
+        renderLocked() {
+            const box = document.createElement('div'); box.className = 'comments-locked';
+            const heading = document.createElement('h4'); heading.textContent = '🔒 Komentáre sú funkcia Premium';
+            const message = document.createElement('p'); message.textContent = 'Vo vlákne môžeš viesť diskusiu k úlohe. Pre pridávanie komentárov a odpovedí je potrebný plán Premium.';
+            box.append(heading, message); this.container.replaceChildren(box); this.container.removeAttribute('aria-busy');
+        },
+        renderError(error) {
+            const box = document.createElement('div'); box.className = 'comment-error';
+            const message = document.createElement('p'); message.textContent = error.message || 'Komentáre sa nepodarilo načítať.';
+            const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'button button-quiet'; retry.dataset.action = 'comments-retry'; retry.textContent = 'Skúsiť znova';
+            box.append(message, retry); this.container.replaceChildren(box); this.container.removeAttribute('aria-busy');
+        },
+        makeForm(parentId) {
+            const form = document.createElement('form'); form.className = 'comment-form'; form.dataset.parentId = parentId == null ? '' : String(parentId);
+            const label = document.createElement('label'); label.textContent = parentId == null ? 'Nový komentár' : 'Tvoja odpoveď';
+            const field = document.createElement('textarea'); field.name = 'body'; field.rows = 3; field.maxLength = 1000; field.required = true; field.placeholder = 'Napíš komentár…';
+            const error = document.createElement('p'); error.className = 'comment-form-error'; error.setAttribute('aria-live', 'polite');
+            const submit = document.createElement('button'); submit.type = 'submit'; submit.className = 'button button-primary'; submit.dataset.action = 'comment-submit'; submit.textContent = 'Pridať';
+            form.append(label, field, error, submit); return form;
+        },
+        /* Strom zostavujeme podľa parent_id a hĺbku počítame lokálne pre bezpečné odsadenie a limit odpovedí. */
+        render() {
+            const root = document.createElement('section'); root.className = 'comments-section'; root.setAttribute('aria-labelledby', 'comments-heading');
+            const heading = document.createElement('h4'); heading.id = 'comments-heading'; heading.textContent = `Komentáre (${this.items.length})`; root.append(heading);
+            root.append(this.makeForm(null));
+            const list = document.createElement('div'); list.className = 'comment-tree';
+            const children = new Map();
+            this.items.forEach((item) => { const key = item.parent_id == null ? null : String(item.parent_id); if (!children.has(key)) children.set(key, []); children.get(key).push(item); });
+            const visited = new Set();
+            const appendBranch = (parentId, depth, parentNode) => {
+                (children.get(parentId == null ? null : String(parentId)) || []).forEach((item) => {
+                    const id = String(item.id); if (visited.has(id) || depth > 5) return; visited.add(id);
+                    const article = document.createElement('article'); article.className = 'comment-item'; article.style.setProperty('--comment-depth', String(Math.min(depth, 5))); article.dataset.commentId = id; article.dataset.depth = String(depth);
+                    const meta = document.createElement('div'); meta.className = 'comment-meta';
+                    const author = document.createElement('strong'); author.textContent = item.author?.name || 'Používateľ';
+                    const date = document.createElement('time');
+                    if (item.created_at && !Number.isNaN(Date.parse(item.created_at))) { date.dateTime = item.created_at; date.textContent = new Intl.DateTimeFormat('sk-SK', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at)); }
+                    meta.append(author, date);
+                    const body = document.createElement('p'); body.className = 'comment-body'; body.textContent = item.body || ''; article.append(meta, body);
+                    const controls = document.createElement('div'); controls.className = 'comment-controls';
+                    if (depth < 5) { const reply = document.createElement('button'); reply.type = 'button'; reply.className = 'text-button'; reply.dataset.action = 'comment-reply'; reply.textContent = 'Odpovedať'; controls.append(reply); }
+                    if (item.can_delete) { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button comment-delete'; remove.dataset.action = 'comment-delete'; remove.textContent = 'Odstrániť'; controls.append(remove); }
+                    article.append(controls); (parentNode || list).append(article); appendBranch(id, depth + 1, article);
+                });
+            };
+            appendBranch(null, 0, null);
+            if (this.items.length && !visited.size) { const empty = document.createElement('p'); empty.className = 'comments-empty'; empty.textContent = 'Vlákno komentárov sa nepodarilo zostaviť.'; list.append(empty); }
+            root.append(list); this.container.replaceChildren(root); this.container.removeAttribute('aria-busy');
+        },
+        toggleReply(button) {
+            const article = button.closest('.comment-item'); const existing = article.querySelector(':scope > .comment-form');
+            if (existing) { existing.remove(); return; }
+            const item = this.items.find((entry) => String(entry.id) === article.dataset.commentId);
+            if (item && Number(article.dataset.depth) < 5) article.append(this.makeForm(item.id));
+        },
+        /* Server zostáva autoritou pre validáciu aj hĺbku; lokálny záznam pomáha mocku bez trvalého úložiska. */
+        async submit(form) {
+            if (state.user?.plan !== 'premium') { this.renderLocked(); return; }
+            const body = form.elements.body.value.trim(); if (!body) { form.elements.body.focus(); return; }
+            const parentId = form.dataset.parentId ? Number(form.dataset.parentId) : null; const button = form.querySelector('[type="submit"]'); button.disabled = true;
+            try {
+                const saved = await api.request('POST', `/api/tasks/${encodeURIComponent(this.taskId)}/comments`, { body, parent_id: parentId });
+                const parent = parentId == null ? null : this.items.find((item) => Number(item.id) === parentId);
+                const collision = saved && this.items.some((item) => String(item.id) === String(saved.id));
+                this.items.push({ ...(saved || {}), id: collision || !saved?.id ? `local-${Date.now()}` : saved.id, task_id: this.taskId, parent_id: parentId, depth: parent ? Number(parent.depth) + 1 : 0, body, author: saved?.author || { name: state.user?.name || 'Ja' }, created_at: saved?.created_at || new Date().toISOString(), can_delete: saved?.can_delete ?? true });
+                this.render();
+            } catch (error) {
+                const target = form.querySelector('.comment-form-error');
+                if (target) target.textContent = error.code === 'comment_too_deep' ? 'Odpoveď už prekročila maximálnu hĺbku 5.' : error.message || 'Komentár sa nepodarilo pridať.';
+                button.disabled = false;
+            }
+        },
+        /* API zmaže celý podstrom; pred volaním vysvetlíme následok a vyžiadame dve potvrdenia. */
+        async remove(button) {
+            const item = this.items.find((entry) => String(entry.id) === button.closest('.comment-item')?.dataset.commentId);
+            if (!item || !item.can_delete) return;
+            const descendants = new Set([String(item.id)]); let changed = true;
+            while (changed) { changed = false; this.items.forEach((entry) => { if (descendants.has(String(entry.parent_id)) && !descendants.has(String(entry.id))) { descendants.add(String(entry.id)); changed = true; } }); }
+            const count = descendants.size - 1;
+            const replyWord = count === 1 ? 'odpoveď' : count >= 2 && count <= 4 ? 'odpovede' : 'odpovedí';
+            const message = count ? `Odstránením komentára sa odstráni aj ${count} ${replyWord}. Pokračovať?` : 'Naozaj chceš odstrániť tento komentár?';
+            if (!await ui.confirm(message, 'Odstrániť komentár?', 'Pokračovať')) return;
+            if (!await ui.confirm('Odstránenie je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
+            button.disabled = true;
+            try { await api.request('DELETE', `/api/comments/${encodeURIComponent(item.id)}`); this.items = this.items.filter((entry) => !descendants.has(String(entry.id))); this.render(); }
+            catch (error) { button.disabled = false; ui.showToast(error.message || 'Komentár sa nepodarilo odstrániť.', 'error'); }
+        }
+    };
+
     /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
     const taskList = {
         requestSequence: 0,
@@ -493,6 +601,9 @@
                 facts.append(term, detail);
             });
             content.append(title, description, facts);
+            const comments = document.createElement('div'); comments.id = 'task-comments'; comments.className = 'task-comments'; comments.setAttribute('aria-live', 'polite'); comments.setAttribute('aria-busy', 'true');
+            comments.innerHTML = '<div class="comment-skeleton" aria-hidden="true"></div>';
+            content.append(comments);
             const actions = document.createElement('div');
             actions.className = 'panel-actions';
             if (task.is_done) {
@@ -512,6 +623,7 @@
             content.append(actions);
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             ui.openPanel('task-detail-panel');
+            commentThreads.load(task.id);
         }
     };
 
@@ -926,6 +1038,9 @@
     /* Delegované udalosti fungujú aj pre obsah, ktorý neskôr vykreslia pohľady. */
     $(document).on('click', '[data-action]', function (event) {
         const action = this.dataset.action;
+        if (action === 'comments-retry') commentThreads.load(commentThreads.taskId);
+        if (action === 'comment-reply') commentThreads.toggleReply(this);
+        if (action === 'comment-delete') commentThreads.remove(this);
         if (action === 'menu-toggle') ui.openPanel('navigation-drawer');
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
         if (action === 'task-create') taskForm.open(null);
@@ -989,6 +1104,11 @@
         projectManager.save(document.querySelector('[data-action="project-save"]'));
     });
 
+    $(document).on('submit', '.comment-form', function (event) {
+        event.preventDefault();
+        commentThreads.submit(this);
+    });
+
     $(document).on('click', '[data-project-icon]', function () {
         const form = document.getElementById('project-form');
         form.dataset.selectedIcon = this.dataset.projectIcon;
@@ -1015,7 +1135,7 @@
         if (event.key === 'Escape' && !document.getElementById('confirm-dialog').open) ui.closePanels();
     });
 
-    window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList };
+    window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList, commentThreads };
     theme.init();
     i18n.apply();
     views.init();

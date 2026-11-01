@@ -257,6 +257,11 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && /^\/api\/tasks\/([^/]+)\/comments$/.test(pathname)) {
     const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
 
+    if (mockUser.plan !== 'premium') {
+      res.writeHead(403, {"Content-Type":"application/json; charset=utf-8"});
+      return res.end(JSON.stringify({"error":{"code":"premium_required","message":"Komentáre sú dostupné v pláne Premium.","fields":{}}}));
+    }
+
     // "Vyžaduje Premium" — when x-mock-response-code: 403
     if (requestedStatusCode === '403') {
       res.writeHead(403, {"Content-Type":"application/json; charset=utf-8"});
@@ -271,6 +276,11 @@ const server = http.createServer((req, res) => {
   // @endpoint POST /api/tasks/{{id}}/comments
   if (req.method === 'POST' && /^\/api\/tasks\/([^/]+)\/comments$/.test(pathname)) {
     const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
+
+    if (mockUser.plan !== 'premium') {
+      res.writeHead(403, {"Content-Type":"application/json; charset=utf-8"});
+      return res.end(JSON.stringify({"error":{"code":"premium_required","message":"Komentáre sú dostupné v pláne Premium.","fields":{}}}));
+    }
 
     // "Komentár by prekročil hĺbku" — when x-mock-response-code: 422
     if (requestedStatusCode === '422') {

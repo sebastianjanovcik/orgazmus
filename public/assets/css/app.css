@@ -151,6 +151,29 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .task-detail-content dd { margin: 0; font-size: 13px; font-weight: 700; }
 .task-detail-content > .panel-actions { justify-content: flex-end; margin-top: 22px; padding: 20px 0 4px; border-top: 0; }
 .task-detail-content > .panel-actions .button { flex: 0 1 auto; min-width: 170px; }
+/* Vlákna držia čitateľné odsadenie aj na úzkych displejoch a skeleton kopíruje kartu komentára. */
+.task-comments { margin-top: 22px; }
+.comment-skeleton { height: 94px; margin: 10px 0; border: 1px solid var(--glass-border); border-radius: 15px; background: linear-gradient(100deg, var(--surface-solid) 20%, color-mix(in srgb, var(--ink) 7%, var(--surface-solid)) 45%, var(--surface-solid) 70%); background-size: 220% 100%; animation: task-skeleton-shimmer 1.4s infinite; }
+.comments-section h4 { margin: 0 0 14px; font-size: 17px; }
+.comment-form { display: grid; gap: 8px; margin: 0 0 16px; padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+.comment-form label { color: var(--muted); font-size: 13px; font-weight: 650; }
+.comment-form textarea { width: 100%; min-height: 70px; resize: vertical; padding: 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); font: inherit; }
+.comment-form .button { justify-self: end; min-height: 38px; padding: 7px 15px; }
+.comment-form-error { min-height: 0; margin: 0; color: var(--danger); font-size: 12px; }
+.comment-item { margin: 10px 0; margin-left: min(calc(var(--comment-depth) * 15px), 64px); padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow-wrap: anywhere; }
+.comment-meta, .comment-controls { display: flex; align-items: center; gap: 12px; }
+.comment-meta { justify-content: space-between; color: var(--muted); font-size: 12px; }
+.comment-meta strong { color: var(--ink); }
+.comment-body { margin: 9px 0; white-space: pre-wrap; line-height: 1.5; }
+.comment-controls { justify-content: flex-end; }
+.comment-controls .text-button { padding: 3px; color: var(--accent); font-size: 12px; }
+.comment-controls .comment-delete { color: var(--danger); }
+.comment-item > .comment-form { margin: 10px 0 0; }
+.comments-locked, .comment-error { margin: 8px 0; padding: 16px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); }
+.comments-locked h4, .comments-locked p, .comment-error p { margin: 0; }
+.comments-locked p, .comment-error p { margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.comment-error { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.comments-empty { color: var(--muted); font-size: 13px; }
 /* Na veľkej obrazovke sa FAB drží pevného odstupu od pravého okraja viewportu. */
 .fab { position: fixed; z-index: 4; right: 34px; bottom: calc(28px + env(safe-area-inset-bottom)); display: grid; width: 60px; height: 60px; place-items: center; padding: 0 0 4px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #56c977, #25964e); box-shadow: 0 10px 28px rgba(47, 165, 87, .38), inset 0 1px rgba(255,255,255,.5); cursor: pointer; font-size: 32px; font-weight: 300; line-height: 1; }
 
