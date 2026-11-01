@@ -151,6 +151,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .task-detail-content dd { margin: 0; font-size: 13px; font-weight: 700; }
 .task-detail-content > .panel-actions { justify-content: flex-end; margin-top: 22px; padding: 20px 0 4px; border-top: 0; }
 .task-detail-content > .panel-actions .button { flex: 0 1 auto; min-width: 170px; }
+.task-detail-content > .calendar-add-task { width: 100%; margin-top: 12px; }
 /* Vlákna držia čitateľné odsadenie aj na úzkych displejoch a skeleton kopíruje kartu komentára. */
 .task-comments { margin-top: 22px; }
 .comment-skeleton { height: 94px; margin: 10px 0; border: 1px solid var(--glass-border); border-radius: 15px; background: linear-gradient(100deg, var(--surface-solid) 20%, color-mix(in srgb, var(--ink) 7%, var(--surface-solid)) 45%, var(--surface-solid) 70%); background-size: 220% 100%; animation: task-skeleton-shimmer 1.4s infinite; }

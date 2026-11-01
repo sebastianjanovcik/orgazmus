@@ -635,6 +635,16 @@
                 actions.append(edit);
             }
             content.append(actions);
+            if (router.current().name === 'calendar') {
+                // Kalendárový detail zachová vybraný deň aj pri rýchlom vytvorení ďalšej úlohy.
+                const addAnother = document.createElement('button');
+                addAnother.type = 'button';
+                addAnother.className = 'button button-primary calendar-add-task';
+                addAnother.dataset.action = 'calendar-add-task';
+                addAnother.dataset.dueDate = task.due_date || '';
+                addAnother.textContent = 'Pridať ďalšiu úlohu na tento deň';
+                content.append(addAnother);
+            }
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             ui.openPanel('task-detail-panel');
             commentThreads.load(task.id);
@@ -679,14 +689,14 @@
             const firstInvalid = form.querySelector('[aria-invalid="true"]');
             if (firstInvalid) firstInvalid.focus();
         },
-        open(task) {
+        open(task, dueDate) {
             const form = document.getElementById('task-form');
             this.editingId = task ? task.id : null;
             this.clearErrors();
             form.reset();
             form.elements.title.value = task ? task.title || '' : '';
             form.elements.priority.value = String(task ? task.priority || 2 : 2);
-            form.elements.due_date.value = task ? task.due_date || '' : components.today();
+            form.elements.due_date.value = task ? task.due_date || '' : dueDate || components.today();
             form.elements.description.value = task ? task.description || '' : '';
             document.getElementById('task-description').innerHTML = this.sanitize(task && task.description || '');
             const select = form.elements.project_id;
@@ -723,6 +733,7 @@
                 await api.request(this.editingId ? 'PATCH' : 'POST', this.editingId ? `/api/tasks/${this.editingId}` : '/api/tasks', data);
                 ui.closePanels();
                 if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
+                if (router.current().name === 'calendar') views.reloadCalendar();
                 ui.showToast(this.editingId ? 'Úloha bola upravená.' : 'Úloha bola vytvorená.');
             } catch (error) {
                 if (error.status === 422) this.showErrors(error.fields);
@@ -933,7 +944,7 @@
                     headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
                     events: [],
                     datesSet: (info) => this.loadCalendarRange(info, routeSequence),
-                    dateClick: (info) => this.selectCalendarDay(info.dateStr),
+                    dateClick: (info) => this.openCalendarDay(info.dateStr),
                     eventClick: (info) => {
                         const task = state.tasks.find((item) => String(item.id) === String(info.event.id));
                         if (task) taskList.showDetail(task);
@@ -1012,6 +1023,18 @@
             if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Na tento deň nie sú naplánované žiadne úlohy.'; list.append(empty); return; }
             const projects = new Map(state.projects.map((project) => [Number(project.id), project]));
             tasks.forEach((task) => list.append(taskList.makeCard(task, projects)));
+        },
+        openCalendarDay(date) {
+            this.selectCalendarDay(date);
+            const task = state.tasks.find((item) => item.due_date === date);
+            // Prázdny deň preskočí medzikrok; pri obsadenom dni sa otvorí úloha a pridanie ostane dostupné v detaile.
+            if (task) taskList.showDetail(task);
+            else taskForm.open(null, date);
+        },
+        reloadCalendar() {
+            if (!this.calendar || router.current().name !== 'calendar') return;
+            const view = this.calendar.view;
+            this.loadCalendarRange({ startStr: components.localDateStr(view.activeStart), endStr: components.localDateStr(view.activeEnd) }, state.routeSequence);
         },
         renderCompleted() {
             const list = document.getElementById('completed-task-list');
@@ -1209,6 +1232,7 @@
         if (action === 'menu-toggle') ui.openPanel('navigation-drawer');
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
         if (action === 'task-create') taskForm.open(null);
+        if (action === 'calendar-add-task') { ui.closePanels(); taskForm.open(null, this.dataset.dueDate); }
         if (action === 'task-detail') {
             const task = state.tasks.find((item) => String(item.id) === this.closest('.task-card')?.dataset.taskId);
             if (task) taskList.showDetail(task);
