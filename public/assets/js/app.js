@@ -135,6 +135,7 @@
 
     const ui = {
         toastTimer: null,
+        panelReturnTargets: new WeakMap(),
         showToast(text, type) {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -147,6 +148,8 @@
         openPanel(id) {
             const panel = document.getElementById(id);
             if (!panel) return;
+            /* Po zavretí dialógu sa klávesnica vráti na prvok, ktorý ho otvoril. */
+            this.panelReturnTargets.set(panel, document.activeElement);
             panel.classList.add('is-open');
             panel.setAttribute('aria-hidden', 'false');
             const scrim = document.querySelector('.scrim');
@@ -155,12 +158,16 @@
             if (firstControl) firstControl.focus();
         },
         closePanels() {
+            let returnTarget = null;
             document.querySelectorAll('.panel.is-open').forEach((panel) => {
+                const target = this.panelReturnTargets.get(panel);
+                if (target && target.isConnected) returnTarget = target;
                 panel.classList.remove('is-open');
                 panel.setAttribute('aria-hidden', 'true');
             });
             const scrim = document.querySelector('.scrim');
             if (scrim) scrim.classList.remove('is-visible');
+            if (returnTarget) returnTarget.focus();
         }
     };
 
@@ -422,8 +429,119 @@
                 facts.append(term, detail);
             });
             content.append(title, description, facts);
+            const actions = document.createElement('div');
+            actions.className = 'panel-actions';
+            const edit = document.createElement('button');
+            edit.type = 'button'; edit.className = 'button button-primary';
+            edit.dataset.action = 'task-edit'; edit.dataset.taskId = String(task.id);
+            edit.textContent = 'Upraviť úlohu';
+            actions.append(edit);
+            content.append(actions);
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             ui.openPanel('task-detail-panel');
+        }
+    };
+
+    /* Jeden formulár obsluhuje obe operácie; popis sa pred API odoslaním zúži na povolené značky. */
+    const taskForm = {
+        editingId: null,
+        allowedTags: new Set(['B', 'STRONG', 'I', 'EM', 'UL', 'OL', 'LI', 'BR', 'P']),
+        sanitize(html) {
+            const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
+            parsed.querySelectorAll('script, style').forEach((node) => node.remove());
+            const clean = (node) => {
+                Array.from(node.childNodes).forEach((child) => {
+                    if (child.nodeType !== Node.ELEMENT_NODE) return;
+                    clean(child);
+                    if (!this.allowedTags.has(child.tagName)) {
+                        child.replaceWith(...Array.from(child.childNodes));
+                    } else {
+                        Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name));
+                    }
+                });
+            };
+            clean(parsed.body);
+            return parsed.body.innerHTML.trim();
+        },
+        clearErrors() {
+            const form = document.getElementById('task-form');
+            form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
+            form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+        },
+        showErrors(fields) {
+            const form = document.getElementById('task-form');
+            Object.entries(fields || {}).forEach(([name, message]) => {
+                const id = { title: 'task-name', priority: 'task-priority-label', project_id: 'task-project', due_date: 'task-due-date', description: 'task-description' }[name];
+                const input = name === 'priority' ? form.querySelector('[name="priority"]') : id && document.getElementById(id);
+                const error = document.getElementById(`task-${name.replace('_', '-')}-error`);
+                if (input) input.setAttribute('aria-invalid', 'true');
+                if (error) error.textContent = message;
+            });
+            const firstInvalid = form.querySelector('[aria-invalid="true"]');
+            if (firstInvalid) firstInvalid.focus();
+        },
+        open(task) {
+            const form = document.getElementById('task-form');
+            this.editingId = task ? task.id : null;
+            this.clearErrors();
+            form.reset();
+            form.elements.title.value = task ? task.title || '' : '';
+            form.elements.priority.value = String(task ? task.priority || 2 : 2);
+            form.elements.due_date.value = task ? task.due_date || '' : components.today();
+            form.elements.description.value = task ? task.description || '' : '';
+            document.getElementById('task-description').innerHTML = this.sanitize(task && task.description || '');
+            const select = form.elements.project_id;
+            select.replaceChildren(...state.projects.map((project) => {
+                const option = document.createElement('option');
+                option.value = String(project.id); option.textContent = project.name;
+                return option;
+            }));
+            const preferred = task ? task.project_id : state.projects[0]?.id;
+            if (preferred != null) select.value = String(preferred);
+            document.getElementById('task-panel-title').textContent = task ? 'Upraviť úlohu' : 'Nová úloha';
+            document.querySelector('.task-delete-button').hidden = !task;
+            ui.openPanel('task-panel');
+        },
+        async save(button) {
+            const form = document.getElementById('task-form');
+            this.clearErrors();
+            const title = form.elements.title.value.trim();
+            const description = this.sanitize(document.getElementById('task-description').innerHTML);
+            const data = {
+                title, project_id: Number(form.elements.project_id.value),
+                priority: Number(form.elements.priority.value), due_date: form.elements.due_date.value,
+                description: description || null
+            };
+            const fields = {};
+            if (!title || title.length > 150) fields.title = 'Názov musí mať 1 až 150 znakov.';
+            if (!data.project_id) fields.project_id = 'Vyber projekt.';
+            if (!data.due_date || !/^\d{4}-\d{2}-\d{2}$/.test(data.due_date)) fields.due_date = 'Vyber platný termín.';
+            if (description.length > 2000) fields.description = 'Popis môže mať najviac 2 000 znakov.';
+            if (Object.keys(fields).length) return this.showErrors(fields);
+            form.elements.description.value = data.description || '';
+            button.disabled = true;
+            try {
+                await api.request(this.editingId ? 'PATCH' : 'POST', this.editingId ? `/api/tasks/${this.editingId}` : '/api/tasks', data);
+                ui.closePanels();
+                if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
+                ui.showToast(this.editingId ? 'Úloha bola upravená.' : 'Úloha bola vytvorená.');
+            } catch (error) {
+                if (error.status === 422) this.showErrors(error.fields);
+                else ui.showToast(error.message || 'Úlohu sa nepodarilo uložiť.', 'error');
+            } finally { button.disabled = false; }
+        },
+        async remove(button) {
+            if (!this.editingId) return;
+            if (!window.confirm('Naozaj chceš odstrániť túto úlohu?')) return;
+            if (!window.confirm('Odstránenie je trvalé. Potvrď ešte raz.')) return;
+            button.disabled = true;
+            try {
+                await api.request('DELETE', `/api/tasks/${this.editingId}`);
+                ui.closePanels();
+                if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
+                ui.showToast('Úloha bola odstránená.');
+            } catch (error) { ui.showToast(error.message || 'Úlohu sa nepodarilo odstrániť.', 'error'); }
+            finally { button.disabled = false; }
         }
     };
 
@@ -552,11 +670,17 @@
         const action = this.dataset.action;
         if (action === 'menu-toggle') ui.openPanel('navigation-drawer');
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
-        if (action === 'task-create') ui.openPanel('task-panel');
+        if (action === 'task-create') taskForm.open(null);
         if (action === 'task-detail') {
             const task = state.tasks.find((item) => String(item.id) === this.closest('.task-card')?.dataset.taskId);
             if (task) taskList.showDetail(task);
         }
+        if (action === 'task-edit') {
+            const task = state.tasks.find((item) => String(item.id) === this.dataset.taskId);
+            if (task) { ui.closePanels(); taskForm.open(task); }
+        }
+        if (action === 'task-save') taskForm.save(this);
+        if (action === 'task-delete') taskForm.remove(this);
         if (action === 'tasks-retry') views.loadTasks(state.routeSequence);
         if (action === 'project-open') ui.openPanel('project-panel');
         if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
@@ -568,8 +692,7 @@
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
-        if (action === 'task-edit' || action === 'task-complete' || action === 'task-save' ||
-            action === 'project-save' || action === 'login-submit' ||
+        if (action === 'task-complete' || action === 'project-save' || action === 'login-submit' ||
             action === 'register-submit') {
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
@@ -586,6 +709,23 @@
     $(document).on('submit', '#login-form, #register-form', function (event) {
         event.preventDefault();
         auth.submit(this);
+    });
+
+    $(document).on('submit', '#task-form', function (event) {
+        event.preventDefault();
+        taskForm.save(this.querySelector('[type="submit"]'));
+    });
+
+    /* Editor povoľuje formátovanie cez toolbar, no obsah vložený zvonka zmení na obyčajný text. */
+    $(document).on('click', '[data-editor-command]', function () {
+        const editor = document.getElementById('task-description');
+        editor.focus();
+        document.execCommand(this.dataset.editorCommand, false);
+    });
+    $(document).on('paste', '#task-description', function (event) {
+        event.preventDefault();
+        const text = (event.originalEvent.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
     });
 
     $(document).on('change', '#theme-preference', function () {

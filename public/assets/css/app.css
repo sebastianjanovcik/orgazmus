@@ -163,6 +163,14 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .panel-form label, .field-label, .auth-card label { display: block; margin: 15px 2px 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
 .panel-form input, .panel-form select, .panel-form textarea, .auth-card input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, var(--page)); font-size: 16px; }
 .panel-form textarea { resize: vertical; }
+.rich-editor { width: 100%; min-height: 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, var(--page)); font-size: 16px; overflow-wrap: anywhere; }
+.rich-editor:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+.editor-toolbar { display: flex; gap: 6px; margin: 8px 0 0; }
+.editor-toolbar button { min-width: 38px; min-height: 36px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); }
+.editor-toolbar button:focus-visible, .rich-editor:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.task-form-actions { align-items: center; }
+.task-form-actions .action-spacer { flex: 1; }
+.task-delete-button { color: var(--danger); }
 .panel-actions { display: flex; gap: 10px; padding: 14px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 .button { display: inline-flex; min-height: 48px; flex: 1; align-items: center; justify-content: center; padding: 10px 16px; border: 0; border-radius: 14px; cursor: pointer; font-weight: 700; }
 .button-primary { color: var(--accent-contrast); background: var(--accent); }.button-quiet { color: var(--ink); background: var(--accent-soft); }
