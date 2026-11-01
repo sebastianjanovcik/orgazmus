@@ -285,7 +285,7 @@ const server = http.createServer((req, res) => {
     // "Komentár by prekročil hĺbku" — when x-mock-response-code: 422
     if (requestedStatusCode === '422') {
       res.writeHead(422, {"Content-Type":"application/json; charset=utf-8"});
-      return res.end(JSON.stringify({"error":{"code":"comment_too_deep","message":"Odpoveď prekračuje maximálnu hĺbku 5.","fields":{}}}));
+      return res.end(JSON.stringify({"error":{"code":"comment_too_deep","message":"Odpoveď prekračuje maximálnu hĺbku 4.","fields":{}}}));
     }
 
     // "Úspešná odpoveď" — default

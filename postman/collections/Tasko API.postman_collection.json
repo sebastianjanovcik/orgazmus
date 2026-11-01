@@ -1966,7 +1966,7 @@
               "value": "application/json; charset=utf-8"
             }
           ],
-          "body": "{\n  \"error\": {\n    \"code\": \"comment_too_deep\",\n    \"message\": \"Odpoveď prekračuje maximálnu hĺbku 5.\",\n    \"fields\": {}\n  }\n}"
+          "body": "{\n  \"error\": {\n    \"code\": \"comment_too_deep\",\n    \"message\": \"Odpoveď prekračuje maximálnu hĺbku 4.\",\n    \"fields\": {}\n  }\n}"
         }
       ]
     },

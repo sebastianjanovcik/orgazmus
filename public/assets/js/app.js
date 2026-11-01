@@ -347,8 +347,8 @@
             const visited = new Set();
             const appendBranch = (parentId, depth, parentNode) => {
                 (children.get(parentId == null ? null : String(parentId)) || []).forEach((item) => {
-                    const id = String(item.id); if (visited.has(id) || depth > 5) return; visited.add(id);
-                    const article = document.createElement('article'); article.className = 'comment-item'; article.style.setProperty('--comment-depth', String(Math.min(depth, 5))); article.dataset.commentId = id; article.dataset.depth = String(depth);
+                    const id = String(item.id); if (visited.has(id) || depth > 4) return; visited.add(id);
+                    const article = document.createElement('article'); article.className = 'comment-item'; article.style.setProperty('--comment-depth', String(Math.min(depth, 4))); article.dataset.commentId = id; article.dataset.depth = String(depth);
                     const meta = document.createElement('div'); meta.className = 'comment-meta';
                     const author = document.createElement('strong'); author.textContent = item.author?.name || 'Používateľ';
                     const date = document.createElement('time');
@@ -356,7 +356,7 @@
                     meta.append(author, date);
                     const body = document.createElement('p'); body.className = 'comment-body'; body.textContent = item.body || ''; article.append(meta, body);
                     const controls = document.createElement('div'); controls.className = 'comment-controls';
-                    if (depth < 5) { const reply = document.createElement('button'); reply.type = 'button'; reply.className = 'text-button'; reply.dataset.action = 'comment-reply'; reply.textContent = 'Odpovedať'; controls.append(reply); }
+                    if (depth < 4) { const reply = document.createElement('button'); reply.type = 'button'; reply.className = 'text-button'; reply.dataset.action = 'comment-reply'; reply.textContent = 'Odpovedať'; controls.append(reply); }
                     if (item.can_delete) { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button comment-delete'; remove.dataset.action = 'comment-delete'; remove.textContent = 'Odstrániť'; controls.append(remove); }
                     article.append(controls); (parentNode || list).append(article); appendBranch(id, depth + 1, article);
                 });
@@ -369,7 +369,7 @@
             const article = button.closest('.comment-item'); const existing = article.querySelector(':scope > .comment-form');
             if (existing) { existing.remove(); return; }
             const item = this.items.find((entry) => String(entry.id) === article.dataset.commentId);
-            if (item && Number(article.dataset.depth) < 5) article.append(this.makeForm(item.id));
+            if (item && Number(article.dataset.depth) < 4) article.append(this.makeForm(item.id));
         },
         /* Hĺbku odvodzujeme z rodičovského reťazca, aby mock ID ani chybná hodnota depth nezmenili limit. */
         depthOf(item) {
@@ -389,7 +389,7 @@
             const parent = parentId == null ? null : this.items.find((item) => String(item.id) === parentId);
             const depth = parent ? this.depthOf(parent) + 1 : 0;
             const errorTarget = form.querySelector('.comment-form-error');
-            if (depth > 5) { if (errorTarget) errorTarget.textContent = 'Odpoveď už prekročila maximálnu hĺbku 5.'; return; }
+            if (depth > 4) { if (errorTarget) errorTarget.textContent = 'Odpoveď už prekročila maximálnu hĺbku 4.'; return; }
             const button = form.querySelector('[type="submit"]'); button.disabled = true;
             try {
                 const saved = await api.request('POST', `/api/tasks/${encodeURIComponent(this.taskId)}/comments`, { body, parent_id: parent ? (parent.apiId ?? parent.id) : null });
@@ -398,7 +398,7 @@
                 this.render();
             } catch (error) {
                 const target = errorTarget;
-                if (target) target.textContent = error.code === 'comment_too_deep' ? 'Odpoveď už prekročila maximálnu hĺbku 5.' : error.message || 'Komentár sa nepodarilo pridať.';
+                if (target) target.textContent = error.code === 'comment_too_deep' ? 'Odpoveď už prekročila maximálnu hĺbku 4.' : error.message || 'Komentár sa nepodarilo pridať.';
                 button.disabled = false;
             }
         },

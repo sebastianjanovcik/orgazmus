@@ -103,7 +103,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## F11 – Komentáre a odpovede
 
-**Čo sa urobí:** Do detailu úlohy sa pridajú komentáre a odpovede s maximálnou hĺbkou piatich úrovní. Používateľ Standard uvidí uzamknutú Premium funkciu. Autor môže odstrániť svoj komentár.
+**Čo sa urobí:** Do detailu úlohy sa pridajú komentáre a odpovede s maximálnou hĺbkou štyroch úrovní. Používateľ Standard uvidí uzamknutú Premium funkciu. Autor môže odstrániť svoj komentár.
 
 **Výstupy:** Vlákna komentárov, formulár odpovede a stav zamknutia podľa plánu.
 
@@ -363,7 +363,7 @@ V každom kroku najprv skontroluj, či výstupy predchádzajúceho kroku existuj
 4. Pri Standard zobraziť vysvetlenie a prémiový zámok; pri Premium umožniť pridanie komentára.
 5. Pri mazaní rodiča oznámiť, že sa odstránia aj odpovede.
 
-**Kontrola:** hlboké vlákno ostáva čitateľné na mobile, hĺbka 5 nepovolí ďalšiu odpoveď, Standard nevytvorí komentár. Výstup je komentárová funkcia vo fronte.
+**Kontrola:** hlboké vlákno ostáva čitateľné na mobile, hĺbka 4 nepovolí ďalšiu odpoveď, Standard nevytvorí komentár. Výstup je komentárová funkcia vo fronte.
 
 ## F12 – Kalendár, hotové, štatistiky: podúlohy a kontrola
 

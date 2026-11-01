@@ -55,7 +55,7 @@ Prázdny popis sa uloží ako `null`. Úloha patrí jednému projektu.
 ```
 
 Komentár (`comment`) obsahuje `id`, `task_id`, `parent_id` (ID alebo `null`),
-`depth` (0–5), `body`, `author` (`id`, `name`), `created_at` a `can_delete`.
+`depth` (0–4), `body`, `author` (`id`, `name`), `created_at` a `can_delete`.
 ID sú kladné celé čísla; `body` je čistý text s dĺžkou 1–1 000 znakov.
 Hĺbka sa odvodzuje na serveri; klient ju neposiela. Zoznam sa zoradí podľa
 `created_at` a ID vzostupne.
@@ -116,7 +116,7 @@ aktuálneho používateľa a vráti napríklad `{"data":{"deleted":3}}`.
 - `standard` má najviac 3 projekty a nemá komentáre. Ďalší projekt vráti
   `403 plan_limit`; endpointy komentárov vrátia `403 premium_required`.
 - `premium` nemá limit projektov a môže komentovať. Koreň komentára má hĺbku
-  0; najhlbšia povolená odpoveď má hĺbku 5. Odpoveď, ktorá by limit
+  0; najhlbšia povolená odpoveď má hĺbku 4. Odpoveď, ktorá by limit
   prekročila, vráti `422 comment_too_deep`. Zmazanie komentára odstráni aj
   jeho odpovede.
 - `PATCH /api/me/plan` je iba ukážkový prepínač pre demo; mimo demo režimu
