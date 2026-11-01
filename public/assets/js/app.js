@@ -283,6 +283,7 @@
     /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
     const taskList = {
         requestSequence: 0,
+        pendingCompletions: new Set(),
         priorities: { 1: 'Nízka', 2: 'Stredná', 3: 'Vysoká', 4: 'Kritická' },
         plainText(value) {
             /* Popis API môže obsahovať povolené formátovanie; detail zoznamu ukáže iba jeho text. */
@@ -363,11 +364,55 @@
             done.forEach((task) => doneList.append(this.makeCard(task, projects)));
             this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
             this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
+            this.updateCounts(tasks);
+        },
+        updateCounts(tasks) {
+            const open = tasks.filter((task) => !task.is_done);
+            const done = tasks.filter((task) => task.is_done);
             document.getElementById('open-task-count').textContent = String(open.length);
             document.getElementById('overdue-task-count').textContent = String(open.filter((task) => task.due_date && task.due_date < components.today()).length);
             document.getElementById('completed-task-count').textContent = String(done.length);
             document.getElementById('open-section-count').textContent = `${open.length} ${open.length === 1 ? 'úloha' : 'úloh'}`;
             document.getElementById('done-section-count').textContent = `${done.length} ${done.length === 1 ? 'úloha' : 'úloh'}`;
+        },
+        setCardDone(card, button, task, isDone) {
+            task.is_done = isDone;
+            card.classList.toggle('is-done', isDone);
+            card.classList.toggle('is-overdue', Boolean(task.due_date && task.due_date < components.today() && !isDone));
+            button.setAttribute('aria-pressed', String(isDone));
+            button.setAttribute('aria-label', `${isDone ? 'Znovu otvoriť' : 'Označiť ako hotovú'} úlohu ${task.title}`);
+        },
+        complete(button) {
+            const card = button.closest('.task-card');
+            const task = state.tasks.find((item) => String(item.id) === card?.dataset.taskId);
+            if (!task || this.pendingCompletions.has(String(task.id))) return;
+
+            const previousState = Boolean(task.is_done);
+            const nextState = !previousState;
+            const taskId = String(task.id);
+            this.pendingCompletions.add(taskId);
+            button.disabled = true;
+            // Aktualizácia karty a počtov je okamžitá; jej pozícia zostane rovnaká až do ďalšieho načítania.
+            this.setCardDone(card, button, task, nextState);
+            this.updateCounts(state.tasks);
+
+            api.request('POST', `/api/tasks/${encodeURIComponent(taskId)}/${nextState ? 'complete' : 'uncomplete'}`)
+                .then((updatedTask) => {
+                    if (updatedTask && typeof updatedTask.is_done === 'boolean') {
+                        this.setCardDone(card, button, task, updatedTask.is_done);
+                        if (updatedTask.completed_at !== undefined) task.completed_at = updatedTask.completed_at;
+                        this.updateCounts(state.tasks);
+                    }
+                })
+                .catch((error) => {
+                    this.setCardDone(card, button, task, previousState);
+                    this.updateCounts(state.tasks);
+                    ui.showToast(error.message || 'Stav úlohy sa nepodarilo uložiť.', 'error');
+                })
+                .finally(() => {
+                    this.pendingCompletions.delete(taskId);
+                    button.disabled = false;
+                });
         },
         emptyState(container, count, message, id) {
             if (count) return;
@@ -681,6 +726,11 @@
         }
         if (action === 'task-save') taskForm.save(this);
         if (action === 'task-delete') taskForm.remove(this);
+        if (action === 'task-complete') {
+            event.preventDefault();
+            event.stopPropagation();
+            taskList.complete(this);
+        }
         if (action === 'tasks-retry') views.loadTasks(state.routeSequence);
         if (action === 'project-open') ui.openPanel('project-panel');
         if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
@@ -692,7 +742,7 @@
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
-        if (action === 'task-complete' || action === 'project-save' || action === 'login-submit' ||
+        if (action === 'project-save' || action === 'login-submit' ||
             action === 'register-submit') {
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
