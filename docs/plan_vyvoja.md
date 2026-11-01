@@ -87,7 +87,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## F9 – Označenie úlohy ako hotovej
 
-**Čo sa urobí:** Zaškrtnutie okamžite zmení vzhľad a odošle osobitné volanie na dokončenie alebo opätovné otvorenie úlohy. Pri chybe sa zobrazenie vráti do pôvodného stavu.
+**Čo sa urobí:** Zaškrtnutie okamžite zmení vzhľad a odošle osobitné volanie na dokončenie alebo opätovné otvorenie úlohy. Po úspechu sa karta presunie medzi otvorené alebo hotové úlohy; pri chybe sa obnoví pôvodný stav. Hotovú úlohu možno z detailu odstrániť, nie upraviť.
 
 **Výstupy:** Rýchla interakcia s možnosťou vrátenia pri chybe a aktualizáciou počtov.
 
@@ -339,7 +339,8 @@ V každom kroku najprv skontroluj, či výstupy predchádzajúceho kroku existuj
 1. Obsluhovať checkbox delegovanou udalosťou, aby rovnaké správanie platilo aj pre dynamicky vykreslené úlohy.
 2. Okamžite upraviť vzhľad a poslať POST `/complete` alebo `/uncomplete` podľa nového stavu.
 3. Pri chybe vrátiť checkbox aj dekoráciu do pôvodného stavu a oznámiť chybu.
-4. Nedovoliť kliknutiu na checkbox otvoriť editor; po úspechu aktualizovať počty, ale nepresúvať položku nečakane.
+4. Nedovoliť kliknutiu na checkbox otvoriť editor; po úspechu aktualizovať počty a presunúť kartu do zodpovedajúcej sekcie.
+5. Pri hotovej úlohe skryť úpravu a ponúknuť odstránenie s dvojitým potvrdením.
 
 **Kontrola:** v Network paneli vidieť správnu akciu; simulovaná chyba vráti stav späť. Výstup je spoľahlivé okamžité zaškrtnutie.
 

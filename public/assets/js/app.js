@@ -403,6 +403,8 @@
                         if (updatedTask.completed_at !== undefined) task.completed_at = updatedTask.completed_at;
                         this.updateCounts(state.tasks);
                     }
+                    // Po potvrdení serverom sa karta prekreslí v správnej sekcii; pri chybe ostáva na mieste.
+                    this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
                 })
                 .catch((error) => {
                     this.setCardDone(card, button, task, previousState);
@@ -476,11 +478,20 @@
             content.append(title, description, facts);
             const actions = document.createElement('div');
             actions.className = 'panel-actions';
-            const edit = document.createElement('button');
-            edit.type = 'button'; edit.className = 'button button-primary';
-            edit.dataset.action = 'task-edit'; edit.dataset.taskId = String(task.id);
-            edit.textContent = 'Upraviť úlohu';
-            actions.append(edit);
+            if (task.is_done) {
+                // Hotovú úlohu možno z detailu odstrániť, ale jej obsah sa už nedá upraviť.
+                const remove = document.createElement('button');
+                remove.type = 'button'; remove.className = 'button button-quiet task-delete-button';
+                remove.dataset.action = 'task-delete'; remove.dataset.taskId = String(task.id);
+                remove.textContent = 'Odstrániť úlohu';
+                actions.append(remove);
+            } else {
+                const edit = document.createElement('button');
+                edit.type = 'button'; edit.className = 'button button-primary';
+                edit.dataset.action = 'task-edit'; edit.dataset.taskId = String(task.id);
+                edit.textContent = 'Upraviť úlohu';
+                actions.append(edit);
+            }
             content.append(actions);
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             ui.openPanel('task-detail-panel');
@@ -576,13 +587,15 @@
             } finally { button.disabled = false; }
         },
         async remove(button) {
-            if (!this.editingId) return;
+            const taskId = button.dataset.taskId || this.editingId;
+            if (!taskId) return;
             if (!window.confirm('Naozaj chceš odstrániť túto úlohu?')) return;
             if (!window.confirm('Odstránenie je trvalé. Potvrď ešte raz.')) return;
             button.disabled = true;
             try {
-                await api.request('DELETE', `/api/tasks/${this.editingId}`);
+                await api.request('DELETE', `/api/tasks/${taskId}`);
                 ui.closePanels();
+                this.editingId = null;
                 if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
                 ui.showToast('Úloha bola odstránená.');
             } catch (error) { ui.showToast(error.message || 'Úlohu sa nepodarilo odstrániť.', 'error'); }
@@ -722,7 +735,7 @@
         }
         if (action === 'task-edit') {
             const task = state.tasks.find((item) => String(item.id) === this.dataset.taskId);
-            if (task) { ui.closePanels(); taskForm.open(task); }
+            if (task && !task.is_done) { ui.closePanels(); taskForm.open(task); }
         }
         if (action === 'task-save') taskForm.save(this);
         if (action === 'task-delete') taskForm.remove(this);
