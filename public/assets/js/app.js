@@ -131,6 +131,7 @@
                 else link.removeAttribute('aria-current');
             });
             if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
+            if (['calendar', 'done', 'stats'].includes(route.name) && state.user) views.loadInsights(sequence, route.name);
             if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
             if (sequence !== state.routeSequence) return;
         }
@@ -906,6 +907,159 @@
     };
 
     const views = {
+        calendar: null,
+        calendarSequence: 0,
+        async loadInsights(routeSequence, name) {
+            const target = document.getElementById('view');
+            if (!target) return;
+            if (name === 'calendar') {
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Kalendár</h1><p class="page-subtitle">Termíny a úlohy podľa dní.</p></div></div><section class="calendar-card" aria-label="Kalendár úloh"><div id="task-calendar" aria-label="Kalendár"></div></section><section class="task-section calendar-day-section" aria-labelledby="calendar-day-heading"><div class="section-heading"><h2 id="calendar-day-heading">Vybraný deň</h2><span id="calendar-day-count" class="section-count"></span></div><div id="calendar-day-tasks" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
+                const calendarRoot = document.getElementById('task-calendar');
+                if (!window.FullCalendar || !calendarRoot) {
+                    calendarRoot.textContent = 'Kalendár sa nepodarilo načítať.';
+                    return;
+                }
+                const locale = {
+                    code: 'sk', week: { dow: 1, doy: 4 },
+                    buttonText: { prev: 'Predchádzajúci mesiac', next: 'Nasledujúci mesiac', today: 'Dnes', month: 'Mesiac', week: 'Týždeň', day: 'Deň', list: 'Zoznam' },
+                    monthNames: ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl', 'august', 'september', 'október', 'november', 'december'],
+                    monthNamesShort: ['jan', 'feb', 'mar', 'apr', 'máj', 'jún', 'júl', 'aug', 'sep', 'okt', 'nov', 'dec'],
+                    dayNames: ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'],
+                    dayNamesShort: ['ne', 'po', 'ut', 'st', 'št', 'pi', 'so'],
+                    allDayText: 'Celý deň', moreLinkText: 'ďalšie', noEventsText: 'Žiadne úlohy'
+                };
+                this.calendar = new FullCalendar.Calendar(calendarRoot, {
+                    initialView: 'dayGridMonth', locale, firstDay: 1, height: 'auto', dayMaxEvents: 3,
+                    headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+                    events: [],
+                    datesSet: (info) => this.loadCalendarRange(info, routeSequence),
+                    dateClick: (info) => this.selectCalendarDay(info.dateStr),
+                    eventClick: (info) => {
+                        const task = state.tasks.find((item) => String(item.id) === String(info.event.id));
+                        if (task) taskList.showDetail(task);
+                    },
+                    dayCellClassNames: (info) => {
+                        const date = components.localDateStr(info.date);
+                        return date < components.today() && state.tasks.some((task) => task.due_date === date && !task.is_done) ? ['has-overdue-task'] : [];
+                    },
+                    dayCellDidMount: (info) => {
+                        const date = components.localDateStr(info.date);
+                        const count = state.tasks.filter((task) => task.due_date === date).length;
+                        if (count) info.el.setAttribute('aria-label', `${date}, ${count} ${count === 1 ? 'úloha' : 'úloh'}`);
+                    }
+                });
+                this.calendar.render();
+                const today = components.today();
+                this.selectCalendarDay(today);
+                return;
+            }
+            if (name === 'done') {
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Hotové úlohy</h1><p class="page-subtitle">Dokončené úlohy na jednom mieste.</p></div><button class="button button-danger" type="button" data-action="completed-clear">Zmazať všetky hotové</button></div><section class="task-section"><div id="completed-task-list" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
+            } else {
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Štatistiky</h1><p class="page-subtitle">Prehľad dokončených úloh a priebehu projektov.</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">Priebeh projektov</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
+            }
+            try {
+                const [tasks, projects] = await Promise.all([api.request('GET', '/api/tasks'), api.request('GET', '/api/projects')]);
+                if (routeSequence !== state.routeSequence) return;
+                state.tasks = Array.isArray(tasks) ? tasks : [];
+                state.projects = Array.isArray(projects) ? projects : [];
+                projectManager.renderSidebar();
+                if (name === 'done') this.renderCompleted();
+                else this.renderStatistics();
+            } catch (error) {
+                if (routeSequence !== state.routeSequence) return;
+                const node = document.getElementById(name === 'done' ? 'completed-task-list' : 'task-statistics');
+                if (node) node.textContent = error.message || 'Údaje sa nepodarilo načítať.';
+            }
+        },
+        async loadCalendarRange(info, routeSequence) {
+            const sequence = ++this.calendarSequence;
+            // FullCalendar dáva koniec rozsahu ako exkluzívny dátum; API kontrakt prijíma obe hranice vrátane.
+            const end = components.addDays(info.endStr.slice(0, 10), -1);
+            try {
+                const [tasks, projects] = await Promise.all([
+                    api.request('GET', `/api/tasks?from=${encodeURIComponent(info.startStr.slice(0, 10))}&to=${encodeURIComponent(end)}`),
+                    api.request('GET', '/api/projects')
+                ]);
+                if (sequence !== this.calendarSequence || routeSequence !== state.routeSequence || router.current().name !== 'calendar') return;
+                state.tasks = Array.isArray(tasks) ? tasks : [];
+                state.projects = Array.isArray(projects) ? projects : [];
+                projectManager.renderSidebar();
+                this.calendar.removeAllEvents();
+                state.tasks.filter((task) => task.due_date && !task.is_done).forEach((task) => {
+                    const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
+                    const priority = Math.min(4, Math.max(1, Number(task.priority) || 2));
+                    const colors = { 1: '#777b8b', 2: '#4285d4', 3: '#d8902e', 4: '#d95359' };
+                    this.calendar.addEvent({ id: String(task.id), title: task.title, start: task.due_date, allDay: true, backgroundColor: colors[priority], borderColor: project?.color || colors[priority], textColor: '#fff' });
+                });
+                this.calendar.render();
+                this.selectCalendarDay(document.getElementById('calendar-day-heading')?.dataset.date || components.today());
+            } catch (error) {
+                if (sequence !== this.calendarSequence) return;
+                const list = document.getElementById('calendar-day-tasks');
+                if (list) list.textContent = error.message || 'Úlohy kalendára sa nepodarilo načítať.';
+            }
+        },
+        selectCalendarDay(date) {
+            const heading = document.getElementById('calendar-day-heading');
+            const list = document.getElementById('calendar-day-tasks');
+            if (!heading || !list) return;
+            heading.dataset.date = date;
+            heading.textContent = new Intl.DateTimeFormat('sk', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+            const tasks = state.tasks.filter((task) => task.due_date === date);
+            document.getElementById('calendar-day-count').textContent = `${tasks.length} ${tasks.length === 1 ? 'úloha' : 'úloh'}`;
+            list.replaceChildren();
+            if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Na tento deň nie sú naplánované žiadne úlohy.'; list.append(empty); return; }
+            const projects = new Map(state.projects.map((project) => [Number(project.id), project]));
+            tasks.forEach((task) => list.append(taskList.makeCard(task, projects)));
+        },
+        renderCompleted() {
+            const list = document.getElementById('completed-task-list');
+            if (!list) return;
+            const tasks = state.tasks.filter((task) => task.is_done);
+            list.replaceChildren();
+            if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Zatiaľ nemáš hotové úlohy.'; list.append(empty); }
+            else { const projects = new Map(state.projects.map((project) => [Number(project.id), project])); tasks.forEach((task) => list.append(taskList.makeCard(task, projects))); }
+        },
+        renderStatistics() {
+            const total = state.tasks.length;
+            const done = state.tasks.filter((task) => task.is_done).length;
+            const open = total - done;
+            const cards = document.getElementById('task-statistics');
+            if (!cards) return;
+            cards.replaceChildren();
+            [['Všetky úlohy', total], ['Otvorené úlohy', open], ['Dokončené úlohy', done]].forEach(([label, value]) => {
+                const card = document.createElement('article'); card.className = 'summary-card statistic-card';
+                const number = document.createElement('strong'); number.textContent = String(value);
+                const caption = document.createElement('span'); caption.textContent = label;
+                card.append(number, caption); cards.append(card);
+            });
+            const list = document.getElementById('project-statistics');
+            list.replaceChildren();
+            state.projects.forEach((project) => {
+                const tasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id));
+                const completed = tasks.filter((task) => task.is_done).length;
+                const row = document.createElement('div'); row.className = 'statistics-project-row';
+                const name = document.createElement('span'); name.textContent = project.name;
+                const count = document.createElement('span'); count.textContent = `${completed} z ${tasks.length} hotových`;
+                const progress = document.createElement('progress'); progress.max = tasks.length || 1; progress.value = completed; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
+                row.append(name, count, progress); list.append(row);
+            });
+            if (!state.projects.length) list.textContent = 'Zatiaľ nemáš projekty.';
+        },
+        async clearCompleted(button) {
+            const count = state.tasks.filter((task) => task.is_done).length;
+            if (!count) { ui.showToast('Nemáš žiadne hotové úlohy.', 'info'); return; }
+            if (!await ui.confirm(`Naozaj chceš zmazať ${count} hotových ${count === 1 ? 'úlohu' : 'úloh'}?`, 'Zmazať hotové úlohy?', 'Zmazať všetky')) return;
+            button.disabled = true;
+            try {
+                await api.request('DELETE', '/api/tasks/completed');
+                state.tasks = state.tasks.filter((task) => !task.is_done);
+                this.renderCompleted();
+                ui.showToast('Hotové úlohy boli zmazané.', 'success');
+            } catch (error) { ui.showToast(error.message || 'Hotové úlohy sa nepodarilo zmazať.', 'error'); }
+            finally { button.disabled = false; }
+        },
         async loadTasks(routeSequence) {
             const requestSequence = ++taskList.requestSequence;
             taskList.loading();
@@ -1071,6 +1225,7 @@
             taskList.complete(this);
         }
         if (action === 'tasks-retry') views.loadTasks(state.routeSequence);
+        if (action === 'completed-clear') views.clearCompleted(this);
         if (action === 'project-open') projectManager.open(null);
         if (action === 'project-edit') {
             const project = state.projects.find((item) => Number(item.id) === Number(this.dataset.projectId));
