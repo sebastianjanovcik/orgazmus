@@ -145,6 +145,19 @@
             window.clearTimeout(this.toastTimer);
             this.toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 2800);
         },
+        confirm(message, title, confirmLabel) {
+            const dialog = document.getElementById('confirm-dialog');
+            if (!dialog || dialog.open) return Promise.resolve(false);
+            document.getElementById('confirm-dialog-title').textContent = title || 'Potvrdenie';
+            document.getElementById('confirm-dialog-message').textContent = message;
+            const confirmButton = document.getElementById('confirm-dialog-submit');
+            confirmButton.textContent = confirmLabel || 'Potvrdiť';
+            return new Promise((resolve) => {
+                dialog.addEventListener('close', () => resolve(dialog.returnValue === 'confirm'), { once: true });
+                dialog.showModal();
+                confirmButton.focus();
+            });
+        },
         openPanel(id) {
             const panel = document.getElementById(id);
             if (!panel) return;
@@ -589,8 +602,8 @@
         async remove(button) {
             const taskId = button.dataset.taskId || this.editingId;
             if (!taskId) return;
-            if (!window.confirm('Naozaj chceš odstrániť túto úlohu?')) return;
-            if (!window.confirm('Odstránenie je trvalé. Potvrď ešte raz.')) return;
+            if (!await ui.confirm('Naozaj chceš odstrániť túto úlohu?', 'Odstrániť úlohu?', 'Odstrániť')) return;
+            if (!await ui.confirm('Odstránenie je trvalé. Potvrď ešte raz.', 'Posledné potvrdenie', 'Áno, odstrániť')) return;
             button.disabled = true;
             try {
                 await api.request('DELETE', `/api/tasks/${taskId}`);
@@ -796,7 +809,7 @@
     });
 
     $(document).on('keydown', (event) => {
-        if (event.key === 'Escape') ui.closePanels();
+        if (event.key === 'Escape' && !document.getElementById('confirm-dialog').open) ui.closePanels();
     });
 
     window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList };

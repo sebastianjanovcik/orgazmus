@@ -80,6 +80,16 @@
                 <button class="button button-primary" type="submit" data-i18n="register_submit">Vytvoriť účet</button><button class="text-button" type="button" data-action="show-login" data-i18n="back_to_login">Už máš účet? Prihlás sa</button>
             </form>
         </section>
+        <dialog class="confirm-dialog" id="confirm-dialog" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+            <div class="confirm-dialog-content">
+                <h2 id="confirm-dialog-title">Potvrdenie</h2>
+                <p id="confirm-dialog-message"></p>
+                <form method="dialog" class="confirm-dialog-actions">
+                    <button class="button button-quiet" type="submit" value="cancel">Zrušiť</button>
+                    <button class="button button-danger" id="confirm-dialog-submit" type="submit" value="confirm">Potvrdiť</button>
+                </form>
+            </div>
+        </dialog>
         <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
     <!-- Lokálne knižnice zostávajú v poradí určenom plánom F3. -->
