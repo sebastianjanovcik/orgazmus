@@ -258,6 +258,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 #task-calendar .fc-toolbar-title { font-size: clamp(17px, 3vw, 22px); text-transform: capitalize; }
 #task-calendar .fc-button { min-height: 38px; border-radius: 11px; box-shadow: none; }
 #task-calendar .fc-daygrid-day-number { color: var(--ink); text-decoration: none; }
+#task-calendar .fc-daygrid-day { cursor: pointer; }
 #task-calendar .fc-daygrid-day.has-overdue-task { background: color-mix(in srgb, var(--danger) 8%, transparent); }
 #task-calendar .fc-daygrid-day.has-overdue-task .fc-daygrid-day-number { color: var(--danger); font-weight: 800; }
 #task-calendar .fc-daygrid-event { border-radius: 999px; padding: 1px 5px; }
