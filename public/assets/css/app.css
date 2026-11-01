@@ -142,7 +142,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 #task-detail-panel { background: var(--surface-solid); }
 #task-detail-panel .panel-header { border-bottom: 0; }
 #task-detail-panel .task-panel-header > button { padding: 0; line-height: 1; }
-#task-detail-panel .close-mark { display: grid; width: 100%; height: 100%; place-items: center; transform: translateY(1px); }
+#task-detail-panel .close-mark { display: grid; width: 100%; height: 100%; place-items: center; line-height: 1; }
 .task-detail-content { overflow-y: auto; padding: 20px 24px 26px; }
 .task-detail-content h3 { margin: 0; font-size: 25px; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; }
 .task-detail-description { margin: 16px 0 4px; padding: 16px; border: 1px solid var(--glass-border); border-radius: 17px; color: var(--muted); background: var(--surface-solid); line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
