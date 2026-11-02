@@ -989,9 +989,11 @@
             content.replaceChildren();
             const title = document.createElement('h3');
             title.textContent = task.title || '';
-            const description = document.createElement('p');
+            const description = document.createElement('div');
             description.className = 'task-detail-description';
-            description.textContent = this.plainText(task.description) || 'Bez popisu.';
+            const safeDescription = taskForm.sanitize(task.description);
+            if (safeDescription) description.innerHTML = safeDescription;
+            else description.textContent = 'Bez popisu.';
             const facts = document.createElement('dl');
             [[ 'Priorita', this.priorities[Math.min(4, Math.max(1, Number(task.priority) || 2))] ],
                 [ 'Projekt', project ? project.name : 'Bez projektu' ], [ 'Termín', this.dateLabel(task.due_date) ],
@@ -1040,7 +1042,7 @@
     /* Jeden formulár obsluhuje obe operácie; popis sa pred API odoslaním zúži na povolené značky. */
     const taskForm = {
         editingId: null,
-        allowedTags: new Set(['B', 'STRONG', 'I', 'EM', 'UL', 'OL', 'LI', 'BR', 'P']),
+        allowedTags: new Set(['B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'BR', 'P', 'DIV']),
         sanitize(html) {
             const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
             parsed.querySelectorAll('script, style').forEach((node) => node.remove());
