@@ -106,6 +106,7 @@
             return { name: parts[0] || 'tasks', id: parts.slice(1).join('-') };
         },
         navigate() {
+            dropdowns.close();
             const sequence = ++state.routeSequence;
             const route = this.current();
             /* Aplikačné obrazovky sú súkromné; samotná kontrola prehliadača je len UX vrstva. */
@@ -123,6 +124,7 @@
             document.body.classList.toggle('auth-route', Boolean(page.auth));
             const view = document.getElementById('view');
             if (view) {
+                dropdowns.dispose(view);
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
                 else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
@@ -205,6 +207,11 @@
     /* Vlastné menu dáva ponukám jednotný vzhľad; skrytý select ostáva zdrojom hodnoty formulára. */
     const dropdowns = {
         active: null,
+        dispose(root) {
+            root.querySelectorAll('select[data-dropdown-ready]').forEach((select) => {
+                document.getElementById(`${select.id}-listbox`)?.remove();
+            });
+        },
         init(root) {
             (root || document).querySelectorAll('select').forEach((select) => {
                 if (select.dataset.dropdownReady) { this.sync(select); return; }
@@ -239,7 +246,7 @@
                 listbox.setAttribute('role', 'listbox');
                 listbox.setAttribute('aria-label', trigger.getAttribute('aria-label'));
                 listbox.hidden = true;
-                wrapper.append(listbox);
+                document.body.append(listbox);
                 trigger.addEventListener('click', () => listbox.hidden ? this.open(select) : this.close());
                 trigger.addEventListener('keydown', (event) => this.keydown(event, select));
                 select.addEventListener('change', () => this.sync(select));
@@ -251,7 +258,7 @@
             if (!wrapper) return;
             const trigger = wrapper.querySelector('.styled-select-trigger');
             const value = wrapper.querySelector('.styled-select-value');
-            const listbox = wrapper.querySelector('.styled-select-menu');
+            const listbox = document.getElementById(`${select.id}-listbox`);
             const selected = select.options[select.selectedIndex];
             value.textContent = selected?.textContent || 'Vyber…';
             trigger.disabled = select.disabled || select.options.length === 0;
@@ -278,7 +285,7 @@
             this.close();
             const wrapper = select.closest('.styled-select');
             const trigger = wrapper.querySelector('.styled-select-trigger');
-            const listbox = wrapper.querySelector('.styled-select-menu');
+            const listbox = document.getElementById(`${select.id}-listbox`);
             const rect = trigger.getBoundingClientRect();
             listbox.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8))}px`;
             listbox.style.width = `${rect.width}px`;
@@ -296,14 +303,16 @@
         close() {
             if (!this.active) return;
             const wrapper = this.active.closest('.styled-select');
-            wrapper.querySelector('.styled-select-menu').hidden = true;
-            wrapper.querySelector('.styled-select-menu').classList.remove('opens-up');
+            const listbox = document.getElementById(`${this.active.id}-listbox`);
+            listbox.hidden = true;
+            listbox.classList.remove('opens-up');
             wrapper.querySelector('.styled-select-trigger').setAttribute('aria-expanded', 'false');
             this.active = null;
         },
         activate(select, index) {
             const wrapper = select.closest('.styled-select');
-            const options = Array.from(wrapper.querySelectorAll('.styled-select-option'));
+            const listbox = document.getElementById(`${select.id}-listbox`);
+            const options = Array.from(listbox.querySelectorAll('.styled-select-option'));
             const enabled = options.filter((option) => option.getAttribute('aria-disabled') !== 'true');
             if (!enabled.length) return;
             let item = options[index];
@@ -323,24 +332,23 @@
             if (trigger?.isConnected) trigger.focus();
         },
         keydown(event, select) {
-            const wrapper = select.closest('.styled-select');
             const options = Array.from(select.options);
             const current = select.selectedIndex;
             let next = current;
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault();
-                if (wrapper.querySelector('.styled-select-menu').hidden) this.open(select, current);
+                if (document.getElementById(`${select.id}-listbox`).hidden) this.open(select, current);
                 next = (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
                 this.activate(select, next);
             } else if (event.key === 'Home' || event.key === 'End') {
                 event.preventDefault();
-                if (wrapper.querySelector('.styled-select-menu').hidden) this.open(select);
+                if (document.getElementById(`${select.id}-listbox`).hidden) this.open(select);
                 next = event.key === 'Home' ? 0 : options.length - 1;
                 this.activate(select, next);
             } else if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                const active = wrapper.querySelector('.styled-select-option.is-active');
-                if (!wrapper.querySelector('.styled-select-menu').hidden && active) this.choose(select, Number(active.dataset.index));
+                const active = document.getElementById(`${select.id}-listbox`).querySelector('.styled-select-option.is-active');
+                if (!document.getElementById(`${select.id}-listbox`).hidden && active) this.choose(select, Number(active.dataset.index));
                 else this.open(select);
             } else if (event.key === 'Escape') this.close();
             else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
@@ -353,7 +361,11 @@
     };
 
     document.addEventListener('click', (event) => {
-        if (dropdowns.active && !dropdowns.active.closest('.styled-select').contains(event.target)) dropdowns.close();
+        if (dropdowns.active) {
+            const wrapper = dropdowns.active.closest('.styled-select');
+            const listbox = document.getElementById(`${dropdowns.active.id}-listbox`);
+            if (!wrapper.contains(event.target) && !listbox.contains(event.target)) dropdowns.close();
+        }
     });
 
     const ui = {
