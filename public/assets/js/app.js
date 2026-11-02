@@ -5,8 +5,8 @@
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
         dictionaries: {
-            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', filter: 'Filtrovať', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.' },
-            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', filter: 'Filtrovat', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.' }
+            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.' },
+            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.' }
         },
         language: 'sk',
         key: 'tasko.language',
@@ -21,6 +21,7 @@
             document.documentElement.lang = language;
             try { window.localStorage.setItem(this.key, language); } catch (_) { ui.showToast(this.language === 'cs' ? 'Jazyk se změnil, ale volbu se nepodařilo uložit.' : 'Jazyk sa zmenil, ale voľbu sa nepodarilo uložiť.', 'error'); }
             this.apply();
+            taskForm.setEditorLanguage();
             router.navigate();
             notifications.update();
         },
@@ -1042,6 +1043,43 @@
     /* Jeden formulár obsluhuje obe operácie; popis sa pred API odoslaním zúži na povolené značky. */
     const taskForm = {
         editingId: null,
+        /* Summernote zobrazuje dostupné formátovanie a ponecháva HTML spracované existujúcou sanitizáciou. */
+        initEditor() {
+            const editor = $('#task-description');
+            editor.summernote({
+                lang: i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK',
+                height: 150,
+                minHeight: 120,
+                placeholder: editor.attr('data-placeholder'),
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline', 'clear']],
+                    ['para', ['ul', 'ol']],
+                    ['history', ['undo', 'redo']]
+                ],
+                callbacks: {
+                    onPaste(event) {
+                        const clipboard = (event.originalEvent || event).clipboardData || window.clipboardData;
+                        event.preventDefault();
+                        if (!clipboard) return;
+                        document.execCommand('insertText', false, clipboard.getData('text/plain'));
+                    }
+                }
+            });
+            const editable = editor.next('.note-editor').find('.note-editable');
+            editable.attr({ role: 'textbox', 'aria-labelledby': 'task-description-label', 'aria-multiline': 'true', 'aria-describedby': 'task-description-error' });
+        },
+        getEditorCode() {
+            const code = $('#task-description').summernote('code');
+            return new DOMParser().parseFromString(code, 'text/html').body.textContent.trim() ? code : '';
+        },
+        setEditorCode(html) { $('#task-description').summernote('code', html); },
+        setEditorLanguage() {
+            if (!$('#task-description').next('.note-editor').length) return;
+            const code = this.getEditorCode();
+            $('#task-description').summernote('destroy');
+            this.initEditor();
+            this.setEditorCode(code);
+        },
         allowedTags: new Set(['B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'BR', 'P', 'DIV']),
         sanitize(html) {
             const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
@@ -1071,7 +1109,7 @@
             const form = document.getElementById('task-form');
             Object.entries(fields || {}).forEach(([name, message]) => {
                 const id = { title: 'task-name', priority: 'task-priority-label', project_id: 'task-project', due_date: 'task-due-date', description: 'task-description' }[name];
-                const input = name === 'priority' ? form.querySelector('[name="priority"]') : id && document.getElementById(id);
+                const input = name === 'priority' ? form.querySelector('[name="priority"]') : name === 'description' ? form.querySelector('.note-editable') : id && document.getElementById(id);
                 const error = document.getElementById(`task-${name.replace('_', '-')}-error`);
                 if (input) input.setAttribute('aria-invalid', 'true');
                 if (input?.tagName === 'SELECT') dropdowns.sync(input);
@@ -1093,7 +1131,7 @@
             form.elements.due_date.value = task ? task.due_date || '' : dueDate || components.today();
             datePicker.sync(form.elements.due_date);
             form.elements.description.value = task ? task.description || '' : '';
-            document.getElementById('task-description').innerHTML = this.sanitize(task && task.description || '');
+            this.setEditorCode(this.sanitize(task && task.description || ''));
             const select = form.elements.project_id;
             select.replaceChildren(...state.projects.map((project) => {
                 const option = document.createElement('option');
@@ -1111,7 +1149,7 @@
             const form = document.getElementById('task-form');
             this.clearErrors();
             const title = form.elements.title.value.trim();
-            const description = this.sanitize(document.getElementById('task-description').innerHTML);
+            const description = this.sanitize(this.getEditorCode());
             const data = {
                 title, project_id: Number(form.elements.project_id.value),
                 priority: Number(form.elements.priority.value), due_date: form.elements.due_date.value,
@@ -1671,7 +1709,6 @@
         if (action === 'show-login') window.location.hash = 'login';
         if (action === 'logout') auth.logout(this);
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
-        if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
         if (action === 'notifications') notifications.show();
         if (action === 'notifications-close') {
             document.getElementById('notification-panel').hidden = true;
@@ -1715,19 +1752,6 @@
         form.dataset.selectedIcon = this.dataset.projectIcon;
         form.querySelectorAll('[data-project-icon]').forEach((button) => button.setAttribute('aria-pressed', String(button === this)));
     });
-
-    /* Editor povoľuje formátovanie cez toolbar, no obsah vložený zvonka zmení na obyčajný text. */
-    $(document).on('click', '[data-editor-command]', function () {
-        const editor = document.getElementById('task-description');
-        editor.focus();
-        document.execCommand(this.dataset.editorCommand, false);
-    });
-    $(document).on('paste', '#task-description', function (event) {
-        event.preventDefault();
-        const text = (event.originalEvent.clipboardData || window.clipboardData).getData('text/plain');
-        document.execCommand('insertText', false, text);
-    });
-
     $(document).on('change', '#theme-preference', function () {
         theme.set(this.value);
     });
@@ -1747,6 +1771,7 @@
     window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList, commentThreads };
     i18n.init();
     theme.init();
+    taskForm.initEditor();
     i18n.apply();
     dropdowns.init(document);
     datePicker.init(document);

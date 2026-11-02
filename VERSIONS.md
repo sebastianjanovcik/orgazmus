@@ -1,6 +1,6 @@
 # Verzie nástrojov a knižníc
 
-Zistené 29. 10. 2026 v lokálnom vývojovom prostredí.
+Zistené 2. 11. 2026 v lokálnom vývojovom prostredí.
 
 | Nástroj alebo knižnica | Verzia/stav | Pôvod alebo poznámka |
 | --- | --- | --- |
@@ -8,7 +8,8 @@ Zistené 29. 10. 2026 v lokálnom vývojovom prostredí.
 | Git | 2.54.0.windows.1 | `git --version` |
 | MySQL klient | Nedostupný | Príkaz `mysql` sa v PATH nenašiel; verzia servera nebola overená. |
 | Bootstrap | 5.3.8 | Aktívne súbory sú v `public/assets/vendor/bootstrap/`; pôvodné varianty sú odložené v `trash/assets/`. |
-| jQuery | 4.0.0 | `public/assets/vendor/jquery/`; lokálna minifikovaná distribúcia z oficiálnej stránky jQuery. |
+| jQuery | 3.7.1 | `public/assets/vendor/jquery/`; verzia kompatibilná so Summernote 0.9.1. |
+| Summernote | 0.9.1 | Bootstrap 5 build v `public/assets/vendor/summernote/`; MIT licencia. |
 | FullCalendar | 6.1.19 | `public/assets/vendor/fullcalendar/`; globálna minifikovaná distribúcia z balíka npm cez jsDelivr. |
 
 Používateľská stránka odkazuje na lokálne súbory; pri bežnom spustení preto
