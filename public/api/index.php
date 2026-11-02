@@ -648,7 +648,7 @@ try {
         if ($fields !== []) tasko_validation_error($fields);
 
         $assignments = [];
-        foreach (array_keys($values) as $field) $assignments[] = "`$field` = :$field";
+        foreach (array_keys($values) as $field) $assignments[] = "t.`$field` = :$field";
         $values['task_id'] = $taskId;
         $values['user_id'] = (int) $user['id'];
         $update = $pdo->prepare(
