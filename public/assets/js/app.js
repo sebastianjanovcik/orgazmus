@@ -155,6 +155,7 @@
             if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
             if (['calendar', 'done', 'stats'].includes(route.name) && state.user) views.loadInsights(sequence, route.name);
             if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
+            if (route.name === 'settings' && state.user) views.loadSidebarProjects(sequence);
             if (sequence !== state.routeSequence) return;
         }
     };
@@ -1355,6 +1356,18 @@
     const views = {
         calendar: null,
         calendarSequence: 0,
+        async loadSidebarProjects(routeSequence) {
+            try {
+                const projects = await api.request('GET', '/api/projects');
+                if (routeSequence !== state.routeSequence) return;
+                state.projects = Array.isArray(projects) ? projects : [];
+                projectManager.renderSidebar();
+            } catch (error) {
+                if (routeSequence === state.routeSequence) {
+                    ui.showToast(error.message || 'Projekty sa nepodarilo načítať.', 'error');
+                }
+            }
+        },
         async loadInsights(routeSequence, name) {
             const target = document.getElementById('view');
             if (!target) return;
@@ -1405,10 +1418,18 @@
                 target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Štatistiky</h1><p class="page-subtitle">Prehľad dokončených úloh a priebehu projektov.</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">Priebeh projektov</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
             }
             try {
-                const [tasks, projects] = await Promise.all([api.request('GET', '/api/tasks'), api.request('GET', '/api/projects')]);
+                // Projekty sú dostupné už vo fáze B5, aj keď API úloh ešte nie je hotové.
+                const [tasksResult, projectsResult] = await Promise.allSettled([
+                    api.request('GET', '/api/tasks'),
+                    api.request('GET', '/api/projects')
+                ]);
                 if (routeSequence !== state.routeSequence) return;
-                state.tasks = Array.isArray(tasks) ? tasks : [];
-                state.projects = Array.isArray(projects) ? projects : [];
+                if (projectsResult.status === 'fulfilled') {
+                    state.projects = Array.isArray(projectsResult.value) ? projectsResult.value : [];
+                    projectManager.renderSidebar();
+                }
+                if (tasksResult.status === 'rejected') throw tasksResult.reason;
+                state.tasks = Array.isArray(tasksResult.value) ? tasksResult.value : [];
                 projectManager.renderSidebar();
                 if (name === 'done') this.renderCompleted();
                 else this.renderStatistics();
@@ -1423,13 +1444,17 @@
             // FullCalendar dáva koniec rozsahu ako exkluzívny dátum; API kontrakt prijíma obe hranice vrátane.
             const end = components.addDays(info.endStr.slice(0, 10), -1);
             try {
-                const [tasks, projects] = await Promise.all([
+                const [tasksResult, projectsResult] = await Promise.allSettled([
                     api.request('GET', `/api/tasks?from=${encodeURIComponent(info.startStr.slice(0, 10))}&to=${encodeURIComponent(end)}`),
                     api.request('GET', '/api/projects')
                 ]);
                 if (sequence !== this.calendarSequence || routeSequence !== state.routeSequence || router.current().name !== 'calendar') return;
-                state.tasks = Array.isArray(tasks) ? tasks : [];
-                state.projects = Array.isArray(projects) ? projects : [];
+                if (projectsResult.status === 'fulfilled') {
+                    state.projects = Array.isArray(projectsResult.value) ? projectsResult.value : [];
+                    projectManager.renderSidebar();
+                }
+                if (tasksResult.status === 'rejected') throw tasksResult.reason;
+                state.tasks = Array.isArray(tasksResult.value) ? tasksResult.value : [];
                 projectManager.renderSidebar();
                 this.calendar.removeAllEvents();
                 state.tasks.filter((task) => task.due_date && !task.is_done).forEach((task) => {
@@ -1527,31 +1552,41 @@
         async loadTasks(routeSequence) {
             const requestSequence = ++taskList.requestSequence;
             taskList.loading();
-            try {
-                const [tasks, projects] = await Promise.all([
-                    api.request('GET', '/api/tasks'),
-                    api.request('GET', '/api/projects')
-                ]);
-                if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
-                state.projects = Array.isArray(projects) ? projects : [];
-                state.tasks = Array.isArray(tasks) ? tasks : [];
-                notifications.update();
+            const [tasksResult, projectsResult] = await Promise.allSettled([
+                api.request('GET', '/api/tasks'),
+                api.request('GET', '/api/projects')
+            ]);
+            if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
+            if (projectsResult.status === 'fulfilled') {
+                state.projects = Array.isArray(projectsResult.value) ? projectsResult.value : [];
                 projectManager.renderSidebar();
-                taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
-            } catch (error) {
-                if (requestSequence === taskList.requestSequence && routeSequence === state.routeSequence) taskList.error(error);
             }
+            if (tasksResult.status === 'rejected') {
+                taskList.error(tasksResult.reason);
+                return;
+            }
+            state.tasks = Array.isArray(tasksResult.value) ? tasksResult.value : [];
+            notifications.update();
+            taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
         },
         async loadProjects(routeSequence, route) {
             try {
-                const [projects, tasks] = await Promise.all([api.request('GET', '/api/projects'), api.request('GET', '/api/tasks')]);
+                const projects = await api.request('GET', '/api/projects');
                 if (routeSequence !== state.routeSequence) return;
                 state.projects = Array.isArray(projects) ? projects : [];
-                state.tasks = Array.isArray(tasks) ? tasks : [];
-                notifications.update();
                 projectManager.renderSidebar();
                 if (route.name === 'projects') projectManager.renderList();
                 else {
+                    // Úlohy detailu projektu načítajú samostatne; zoznam projektov funguje už vo fáze B5.
+                    try {
+                        const tasks = await api.request('GET', '/api/tasks');
+                        if (routeSequence === state.routeSequence) state.tasks = Array.isArray(tasks) ? tasks : [];
+                    } catch (_) {
+                        if (routeSequence !== state.routeSequence) return;
+                        state.tasks = [];
+                    }
+                    if (routeSequence !== state.routeSequence) return;
+                    notifications.update();
                     const cached = state.projects.find((item) => String(item.id) === String(route.id));
                     if (!cached) { document.getElementById('project-detail-view').textContent = 'Projekt sa nenašiel.'; return; }
                     try { await Promise.all([api.request('GET', `/api/projects/${encodeURIComponent(route.id)}`), api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`)]); }
