@@ -1804,6 +1804,9 @@
     window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList, commentThreads };
     i18n.init();
     theme.init();
+    // Demo údaje zobraz iba pri lokálnom mocku, aby sa neplietli so skutočným účtom.
+    const demoLoginHint = document.getElementById('demo-login-hint');
+    if (demoLoginHint) demoLoginHint.hidden = !Boolean((window.TASKO_CONFIG || {}).demoMode);
     taskForm.initEditor();
     i18n.apply();
     dropdowns.init(document);

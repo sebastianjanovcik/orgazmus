@@ -1,8 +1,9 @@
 # Tasko
 
 Tasko je responzívna ukážková aplikácia na správu úloh, projektov, kalendára a
-komentárov. Frontend v `public/` komunikuje s lokálnym Postman mock serverom;
-PHP API a databáza zatiaľ nie sú implementované.
+komentárov. Frontend v `public/` predvolene komunikuje s lokálnym Postman mock
+serverom. PHP API obsahuje autentifikáciu a profil; trvalé účty a dáta vyžadujú
+lokálne nakonfigurovanú MySQL databázu.
 
 ## Požiadavky
 
@@ -37,13 +38,13 @@ obsahuje iba verejné lokálne nastavenie; Postman API kľúč doň nevkladaj.
 
 ## Ukážka prihlásenia
 
-Mock pri `GET /api/me` predvolene vráti `401`, takže sa zobrazí prihlásenie.
-Na načítanie ukážkového Premium účtu dočasne nastav v `config.js`
-`mockResponse: 'authenticated'`; frontend túto hodnotu odošle mocku v hlavičke
-`x-mock-response-name`. Po ukážke ju vráť na `null` alebo nastavenie odstráň.
+Frontend pri otvorení stránky zavolá `GET /api/me`; mock vráti `401` a zobrazí
+prihlasovaciu obrazovku. Na lokálne prihlásenie použi účet
+`jana@example.sk` s heslom `password`. Mock tieto údaje overí a po úspechu
+zobrazí aplikáciu. Ide iba o ukážkový účet: registrácia, zmeny a prihlásenie sa
+neukladajú medzi obnoveniami stránky. Pre trvalé účty nakonfiguruj MySQL podľa
+[návodu k databáze](db/README.md).
 
-Mock prehráva statické odpovede a neuchováva registrácie, zmeny, session ani
-prepnutý plán. Obnovenie stránky môže preto vrátiť pôvodné ukážkové údaje.
 Alternatívne chybové odpovede možno vyžiadať cez hlavičku
 `x-mock-response-code` pri priamom volaní API; detaily sú v [API kontrakte](docs/api.md).
 
@@ -67,7 +68,8 @@ Na spustenie frontendu spolu s PHP API použi PHP 8.5 a router vstavaného serve
 php -S localhost:8000 -t public public/router.php
 ```
 
-Otvor `http://localhost:8000`. Frontend odvodí základnú cestu API z umiestnenia
-`config.js`, takže požiadavky aj session cookie zostanú na rovnakom origine bez
-Postman mock servera. Aktuálne sú na PHP API hotové autentifikačné a profilové endpointy B4;
-projekty, úlohy a komentáre sa doplnia v ďalších krokoch.
+Otvor `http://localhost:8000`. Pred spustením zmeň `apiBase` v
+`public/assets/js/config.js` na `http://localhost:8000` a `demoMode` na `false`.
+Požiadavky aj session cookie zostanú na rovnakom origine bez Postman mock servera.
+Autentifikačné a profilové endpointy sú implementované; ostatné API časti sa
+dopĺňajú podľa plánu.

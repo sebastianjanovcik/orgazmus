@@ -153,14 +153,17 @@ Mock je statický: prehráva uložené príklady a neukladá zmeny ani session.
 Lokálny mock z repozitára sa spúšťa cez Postman CLI bez prihlásenia a nie je
 cloudovou adresou dostupnou z internetu.
 
-Mock prehráva prvý uložený úspešný príklad. Na vyžiadanie alternatívnej
-chybovej ukážky pošli hlavičku `x-mock-response-code` s jej HTTP kódom,
-napríklad `x-mock-response-code: 403`.
+Mock prehráva uložené príklady; pri `POST /api/auth/login` prijme iba lokálny
+demo účet `jana@example.sk` s heslom `password`. Ostatné kombinácie vrátia
+všeobecnú chybu `401 invalid_credentials`. Na vyžiadanie alternatívnej chybovej
+ukážky pošli hlavičku `x-mock-response-code` s jej HTTP kódom, napríklad
+`x-mock-response-code: 403`.
 
 Frontend pri štarte volá `GET /api/me`. Lokálny mock pri tejto ceste predvolene
 vracia `401 unauthenticated`, aby sa dala predviesť prihlasovacia obrazovka.
 Pre ukážku už prihlásenej relácie pošli `x-mock-response-name: authenticated`;
-mock si však stav prihlásenia po obnovení stránky neuchováva.
+mock si však stav prihlásenia po obnovení stránky neuchováva. Prihlásenie cez
+demo účet platí iba v otvorenej stránke a nie je skutočnou serverovou session.
 
 ```powershell
 postman mock run ./postman/mocks/tasko/config.yaml

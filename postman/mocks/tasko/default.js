@@ -4,6 +4,7 @@
 const http = require('http');
 const PORT = process.env.PORT || 4500;
 const mockUser = { id: 1, email: 'jana@example.sk', name: 'Jana Nová', plan: 'standard' };
+const demoPassword = 'password';
 
 const server = http.createServer((req, res) => {
   // Lokálny mock povoľuje požiadavky z vývojového webu a preflight pre JSON hlavičky.
@@ -47,16 +48,23 @@ const server = http.createServer((req, res) => {
   // @endpoint POST /api/auth/login
   if (req.method === 'POST' && pathname === '/api/auth/login') {
     const requestedStatusCode = namedStatus[exampleName] || req.headers['x-mock-response-code'];
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      let credentials = {};
+      try { credentials = JSON.parse(body); } catch (_) { /* Neplatné JSON sa správa ako nesprávne prihlasovacie údaje. */ }
 
-    // "Nesprávne prihlasovacie údaje" — when x-mock-response-code: 401
-    if (requestedStatusCode === '401') {
-      res.writeHead(401, {"Content-Type":"application/json; charset=utf-8"});
-      return res.end(JSON.stringify({"error":{"code":"invalid_credentials","message":"E-mail alebo heslo nie sú správne.","fields":{}}}));
-    }
+      // Mock povolí iba zverejnený demo účet; nevytvára ani neukladá skutočnú session.
+      const email = String(credentials?.email || '').trim().toLowerCase();
+      if (requestedStatusCode === '401' || email !== mockUser.email || credentials?.password !== demoPassword) {
+        res.writeHead(401, {"Content-Type":"application/json; charset=utf-8"});
+        return res.end(JSON.stringify({"error":{"code":"invalid_credentials","message":"E-mail alebo heslo nie sú správne.","fields":{}}}));
+      }
 
-    // "Úspešná odpoveď" — default
-    res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
-    return res.end(JSON.stringify({"data":mockUser}));
+      res.writeHead(200, {"Content-Type":"application/json; charset=utf-8"});
+      return res.end(JSON.stringify({"data":mockUser}));
+    });
+    return;
   }
 
   // @endpoint POST /api/auth/logout
