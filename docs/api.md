@@ -70,7 +70,8 @@ Hĺbka sa odvodzuje na serveri; klient ju neposiela. Zoznam sa zoradí podľa
 | `GET /api/me` | Áno | — | `200`, `data: user` | `401 unauthenticated` |
 | `PATCH /api/me` | Áno | `name` | `200`, `data: user` | `422 validation_failed` |
 | `PATCH /api/me/password` | Áno | `current_password`, `new_password` | `204` bez tela; obnoví ID session | `422 validation_failed` |
-| `PATCH /api/me/plan` | Áno, iba demo režim | `plan` (`standard` alebo `premium`) | `200`, `data: user` | `403 forbidden`, `422 validation_failed` |
+| `GET /api/me/plan` | Áno, iba demo režim | — | `200`, `data: {plan}` | `404 not_found` mimo demo režimu |
+| `PATCH /api/me/plan` | Áno, iba demo režim | `plan` (`standard` alebo `premium`) | `200`, `data: user` | `404 not_found` mimo demo režimu, `422 validation_failed` |
 | `GET /api/projects` | Áno | — | `200`, `data: project[]` | `401 unauthenticated` |
 | `POST /api/projects` | Áno | `name`, `description`, `icon` | `201`, `data: project` | `403 plan_limit`, `409 name_taken`, `422 validation_failed` |
 | `GET /api/projects/{id}` | Áno, vlastník | — | `200`, `data: project` | `404 not_found` |
@@ -115,6 +116,11 @@ aktuálneho používateľa a vráti napríklad `{"data":{"deleted":3}}`.
   použiť akciu `/complete` alebo `/uncomplete`.
 - `standard` má najviac 3 projekty a nemá komentáre. Ďalší projekt vráti
   `403 plan_limit`; endpointy komentárov vrátia `403 premium_required`.
+- Registrácia vytvorí účet s plánom `standard`, jeho predvolený projekt
+  `Osobné` a prihlásenú session. Verejná odpoveď nikdy neobsahuje hash hesla.
+- Prepínač plánu je dostupný len ak lokálny `config.php` obsahuje
+  `demo_mode => true`; predvolený stav bez tejto voľby je vypnutý a endpoint
+  vráti `404`. V bežnej prevádzke sa plán mení priamo v databáze.
 - `premium` nemá limit projektov a môže komentovať. Koreň komentára má hĺbku
   0; najhlbšia povolená odpoveď má hĺbku 4. Odpoveď, ktorá by limit
   prekročila, vráti `422 comment_too_deep`. Zmazanie komentára odstráni aj
