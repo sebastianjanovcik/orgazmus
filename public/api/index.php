@@ -107,6 +107,16 @@ try {
         throw new TaskoHttpException(400, 'bad_request', 'Cesta požiadavky nie je platná.');
     }
 
+    // Pri lokálnom XAMPP môže byť public/ podpriečinkom DocumentRoot; odstráň tento prefix po Apache rewrite.
+    $scriptPath = parse_url((string) ($_SERVER['SCRIPT_NAME'] ?? ''), PHP_URL_PATH);
+    $frontControllerSuffix = '/api/index.php';
+    if (is_string($scriptPath) && str_ends_with($scriptPath, $frontControllerSuffix)) {
+        $applicationPrefix = substr($scriptPath, 0, -strlen($frontControllerSuffix));
+        if ($applicationPrefix !== '' && str_starts_with($requestPath, $applicationPrefix . '/')) {
+            $requestPath = substr($requestPath, strlen($applicationPrefix));
+        }
+    }
+
     // OPTIONS neotvára API pre iné originy; pre rovnaký frontend iba oznamuje povolené metódy.
     if ($method === 'OPTIONS') {
         header('Allow: GET, POST, PATCH, DELETE, OPTIONS');

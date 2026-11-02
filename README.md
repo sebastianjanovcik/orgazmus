@@ -57,3 +57,17 @@ Alternatívne chybové odpovede možno vyžiadať cez hlavičku
 
 Verzie nástrojov a knižníc sú uvedené v [VERSIONS.md](VERSIONS.md).
 Záznam kontrol a neoverených scenárov F14 je v [docs/frontend-demo.md](docs/frontend-demo.md).
+
+## Spustenie s PHP API
+
+Lokálne PHP API používa databázu nastavenú v ignorovanom `config/config.php`.
+Na spustenie frontendu spolu s PHP API použi PHP 8.5 a router vstavaného servera:
+
+```powershell
+php -S localhost:8000 -t public public/router.php
+```
+
+Otvor `http://localhost:8000`. Frontend odvodí základnú cestu API z umiestnenia
+`config.js`, takže požiadavky aj session cookie zostanú na rovnakom origine bez
+Postman mock servera. Aktuálne sú na PHP API hotové autentifikačné a profilové endpointy B4;
+projekty, úlohy a komentáre sa doplnia v ďalších krokoch.
