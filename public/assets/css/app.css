@@ -230,6 +230,31 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .styled-select-option + .styled-select-option { border-top: 1px solid rgba(255,255,255,.055); }
 .styled-select-option[aria-selected="true"] { color: var(--accent-contrast); background: var(--accent); font-weight: 700; }
 .styled-select-option[aria-disabled="true"] { cursor: not-allowed; opacity: .45; }
+.native-date-source { display: none !important; }
+.date-picker { position: relative; width: 100%; }
+.date-picker-trigger { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, var(--page)); box-shadow: inset 0 1px 2px rgba(25, 30, 50, .035); cursor: pointer; text-align: left; transition: border-color .18s, background-color .18s, box-shadow .18s; }
+.date-picker-trigger:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); background: var(--surface-solid); }
+.date-picker-trigger:focus-visible { border-color: var(--accent); outline: 3px solid var(--accent-soft); outline-offset: 2px; }
+.date-picker-trigger[aria-invalid="true"] { border-color: var(--danger); }
+.date-picker-trigger:disabled { cursor: not-allowed; opacity: .58; }
+.date-picker-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.date-picker-icon { position: relative; width: 18px; height: 18px; flex: none; border: 1.5px solid var(--muted); border-radius: 4px; }
+.date-picker-icon::before { position: absolute; top: 4px; right: 0; left: 0; border-top: 1.5px solid var(--muted); content: ""; }
+.date-picker-icon::after { position: absolute; top: -3px; left: 4px; width: 7px; height: 5px; border-right: 1.5px solid var(--muted); border-left: 1.5px solid var(--muted); content: ""; }
+.date-picker-menu { position: fixed; z-index: 31; padding: 14px; overflow: auto; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; color: var(--dropdown-ink); background: var(--dropdown-surface); box-shadow: 0 14px 35px rgba(15, 16, 27, .3), inset 0 1px rgba(255,255,255,.07); }
+.date-picker-menu[hidden] { display: none; }
+.date-picker-header { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; gap: 6px; margin-bottom: 12px; }
+.date-picker-header h3 { margin: 0; color: inherit; font-size: 15px; font-weight: 700; text-align: center; text-transform: capitalize; }
+.date-picker-month-button { width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; color: inherit; background: rgba(255,255,255,.055); cursor: pointer; font-size: 23px; line-height: 1; }
+.date-picker-month-button:hover { color: #fff; background: var(--dropdown-hover); }
+.date-picker-weekdays, .date-picker-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.date-picker-weekdays { margin-bottom: 5px; color: #a8a6b4; font-size: 11px; font-weight: 650; }
+.date-picker-weekdays span { padding: 4px 0; }
+.date-picker-day { min-width: 0; min-height: 36px; padding: 0; border: 1px solid transparent; border-radius: 9px; color: var(--dropdown-ink); background: transparent; cursor: pointer; font-size: 13px; }
+.date-picker-day:hover, .date-picker-day:focus-visible { border-color: rgba(255,255,255,.12); color: #fff; background: var(--dropdown-hover); outline: none; }
+.date-picker-day.is-outside-month { color: #858391; }
+.date-picker-day.is-today { border-color: color-mix(in srgb, var(--accent) 65%, transparent); }
+.date-picker-day.is-selected { color: var(--accent-contrast); background: var(--accent); font-weight: 750; }
 .panel-form textarea { resize: vertical; }
 .rich-editor { width: 100%; min-height: 120px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: color-mix(in srgb, var(--surface) 75%, var(--page)); font-size: 16px; overflow-wrap: anywhere; }
 .rich-editor:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }

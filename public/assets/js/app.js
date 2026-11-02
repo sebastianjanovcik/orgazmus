@@ -107,6 +107,7 @@
         },
         navigate() {
             dropdowns.close();
+            datePicker.close();
             const sequence = ++state.routeSequence;
             const route = this.current();
             /* Aplikačné obrazovky sú súkromné; samotná kontrola prehliadača je len UX vrstva. */
@@ -368,6 +369,159 @@
         }
     });
 
+    /* Kalendár termínu používa lokálne dátumy, aby sa pri ukladaní neposunul deň cez UTC. */
+    const datePicker = {
+        active: null,
+        init(root) {
+            (root || document).querySelectorAll('input[type="date"]').forEach((input) => {
+                if (input.dataset.datePickerReady) { this.sync(input); return; }
+                input.dataset.datePickerReady = 'true';
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                if (label) label.htmlFor = `${input.id}-trigger`;
+                const wrapper = document.createElement('div'); wrapper.className = 'date-picker';
+                input.parentNode.insertBefore(wrapper, input); wrapper.append(input);
+                input.classList.add('native-date-source'); input.tabIndex = -1; input.setAttribute('aria-hidden', 'true');
+                const trigger = document.createElement('button');
+                trigger.type = 'button'; trigger.className = 'date-picker-trigger'; trigger.id = `${input.id}-trigger`;
+                trigger.setAttribute('aria-haspopup', 'dialog'); trigger.setAttribute('aria-expanded', 'false'); trigger.setAttribute('aria-controls', `${input.id}-calendar`);
+                trigger.setAttribute('aria-label', label?.textContent.trim() || 'Termín');
+                if (input.required) trigger.setAttribute('aria-required', 'true');
+                if (input.getAttribute('aria-describedby')) trigger.setAttribute('aria-describedby', input.getAttribute('aria-describedby'));
+                const text = document.createElement('span'); text.className = 'date-picker-value';
+                const icon = document.createElement('span'); icon.className = 'date-picker-icon'; icon.setAttribute('aria-hidden', 'true');
+                trigger.append(text, icon); wrapper.append(trigger);
+                const menu = document.createElement('section'); menu.className = 'date-picker-menu'; menu.id = `${input.id}-calendar`;
+                menu.setAttribute('role', 'dialog'); menu.setAttribute('aria-label', i18n.language === 'cs' ? 'Výběr termínu' : 'Výber termínu'); menu.hidden = true;
+                const header = document.createElement('div'); header.className = 'date-picker-header';
+                const previous = document.createElement('button'); previous.type = 'button'; previous.className = 'date-picker-month-button'; previous.dataset.month = '-1'; previous.setAttribute('aria-label', i18n.language === 'cs' ? 'Předchozí měsíc' : 'Predchádzajúci mesiac'); previous.textContent = '‹';
+                const heading = document.createElement('h3'); heading.id = `${input.id}-month-heading`;
+                const next = document.createElement('button'); next.type = 'button'; next.className = 'date-picker-month-button'; next.dataset.month = '1'; next.setAttribute('aria-label', i18n.language === 'cs' ? 'Následující měsíc' : 'Nasledujúci mesiac'); next.textContent = '›';
+                header.append(previous, heading, next);
+                const weekdays = document.createElement('div'); weekdays.className = 'date-picker-weekdays'; weekdays.setAttribute('aria-hidden', 'true');
+                const locale = i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK';
+                for (let day = 5; day <= 11; day += 1) {
+                    const name = document.createElement('span'); name.textContent = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(new Date(2026, 0, day)); weekdays.append(name);
+                }
+                const grid = document.createElement('div'); grid.className = 'date-picker-grid'; grid.setAttribute('role', 'grid'); grid.setAttribute('aria-labelledby', heading.id);
+                menu.append(header, weekdays, grid); document.body.append(menu);
+                trigger.addEventListener('click', () => menu.hidden ? this.open(input) : this.close());
+                trigger.addEventListener('keydown', (event) => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); this.open(input); }
+                });
+                menu.querySelectorAll('[data-month]').forEach((button) => button.addEventListener('click', () => this.shiftMonth(input, Number(button.dataset.month))));
+                menu.addEventListener('click', (event) => {
+                    const day = event.target.closest('[data-date]');
+                    if (day) this.choose(input, day.dataset.date);
+                });
+                menu.addEventListener('keydown', (event) => this.keydown(event, input));
+                input.addEventListener('change', () => this.sync(input));
+                this.sync(input);
+            });
+        },
+        sync(input) {
+            const wrapper = input.closest('.date-picker'); if (!wrapper) return;
+            const trigger = wrapper.querySelector('.date-picker-trigger');
+            const value = wrapper.querySelector('.date-picker-value');
+            trigger.disabled = input.disabled;
+            if (input.getAttribute('aria-invalid') === 'true') trigger.setAttribute('aria-invalid', 'true');
+            else trigger.removeAttribute('aria-invalid');
+            if (!input.value) value.textContent = i18n.language === 'cs' ? 'Vyberte termín' : 'Vyber termín';
+            else {
+                const [year, month, day] = input.value.split('-').map(Number);
+                value.textContent = new Intl.DateTimeFormat(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(year, month - 1, day));
+            }
+        },
+        open(input) {
+            if (input.disabled) return;
+            dropdowns.close(); this.close();
+            const wrapper = input.closest('.date-picker'); const trigger = wrapper.querySelector('.date-picker-trigger');
+            const menu = document.getElementById(`${input.id}-calendar`); const rect = trigger.getBoundingClientRect();
+            const width = Math.min(336, window.innerWidth - 24);
+            const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
+            const below = window.innerHeight - rect.bottom - 12; const opensUp = below < 300 && rect.top > below;
+            menu.style.left = `${left}px`; menu.style.width = `${width}px`;
+            menu.style.maxHeight = `${Math.max(220, Math.min(390, opensUp ? rect.top - 12 : below))}px`;
+            menu.style.top = opensUp ? '' : `${rect.bottom + 6}px`;
+            menu.style.bottom = opensUp ? `${window.innerHeight - rect.top + 6}px` : '';
+            const date = input.value ? this.parse(input.value) : this.parse(components.today());
+            menu.dataset.year = String(date.getFullYear()); menu.dataset.month = String(date.getMonth());
+            this.render(input); menu.hidden = false; trigger.setAttribute('aria-expanded', 'true'); this.active = input;
+            const selected = input.value || components.today();
+            this.focusDay(menu, selected);
+        },
+        parse(value) { const [year, month, day] = value.split('-').map(Number); return new Date(year, month - 1, day); },
+        toISO(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; },
+        render(input) {
+            const menu = document.getElementById(`${input.id}-calendar`);
+            const year = Number(menu.dataset.year); const month = Number(menu.dataset.month);
+            const locale = i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK';
+            menu.querySelector('h3').textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date(year, month, 1));
+            const grid = menu.querySelector('.date-picker-grid'); grid.replaceChildren();
+            const first = new Date(year, month, 1); const mondayOffset = (first.getDay() + 6) % 7;
+            const start = new Date(year, month, 1 - mondayOffset); const today = components.today();
+            for (let index = 0; index < 42; index += 1) {
+                const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index); const iso = this.toISO(date);
+                const button = document.createElement('button'); button.type = 'button'; button.className = 'date-picker-day';
+                button.dataset.date = iso; button.textContent = String(date.getDate());
+                button.setAttribute('aria-label', new Intl.DateTimeFormat(locale, { dateStyle: 'full' }).format(date));
+                button.setAttribute('aria-pressed', String(input.value === iso));
+                if (date.getMonth() !== month) button.classList.add('is-outside-month');
+                if (iso === today) { button.classList.add('is-today'); button.setAttribute('aria-current', 'date'); }
+                if (input.value === iso) button.classList.add('is-selected');
+                grid.append(button);
+            }
+        },
+        shiftMonth(input, amount) {
+            const menu = document.getElementById(`${input.id}-calendar`);
+            const current = new Date(Number(menu.dataset.year), Number(menu.dataset.month) + amount, 1);
+            menu.dataset.year = String(current.getFullYear()); menu.dataset.month = String(current.getMonth());
+            this.render(input);
+            const day = input.value ? this.parse(input.value).getDate() : new Date().getDate();
+            this.focusDay(menu, this.toISO(new Date(current.getFullYear(), current.getMonth(), Math.min(day, new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate()))));
+        },
+        focusDay(menu, iso) { menu.querySelector(`[data-date="${iso}"]`)?.focus(); },
+        choose(input, iso) {
+            input.value = iso; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true }));
+            this.sync(input); this.close();
+            const trigger = input.closest('.date-picker')?.querySelector('.date-picker-trigger'); if (trigger?.isConnected) trigger.focus();
+        },
+        close() {
+            if (!this.active) return;
+            const input = this.active; const menu = document.getElementById(`${input.id}-calendar`);
+            if (menu) menu.hidden = true;
+            input.closest('.date-picker')?.querySelector('.date-picker-trigger')?.setAttribute('aria-expanded', 'false');
+            this.active = null;
+        },
+        keydown(event, input) {
+            const menu = event.currentTarget;
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.close(); input.closest('.date-picker').querySelector('.date-picker-trigger').focus(); return; }
+            const currentButton = event.target.closest('[data-date]'); if (!currentButton) return;
+            const current = this.parse(currentButton.dataset.date); let next = null;
+            if (event.key === 'ArrowLeft') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() - 1);
+            if (event.key === 'ArrowRight') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
+            if (event.key === 'ArrowUp') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() - 7);
+            if (event.key === 'ArrowDown') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 7);
+            if (event.key === 'Home') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() - ((current.getDay() + 6) % 7));
+            if (event.key === 'End') next = new Date(current.getFullYear(), current.getMonth(), current.getDate() + (6 - ((current.getDay() + 6) % 7)));
+            if (event.key === 'PageUp' || event.key === 'PageDown') {
+                event.preventDefault(); this.shiftMonth(input, event.key === 'PageUp' ? -1 : 1); return;
+            }
+            if (next) {
+                event.preventDefault(); const month = document.getElementById(`${input.id}-calendar`);
+                if (next.getMonth() !== Number(month.dataset.month) || next.getFullYear() !== Number(month.dataset.year)) { month.dataset.year = String(next.getFullYear()); month.dataset.month = String(next.getMonth()); this.render(input); }
+                this.focusDay(menu, this.toISO(next));
+            }
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        if (datePicker.active) {
+            const wrapper = datePicker.active.closest('.date-picker');
+            const menu = document.getElementById(`${datePicker.active.id}-calendar`);
+            if (!wrapper.contains(event.target) && !menu.contains(event.target)) datePicker.close();
+        }
+    });
+
     const ui = {
         toastTimer: null,
         panelReturnTargets: new WeakMap(),
@@ -406,6 +560,7 @@
             if (firstControl) firstControl.focus();
         },
         closePanels() {
+            datePicker.close();
             let returnTarget = null;
             document.querySelectorAll('.panel.is-open').forEach((panel) => {
                 const target = this.panelReturnTargets.get(panel);
@@ -908,6 +1063,7 @@
             form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
             form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
             dropdowns.sync(form.elements.project_id);
+            datePicker.sync(form.elements.due_date);
         },
         showErrors(fields) {
             const form = document.getElementById('task-form');
@@ -917,10 +1073,12 @@
                 const error = document.getElementById(`task-${name.replace('_', '-')}-error`);
                 if (input) input.setAttribute('aria-invalid', 'true');
                 if (input?.tagName === 'SELECT') dropdowns.sync(input);
+                if (input?.type === 'date') datePicker.sync(input);
                 if (error) error.textContent = message;
             });
             const firstInvalid = form.querySelector('[aria-invalid="true"]');
             if (firstInvalid?.classList.contains('native-select-source')) firstInvalid.closest('.styled-select')?.querySelector('.styled-select-trigger').focus();
+            else if (firstInvalid?.classList.contains('native-date-source')) firstInvalid.closest('.date-picker')?.querySelector('.date-picker-trigger').focus();
             else if (firstInvalid) firstInvalid.focus();
         },
         open(task, dueDate) {
@@ -931,6 +1089,7 @@
             form.elements.title.value = task ? task.title || '' : '';
             form.elements.priority.value = String(task ? task.priority || 2 : 2);
             form.elements.due_date.value = task ? task.due_date || '' : dueDate || components.today();
+            datePicker.sync(form.elements.due_date);
             form.elements.description.value = task ? task.description || '' : '';
             document.getElementById('task-description').innerHTML = this.sanitize(task && task.description || '');
             const select = form.elements.project_id;
@@ -1588,6 +1747,7 @@
     theme.init();
     i18n.apply();
     dropdowns.init(document);
+    datePicker.init(document);
     views.init();
     notifications.update();
     notifications.scheduleMidnight();
