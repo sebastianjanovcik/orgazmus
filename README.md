@@ -1,30 +1,59 @@
 # Tasko
 
-Tasko je prototyp aplikácie na správu úloh. Aktuálny návrh rozhrania je v súbore
-`To-do wireframe.html`.
+Tasko je responzívna ukážková aplikácia na správu úloh, projektov, kalendára a
+komentárov. Frontend v `public/` komunikuje s lokálnym Postman mock serverom;
+PHP API a databáza zatiaľ nie sú implementované.
 
-## Spustenie
+## Požiadavky
 
-Vyžaduje sa PHP 8.5. V koreňovom priečinku projektu spusti:
+- PHP 8.5
+- Postman CLI 1.82 alebo kompatibilná novšia verzia
+
+## Spustenie dema
+
+V koreňovom priečinku projektu otvor dva samostatné terminály. V prvom spusti
+PHP webserver a nechaj ho bežať:
 
 ```powershell
 php -S localhost:8000 -t public
 ```
 
-Potom otvor `http://localhost:8000`. Webový server sprístupňuje iba priečinok
-`public/`; konfiguračné a databázové súbory zostávajú mimo verejného koreňa.
+V druhom spusti Postman mock a tiež nechaj terminál otvorený:
 
-V tomto kroku je vstupná stránka iba minimálna kostra. API, databáza a
-interaktívne funkcie budú doplnené v ďalších krokoch plánu.
+```powershell
+postman mock run ./postman/mocks/tasko/config.yaml
+```
 
-## Štruktúra
+Otvor `http://localhost:8000`. Frontend predvolene používa mock na
+`http://127.0.0.1:4500`, nastavený v `public/assets/js/config.js`. Ak je port
+4500 obsadený, spusti mock na inom porte:
 
-- `public/` – súbory dostupné prehliadaču vrátane vstupného bodu a API ciest.
-- `includes/` – opakovane použiteľný aplikačný PHP kód.
-- `config/` – lokálna konfigurácia; skutočné tajomstvá sa neukladajú do Gitu.
-- `db/` – databázová schéma a vývojové SQL skripty.
-- `docs/` – plán a technická dokumentácia.
-- `public/assets/` – štýly, logo a lokálne knižnice, ktoré používa stránka.
-- `trash/` – odložené súbory zachované mimo aplikácie; ich obsah sa nenačítava.
+```powershell
+postman mock run ./postman/mocks/tasko/config.yaml --port 4501
+```
+
+Potom v `config.js` zmeň `apiBase` na `http://127.0.0.1:4501`. Tento súbor
+obsahuje iba verejné lokálne nastavenie; Postman API kľúč doň nevkladaj.
+
+## Ukážka prihlásenia
+
+Mock pri `GET /api/me` predvolene vráti `401`, takže sa zobrazí prihlásenie.
+Na načítanie ukážkového Premium účtu dočasne nastav v `config.js`
+`mockResponse: 'authenticated'`; frontend túto hodnotu odošle mocku v hlavičke
+`x-mock-response-name`. Po ukážke ju vráť na `null` alebo nastavenie odstráň.
+
+Mock prehráva statické odpovede a neuchováva registrácie, zmeny, session ani
+prepnutý plán. Obnovenie stránky môže preto vrátiť pôvodné ukážkové údaje.
+Alternatívne chybové odpovede možno vyžiadať cez hlavičku
+`x-mock-response-code` pri priamom volaní API; detaily sú v [API kontrakte](docs/api.md).
+
+## Obsah repozitára
+
+- `public/` – frontend a jeho lokálne knižnice; toto je verejný koreň webservera.
+- `postman/` – kolekcia a konfigurácia lokálneho mock servera.
+- `docs/` – API kontrakt a plán vývoja.
+- `config/`, `db/`, `includes/` – príprava pre budúce PHP API a databázu.
+- `trash/` – odložené archívne súbory, ktoré aplikácia nenačítava.
 
 Verzie nástrojov a knižníc sú uvedené v [VERSIONS.md](VERSIONS.md).
+Záznam kontrol a neoverených scenárov F14 je v [docs/frontend-demo.md](docs/frontend-demo.md).

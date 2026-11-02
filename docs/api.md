@@ -144,8 +144,8 @@ Príklad chyby validácie:
 ## Postman mock
 
 Mock je statický: prehráva uložené príklady a neukladá zmeny ani session.
-Postman CLI nie je v tomto prostredí prihlásený, preto sa mock spúšťa lokálne
-bez účtu, nie ako cloudová adresa dostupná z internetu.
+Lokálny mock z repozitára sa spúšťa cez Postman CLI bez prihlásenia a nie je
+cloudovou adresou dostupnou z internetu.
 
 Mock prehráva prvý uložený úspešný príklad. Na vyžiadanie alternatívnej
 chybovej ukážky pošli hlavičku `x-mock-response-code` s jej HTTP kódom,
