@@ -168,13 +168,13 @@ try {
         '/api/me/password' => ['PATCH'],
         '/api/me/plan' => ['GET', 'PATCH'],
         '/api/projects' => ['GET', 'POST'],
-        '/api/tasks' => ['GET'],
+        '/api/tasks' => ['GET', 'POST'],
     ];
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
-        $allowedMethods[$route] = ['GET'];
+        $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
@@ -488,18 +488,129 @@ try {
         }
     }
 
-    if ($route === '/api/tasks' && $method === 'GET') {
+    if ($route === '/api/tasks' && in_array($method, ['GET', 'POST'], true)) {
         $user = tasko_authenticated_user();
+        if ($method === 'POST') {
+            tasko_require_same_origin();
+            $input = tasko_read_json_body();
+            $title = tasko_validate_name($input['title'] ?? null, 150);
+            $descriptionInput = $input['description'] ?? null;
+            $description = tasko_validate_task_description($descriptionInput);
+            $projectId = $input['project_id'] ?? null;
+            $priority = $input['priority'] ?? 2;
+            $dueDate = $input['due_date'] ?? null;
+            $fields = [];
+            if ($title === null) $fields['title'] = 'Názov musí mať 1 až 150 znakov.';
+            if ($descriptionInput !== null) {
+                $descriptionLength = is_string($descriptionInput) ? tasko_text_length($descriptionInput) : null;
+                if ($descriptionLength === null || $descriptionLength > 2000) {
+                    $fields['description'] = 'Popis môže mať najviac 2 000 znakov.';
+                }
+            }
+            if (!tasko_validate_id($projectId)) $fields['project_id'] = 'Vyber platný projekt.';
+            if (!tasko_validate_priority($priority)) $fields['priority'] = 'Vyber prioritu od 1 do 4.';
+            if (!tasko_validate_date($dueDate)) $fields['due_date'] = 'Zadaj platný dátum YYYY-MM-DD.';
+            if ($fields !== []) tasko_validation_error($fields);
+
+            // Vlastníctvo projektu overuje server ešte pred zápisom, aj keď ho klient zobrazil vo výbere.
+            $pdo = tasko_db();
+            $project = $pdo->prepare('SELECT id FROM projects WHERE id = :project_id AND user_id = :user_id');
+            $project->execute(['project_id' => (int) $projectId, 'user_id' => $user['id']]);
+            if ($project->fetchColumn() === false) tasko_validation_error(['project_id' => 'Vybraný projekt neexistuje.']);
+
+            $insert = $pdo->prepare(
+                'INSERT INTO tasks (project_id, title, description, priority, due_date)
+                 VALUES (:project_id, :title, :description, :priority, :due_date)'
+            );
+            $insert->execute([
+                'project_id' => (int) $projectId,
+                'title' => $title,
+                'description' => $description,
+                'priority' => (int) $priority,
+                'due_date' => $dueDate,
+            ]);
+            tasko_json_response(201, tasko_task_find($pdo, (int) $user['id'], (int) $pdo->lastInsertId()));
+        }
+
         $filters = tasko_task_filters($_GET);
         tasko_json_response(200, tasko_tasks_find(tasko_db(), (int) $user['id'], $filters));
     }
 
-    if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1 && $method === 'GET') {
+    if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1 && in_array($method, ['GET', 'PATCH', 'DELETE'], true)) {
         $user = tasko_authenticated_user();
         if (!tasko_validate_id($taskRoute[1])) {
             throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
         }
-        tasko_json_response(200, tasko_task_find(tasko_db(), (int) $user['id'], (int) $taskRoute[1]));
+        $taskId = (int) $taskRoute[1];
+        $pdo = tasko_db();
+        $current = tasko_task_find($pdo, (int) $user['id'], $taskId);
+
+        if ($method === 'GET') tasko_json_response(200, $current);
+        tasko_require_same_origin();
+        if ($method === 'DELETE') {
+            $delete = $pdo->prepare(
+                'DELETE t FROM tasks t INNER JOIN projects p ON p.id = t.project_id
+                 WHERE t.id = :task_id AND p.user_id = :user_id'
+            );
+            $delete->execute(['task_id' => $taskId, 'user_id' => $user['id']]);
+            tasko_json_response(204);
+        }
+
+        $input = tasko_read_json_body();
+        // Povolené názvy polí tvoria aj zoznam SQL identifikátorov; hodnoty ostávajú parametrizované.
+        $allowedFields = ['title', 'description', 'project_id', 'priority', 'due_date'];
+        $unknown = array_diff(array_keys($input), $allowedFields);
+        if ($unknown !== [] || $input === []) {
+            tasko_validation_error(['task' => 'Pošli aspoň jedno povolené pole úlohy.']);
+        }
+
+        $values = [];
+        $fields = [];
+        if (array_key_exists('title', $input)) {
+            $values['title'] = tasko_validate_name($input['title'], 150);
+            if ($values['title'] === null) $fields['title'] = 'Názov musí mať 1 až 150 znakov.';
+        }
+        if (array_key_exists('description', $input)) {
+            $values['description'] = tasko_validate_task_description($input['description']);
+            if ($input['description'] !== null) {
+                $descriptionLength = is_string($input['description']) ? tasko_text_length($input['description']) : null;
+                if ($descriptionLength === null || $descriptionLength > 2000) {
+                    $fields['description'] = 'Popis môže mať najviac 2 000 znakov.';
+                }
+            }
+        }
+        if (array_key_exists('project_id', $input)) {
+            $values['project_id'] = $input['project_id'];
+            if (!tasko_validate_id($values['project_id'])) {
+                $fields['project_id'] = 'Vyber platný projekt.';
+            } else {
+                $project = $pdo->prepare('SELECT id FROM projects WHERE id = :project_id AND user_id = :user_id');
+                $project->execute(['project_id' => (int) $values['project_id'], 'user_id' => $user['id']]);
+                if ($project->fetchColumn() === false) $fields['project_id'] = 'Vybraný projekt neexistuje.';
+                else $values['project_id'] = (int) $values['project_id'];
+            }
+        }
+        if (array_key_exists('priority', $input)) {
+            $values['priority'] = $input['priority'];
+            if (!tasko_validate_priority($values['priority'])) $fields['priority'] = 'Vyber prioritu od 1 do 4.';
+            else $values['priority'] = (int) $values['priority'];
+        }
+        if (array_key_exists('due_date', $input)) {
+            $values['due_date'] = $input['due_date'];
+            if (!tasko_validate_date($values['due_date'])) $fields['due_date'] = 'Zadaj platný dátum YYYY-MM-DD.';
+        }
+        if ($fields !== []) tasko_validation_error($fields);
+
+        $assignments = [];
+        foreach (array_keys($values) as $field) $assignments[] = "`$field` = :$field";
+        $values['task_id'] = $taskId;
+        $values['user_id'] = (int) $user['id'];
+        $update = $pdo->prepare(
+            'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id SET ' . implode(', ', $assignments) .
+            ' WHERE t.id = :task_id AND p.user_id = :user_id'
+        );
+        $update->execute($values);
+        tasko_json_response(200, tasko_task_find($pdo, (int) $user['id'], $taskId));
     }
 
     // Metódy meniace stav sa nikdy nevykonajú bez rovnakého originu.
