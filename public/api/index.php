@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../includes/validation.php';
 require_once __DIR__ . '/../../includes/security.php';
 require_once __DIR__ . '/../../includes/rules.php';
 require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/tasks.php';
 
 /** Porovná Origin s originom aktuálneho hostiteľa; API je určené pre rovnaký frontend. */
 function tasko_is_same_origin(string $origin): bool
@@ -167,9 +168,13 @@ try {
         '/api/me/password' => ['PATCH'],
         '/api/me/plan' => ['GET', 'PATCH'],
         '/api/projects' => ['GET', 'POST'],
+        '/api/tasks' => ['GET'],
     ];
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
+    }
+    if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
+        $allowedMethods[$route] = ['GET'];
     }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
@@ -481,6 +486,20 @@ try {
             }
             tasko_json_response(204);
         }
+    }
+
+    if ($route === '/api/tasks' && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        $filters = tasko_task_filters($_GET);
+        tasko_json_response(200, tasko_tasks_find(tasko_db(), (int) $user['id'], $filters));
+    }
+
+    if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1 && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($taskRoute[1])) {
+            throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        }
+        tasko_json_response(200, tasko_task_find(tasko_db(), (int) $user['id'], (int) $taskRoute[1]));
     }
 
     // Metódy meniace stav sa nikdy nevykonajú bez rovnakého originu.
