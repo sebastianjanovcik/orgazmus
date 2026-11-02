@@ -176,6 +176,12 @@ try {
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
+    if (preg_match('#^/api/tasks/([^/]+)/(complete|uncomplete)$#D', $route, $taskActionRoute) === 1) {
+        $allowedMethods[$route] = ['POST'];
+    }
+    if ($route === '/api/tasks/completed') {
+        $allowedMethods[$route] = ['DELETE'];
+    }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
         throw new TaskoHttpException(405, 'method_not_allowed', 'Táto HTTP metóda nie je na danej ceste podporovaná.');
@@ -534,6 +540,46 @@ try {
 
         $filters = tasko_task_filters($_GET);
         tasko_json_response(200, tasko_tasks_find(tasko_db(), (int) $user['id'], $filters));
+    }
+
+    if ($route === '/api/tasks/completed' && $method === 'DELETE') {
+        $user = tasko_authenticated_user();
+        tasko_require_same_origin();
+        // Hromadné odstránenie sa vždy obmedzuje na hotové úlohy projektov aktuálneho účtu.
+        $delete = tasko_db()->prepare(
+            'DELETE t FROM tasks t
+             INNER JOIN projects p ON p.id = t.project_id
+             WHERE p.user_id = :user_id AND t.is_done = 1'
+        );
+        $delete->execute(['user_id' => (int) $user['id']]);
+        tasko_json_response(200, ['deleted' => $delete->rowCount()]);
+    }
+
+    if (preg_match('#^/api/tasks/([^/]+)/(complete|uncomplete)$#D', $route, $taskActionRoute) === 1 && $method === 'POST') {
+        $user = tasko_authenticated_user();
+        tasko_require_same_origin();
+        if (!tasko_validate_id($taskActionRoute[1])) {
+            throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        }
+        $taskId = (int) $taskActionRoute[1];
+        $pdo = tasko_db();
+        // Pred zmenou stavu sa kontroluje vlastníctvo; cudzie ID má rovnakú odpoveď ako neexistujúce.
+        tasko_task_find($pdo, (int) $user['id'], $taskId);
+        if ($taskActionRoute[2] === 'complete') {
+            $update = $pdo->prepare(
+                'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
+                 SET t.is_done = 1, t.completed_at = COALESCE(t.completed_at, UTC_TIMESTAMP())
+                 WHERE t.id = :task_id AND p.user_id = :user_id'
+            );
+        } else {
+            $update = $pdo->prepare(
+                'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
+                 SET t.is_done = 0, t.completed_at = NULL
+                 WHERE t.id = :task_id AND p.user_id = :user_id'
+            );
+        }
+        $update->execute(['task_id' => $taskId, 'user_id' => (int) $user['id']]);
+        tasko_json_response(200, tasko_task_find($pdo, (int) $user['id'], $taskId));
     }
 
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1 && in_array($method, ['GET', 'PATCH', 'DELETE'], true)) {
