@@ -29,9 +29,9 @@ try {
     ]);
     $pdo->beginTransaction();
 
-    // Pevné heslo uľahčuje lokálne testovanie; do databázy sa uloží iba jeho hash.
+    // Náhodné heslá nefungujú mimo jedného behu seeda; do databázy sa uloží iba ich hash.
     $users = [
-        1 => ['jana@example.sk', 'Jana Nová', 'standard', 'sebo5599'],
+        1 => ['jana@example.sk', 'Jana Nová', 'standard', bin2hex(random_bytes(16))],
         2 => ['premium@example.sk', 'Peter Prémiový', 'premium', bin2hex(random_bytes(16))],
     ];
     $userStatement = $pdo->prepare(
