@@ -14,7 +14,8 @@
         <header class="topbar" aria-label="Horná lišta">
             <button class="icon-button menu-toggle" type="button" aria-label="Otvoriť menu" aria-controls="navigation-drawer" data-action="menu-toggle">☰</button>
             <a class="brand" href="#tasks" aria-label="Tasko – úvodná stránka"><img src="assets/img/tasko.svg" alt="" width="36" height="36"><span>task<span class="brand-accent">o</span></span></a>
-            <button class="icon-button notification-button" type="button" aria-label="Notifikácie" data-action="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a2 2 0 0 0 3.4 0"/></svg><span class="notification-dot" aria-hidden="true"></span></button>
+            <button class="icon-button notification-button" type="button" aria-label="Notifikácie" aria-controls="notification-panel" aria-expanded="false" data-action="notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M10.3 21a2 2 0 0 0 3.4 0"/></svg><span class="notification-dot" aria-hidden="true"></span></button>
+            <section class="notification-panel" id="notification-panel" aria-label="Upozornenia" hidden><div class="notification-panel-heading"><h2 data-i18n="notifications">Upozornenia</h2><button class="icon-button" type="button" data-action="notifications-close" aria-label="Zavrieť">×</button></div><ul id="notification-list"></ul></section>
             <button class="avatar" type="button" aria-label="Otvoriť profil" data-action="profile-open">?</button>
         </header>
 

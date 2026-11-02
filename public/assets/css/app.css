@@ -75,6 +75,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .avatar.is-premium { position: relative; border-color: #f1c75b; }
 .avatar.is-premium::after { content: "♛"; position: absolute; top: -7px; right: -7px; display: grid; width: 19px; height: 19px; place-items: center; border: 1px solid var(--surface); border-radius: 50%; color: #5c4300; background: #ffd76a; font-size: 12px; }
 .notification-button { margin-left: auto; }
+.notification-dot[hidden] { display: none; }
+.notification-panel { position: fixed; z-index: 7; top: calc(72px + env(safe-area-inset-top)); right: 18px; width: min(360px, calc(100vw - 28px)); max-height: min(65vh, 480px); overflow: auto; padding: 15px; border: 1px solid var(--glass-border); border-radius: 18px; color: var(--ink); background: var(--surface-solid); box-shadow: var(--shadow); }
+.notification-panel[hidden] { display: none; }
+.notification-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notification-panel-heading h2 { margin: 0; font-size: 16px; }
+.notification-panel ul { display: grid; gap: 7px; margin: 12px 0 0; padding: 0; list-style: none; }
+.notification-panel li { display: grid; gap: 3px; padding: 10px 11px; border-radius: 11px; background: var(--surface); font-size: 13px; overflow-wrap: anywhere; }
+.notification-overdue { color: var(--danger); font-size: 11px; font-weight: 700; }
+.notification-today { color: var(--accent); font-size: 11px; font-weight: 700; }
+.notification-empty { color: var(--muted); }
 
 /* Desktop ponecháva navigáciu viditeľnú; na menších šírkach ju otvorí panel. */
 .sidebar { position: sticky; top: 72px; display: flex; flex-direction: column; align-self: stretch; min-height: calc(100vh - 72px); padding: 30px 16px 20px; border-right: 1px solid var(--line); }
@@ -223,7 +233,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .demo-plan-toggle { width: 100%; margin: 4px 0 12px; }
 .logout-profile-button { width: 100%; min-height: 46px; margin: 22px 0 8px; border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line)); border-radius: 13px; color: var(--danger); background: transparent; cursor: pointer; font-weight: 700; }
 .logout-profile-button:disabled { cursor: wait; opacity: .65; }
-.settings-card { padding: 22px; border: 1px solid var(--glass-border); border-radius: 20px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+.settings-card { margin-bottom: 14px; padding: 22px; border: 1px solid var(--glass-border); border-radius: 20px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
 .settings-card h2 { margin: 0; font-size: 18px; }
 .settings-card p { margin: 5px 0 16px; color: var(--muted); font-size: 14px; }
 .settings-card label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 650; }

@@ -2,13 +2,28 @@
 (function ($, window, document) {
     'use strict';
 
+    /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
-        sk: {
-            all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár',
-            done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt',
-            login: 'Prihlásenie', register: 'Registrácia'
+        dictionaries: {
+            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', filter: 'Filtrovať', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.' },
+            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', filter: 'Filtrovat', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.' }
         },
-        t(key) { return this.sk[key] || key; },
+        language: 'sk',
+        key: 'tasko.language',
+        init() {
+            try { if (['sk', 'cs'].includes(window.localStorage.getItem(this.key))) this.language = window.localStorage.getItem(this.key); } catch (_) {}
+            document.documentElement.lang = this.language;
+        },
+        t(key) { return this.dictionaries[this.language][key] || this.dictionaries.sk[key] || key; },
+        set(language) {
+            if (!['sk', 'cs'].includes(language)) return;
+            this.language = language;
+            document.documentElement.lang = language;
+            try { window.localStorage.setItem(this.key, language); } catch (_) { ui.showToast(this.language === 'cs' ? 'Jazyk se změnil, ale volbu se nepodařilo uložit.' : 'Jazyk sa zmenil, ale voľbu sa nepodarilo uložiť.', 'error'); }
+            this.apply();
+            router.navigate();
+            notifications.update();
+        },
         apply(root) {
             (root || document).querySelectorAll('[data-i18n]').forEach((node) => {
                 const value = this.t(node.dataset.i18n);
@@ -112,7 +127,8 @@
                 else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'settings') {
-                    view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1><p class="page-subtitle">Prispôsob si vzhľad aplikácie.</p></div></div><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">Vzhľad</h2><p>Vyber, ako sa má Tasko zobrazovať.</p><label for="theme-preference">Farebný režim</label><select id="theme-preference"><option value="system">Automaticky podľa zariadenia</option><option value="light">Svetlý</option><option value="dark">Tmavý</option></select></section>`;
+                    view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
+                    document.getElementById('language-preference').value = i18n.language;
                     theme.apply();
                 } else if (!page.auth) {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1>${title}</h1><p class="page-subtitle">Obsah tejto obrazovky sa pripravuje.</p></div></div>`;
@@ -134,6 +150,53 @@
             if (['calendar', 'done', 'stats'].includes(route.name) && state.user) views.loadInsights(sequence, route.name);
             if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
             if (sequence !== state.routeSequence) return;
+        }
+    };
+
+    /* Upozornenia sú odvodené z už načítaných otvorených úloh; mock API sa tým nemení. */
+    const notifications = {
+        relevantTasks() {
+            const today = components.today();
+            return state.tasks.filter((task) => !task.is_done && task.due_date && task.due_date <= today)
+                .sort((a, b) => a.due_date.localeCompare(b.due_date));
+        },
+        update() {
+            const button = document.querySelector('.notification-button');
+            const badge = document.querySelector('.notification-dot');
+            if (!button || !badge) return;
+            const count = this.relevantTasks().length;
+            badge.hidden = count === 0;
+            badge.setAttribute('aria-label', i18n.t('overdue_count').replace('{count}', count));
+            button.setAttribute('aria-label', `${i18n.t('notifications')} (${count})`);
+        },
+        show() {
+            const tasks = this.relevantTasks();
+            const panel = document.getElementById('notification-panel');
+            const list = document.getElementById('notification-list');
+            if (!panel || !list) return;
+            list.replaceChildren();
+            if (!tasks.length) {
+                const empty = document.createElement('li'); empty.className = 'notification-empty';
+                empty.textContent = i18n.t('no_notifications'); list.append(empty);
+            } else tasks.forEach((task) => {
+                const row = document.createElement('li');
+                const label = document.createElement('span');
+                label.className = task.due_date < components.today() ? 'notification-overdue' : 'notification-today';
+                label.textContent = task.due_date < components.today() ? i18n.t('overdue') : i18n.t('due_today');
+                const title = document.createElement('span'); title.textContent = task.title;
+                row.append(label, title); list.append(row);
+            });
+            panel.hidden = false;
+            document.querySelector('.notification-button').setAttribute('aria-expanded', 'true');
+        },
+        scheduleMidnight() {
+            const now = new Date();
+            const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+            window.setTimeout(() => {
+                this.update();
+                if (router.current().name === 'tasks' && state.user) views.loadTasks(state.routeSequence);
+                this.scheduleMidnight();
+            }, next.getTime() - now.getTime());
         }
     };
 
@@ -1103,6 +1166,7 @@
                 if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
                 state.projects = Array.isArray(projects) ? projects : [];
                 state.tasks = Array.isArray(tasks) ? tasks : [];
+                notifications.update();
                 projectManager.renderSidebar();
                 taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
             } catch (error) {
@@ -1115,6 +1179,7 @@
                 if (routeSequence !== state.routeSequence) return;
                 state.projects = Array.isArray(projects) ? projects : [];
                 state.tasks = Array.isArray(tasks) ? tasks : [];
+                notifications.update();
                 projectManager.renderSidebar();
                 if (route.name === 'projects') projectManager.renderList();
                 else {
@@ -1274,7 +1339,11 @@
         if (action === 'logout') auth.logout(this);
         if (action === 'navigate' && this.getAttribute('href')) ui.closePanels();
         if (action === 'filter') ui.showToast('Filtrovanie úloh bude dostupné v ďalšom kroku.');
-        if (action === 'notifications') ui.showToast('Nemáš nové upozornenia.');
+        if (action === 'notifications') notifications.show();
+        if (action === 'notifications-close') {
+            document.getElementById('notification-panel').hidden = true;
+            document.querySelector('.notification-button').setAttribute('aria-expanded', 'false');
+        }
         if (action === 'login-submit' || action === 'register-submit') {
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
@@ -1329,13 +1398,24 @@
     $(document).on('change', '#theme-preference', function () {
         theme.set(this.value);
     });
+    $(document).on('change', '#language-preference', function () { i18n.set(this.value); });
 
     $(document).on('keydown', (event) => {
         if (event.key === 'Escape' && !document.getElementById('confirm-dialog').open) ui.closePanels();
+        if (event.key === 'Escape') {
+            const panel = document.getElementById('notification-panel');
+            if (panel && !panel.hidden) {
+                panel.hidden = true;
+                document.querySelector('.notification-button').setAttribute('aria-expanded', 'false');
+            }
+        }
     });
 
     window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList, commentThreads };
+    i18n.init();
     theme.init();
     i18n.apply();
     views.init();
+    notifications.update();
+    notifications.scheduleMidnight();
 }(window.jQuery, window, document));
