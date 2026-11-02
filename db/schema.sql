@@ -1,7 +1,7 @@
 -- Základná lokálna schéma Tasko; opakovaný import obnoví štruktúru tabuliek.
 CREATE DATABASE IF NOT EXISTS tasko
     CHARACTER SET utf8mb4
-    COLLATE utf8mb4_0900_ai_ci;
+    COLLATE utf8mb4_unicode_ci;
 
 USE tasko;
 

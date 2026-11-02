@@ -7,7 +7,11 @@ const mockUser = { id: 1, email: 'jana@example.sk', name: 'Jana Nová', plan: 's
 
 const server = http.createServer((req, res) => {
   // Lokálny mock povoľuje požiadavky z vývojového webu a preflight pre JSON hlavičky.
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8000');
+  // PHP server sa lokálne otvára cez localhost alebo jeho IPv4 adresu.
+  const origin = req.headers.origin;
+  if (origin === 'http://localhost:8000' || origin === 'http://127.0.0.1:8000') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mock-response-name, x-api-key');
   if (req.method === 'OPTIONS') {
