@@ -896,11 +896,18 @@
         updateCounts(tasks) {
             const open = tasks.filter((task) => !task.is_done);
             const done = tasks.filter((task) => task.is_done);
-            document.getElementById('open-task-count').textContent = String(open.length);
-            document.getElementById('overdue-task-count').textContent = String(open.filter((task) => task.due_date && task.due_date < components.today()).length);
-            document.getElementById('completed-task-count').textContent = String(done.length);
-            document.getElementById('open-section-count').textContent = `${open.length} ${open.length === 1 ? 'úloha' : 'úloh'}`;
-            document.getElementById('done-section-count').textContent = `${done.length} ${done.length === 1 ? 'úloha' : 'úloh'}`;
+            const counts = {
+                'open-task-count': String(open.length),
+                'overdue-task-count': String(open.filter((task) => task.due_date && task.due_date < components.today()).length),
+                'completed-task-count': String(done.length),
+                'open-section-count': `${open.length} ${open.length === 1 ? 'úloha' : 'úloh'}`,
+                'done-section-count': `${done.length} ${done.length === 1 ? 'úloha' : 'úloh'}`
+            };
+            // Projektový detail tieto počítadlá nemá; aktualizujeme iba prvky prítomné v aktuálnom pohľade.
+            Object.entries(counts).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
         },
         setCardDone(card, button, task, isDone) {
             task.is_done = isDone;
@@ -930,8 +937,14 @@
                         if (updatedTask.completed_at !== undefined) task.completed_at = updatedTask.completed_at;
                         this.updateCounts(state.tasks);
                     }
-                    // Po potvrdení serverom sa karta prekreslí v správnej sekcii; pri chybe ostáva na mieste.
-                    this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                    // Projektový detail má vlastné stĺpce, preto po potvrdení znovu vykreslíme práve jeho úlohy.
+                    const route = router.current();
+                    if (route.name === 'project') {
+                        const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
+                        if (project) projectManager.renderDetail(project);
+                    } else {
+                        this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                    }
                 })
                 .catch((error) => {
                     this.setCardDone(card, button, task, previousState);
