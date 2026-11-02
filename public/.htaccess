@@ -4,3 +4,7 @@
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
 </IfModule>
+
+# API cesty obsluhuje spoločný front controller.
+RewriteEngine On
+RewriteRule ^api(?:/.*)?$ api/index.php [QSA,L]
