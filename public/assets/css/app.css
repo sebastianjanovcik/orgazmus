@@ -275,7 +275,6 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 /* Odseky a zoznamy si zachovajú zreteľné bloky v editore aj v detaile úlohy. */
 .task-form-actions { align-items: center; }
 .task-form-actions .action-spacer { flex: 1; }
-.task-delete-button { color: var(--danger); }
 .panel-actions { display: flex; gap: 10px; padding: 14px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
 .button { display: inline-flex; min-height: 48px; flex: 1; align-items: center; justify-content: center; padding: 10px 16px; border: 0; border-radius: 14px; cursor: pointer; font-weight: 700; }
 .button-primary { color: var(--accent-contrast); background: var(--accent); }.button-quiet { color: var(--ink); background: var(--accent-soft); }
@@ -311,7 +310,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .project-card-description { align-self: start; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .project-card-stats { grid-column: 1; color: var(--muted); font-size: 12px; }
 .project-card progress { grid-column: 1 / -1; width: 100%; height: 7px; accent-color: var(--project-color, var(--accent)); }
-.project-edit { grid-column: 2; grid-row: 2; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); cursor: pointer; }
+.project-edit { grid-column: 2; grid-row: 2; min-height: 38px; padding: 0 10px; border: 1px solid var(--accent); border-radius: 10px; color: var(--accent-contrast); background: var(--accent); cursor: pointer; }
 .project-limit-notice { margin: 0 0 18px; padding: 13px 16px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 14px; color: var(--muted); background: var(--accent-soft); font-size: 13px; }
 .project-limit-notice.is-limit-reached { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
 .project-empty { grid-column: 1 / -1; margin: 0; padding: 22px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); background: var(--surface); font-size: 13px; }
