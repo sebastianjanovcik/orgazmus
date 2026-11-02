@@ -83,6 +83,35 @@ function tasko_validation_error(array $fields): never
     throw new TaskoHttpException(422, 'validation_failed', 'Skontroluj zadané údaje.', $fields);
 }
 
+/** Vráti projekt aj so súhrnnými počtami; každý výber je viazaný na vlastníka. */
+function tasko_project_row(PDO $pdo, int $userId, int $projectId): array
+{
+    $statement = $pdo->prepare(
+        'SELECT p.id, p.name, p.description, p.icon, p.color,
+                COUNT(t.id) AS task_count,
+                COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
+         FROM projects p
+         LEFT JOIN tasks t ON t.project_id = p.id
+         WHERE p.user_id = :user_id AND p.id = :project_id
+         GROUP BY p.id, p.name, p.description, p.icon, p.color'
+    );
+    $statement->execute(['user_id' => $userId, 'project_id' => $projectId]);
+    $project = $statement->fetch();
+    if (!is_array($project)) {
+        throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+    }
+
+    return [
+        'id' => (int) $project['id'],
+        'name' => (string) $project['name'],
+        'description' => (string) $project['description'],
+        'icon' => (string) $project['icon'],
+        'color' => (string) $project['color'],
+        'task_count' => (int) $project['task_count'],
+        'done_count' => (int) $project['done_count'],
+    ];
+}
+
 try {
     // Hlavičky platia pre úspešné aj chybové odpovede; API neposkytuje obsah pre cudzie weby.
     header('X-Content-Type-Options: nosniff');
@@ -137,7 +166,11 @@ try {
         '/api/me' => ['GET', 'PATCH'],
         '/api/me/password' => ['PATCH'],
         '/api/me/plan' => ['GET', 'PATCH'],
+        '/api/projects' => ['GET', 'POST'],
     ];
+    if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
+        $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
+    }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
         throw new TaskoHttpException(405, 'method_not_allowed', 'Táto HTTP metóda nie je na danej ceste podporovaná.');
@@ -283,6 +316,171 @@ try {
 
     if ($route === '/api/me' && $method === 'GET') {
         tasko_json_response(200, tasko_public_user(tasko_authenticated_user()));
+    }
+
+    if ($route === '/api/projects' && in_array($method, ['GET', 'POST'], true)) {
+        $user = tasko_authenticated_user();
+        if ($method === 'POST') tasko_require_same_origin();
+        $userId = (int) $user['id'];
+        $pdo = tasko_db();
+
+        if ($method === 'GET') {
+            $statement = $pdo->prepare(
+                'SELECT p.id, p.name, p.description, p.icon, p.color,
+                        COUNT(t.id) AS task_count,
+                        COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
+                 FROM projects p
+                 LEFT JOIN tasks t ON t.project_id = p.id
+                 WHERE p.user_id = :user_id
+                 GROUP BY p.id, p.name, p.description, p.icon, p.color
+                 ORDER BY p.id'
+            );
+            $statement->execute(['user_id' => $userId]);
+            $projects = array_map(static fn (array $project): array => [
+                'id' => (int) $project['id'],
+                'name' => (string) $project['name'],
+                'description' => (string) $project['description'],
+                'icon' => (string) $project['icon'],
+                'color' => (string) $project['color'],
+                'task_count' => (int) $project['task_count'],
+                'done_count' => (int) $project['done_count'],
+            ], $statement->fetchAll());
+            tasko_json_response(200, $projects);
+        }
+
+        $input = tasko_read_json_body();
+        $name = tasko_validate_name($input['name'] ?? null, 40);
+        $description = tasko_validate_project_description($input['description'] ?? null);
+        $icon = $input['icon'] ?? null;
+        $icons = ['briefcase', 'house', 'book', 'idea', 'target', 'pin'];
+        $fields = [];
+        if ($name === null) $fields['name'] = 'Názov musí mať 1 až 40 znakov.';
+        if ($description === null) $fields['description'] = 'Popis môže mať najviac 200 znakov.';
+        if (!is_string($icon) || !in_array($icon, $icons, true)) $fields['icon'] = 'Vyber platnú ikonu.';
+        if ($fields !== []) tasko_validation_error($fields);
+
+        // Zámok používateľa serializuje vytváranie projektov tej istej identity,
+        // takže dve súbežné požiadavky nemôžu obe obísť limit Standard.
+        try {
+            $pdo->beginTransaction();
+            $lock = $pdo->prepare('SELECT plan FROM users WHERE id = :id FOR UPDATE');
+            $lock->execute(['id' => $userId]);
+            $plan = $lock->fetchColumn();
+            if (!is_string($plan)) throw new TaskoHttpException(401, 'unauthenticated', 'Prihlásenie je potrebné.');
+            tasko_require_project_capacity($pdo, $userId, $plan);
+
+            $countQuery = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
+            $countQuery->execute(['user_id' => $userId]);
+            $colors = ['#6558d3', '#e28a42', '#4188c7', '#45a875', '#c45678', '#8a71d8', '#4e9b9b', '#bd9a36'];
+            $color = $colors[(int) $countQuery->fetchColumn() % count($colors)];
+            $insert = $pdo->prepare(
+                'INSERT INTO projects (user_id, name, description, icon, color)
+                 VALUES (:user_id, :name, :description, :icon, :color)'
+            );
+            $insert->execute([
+                'user_id' => $userId,
+                'name' => $name,
+                'description' => $description,
+                'icon' => $icon,
+                'color' => $color,
+            ]);
+            $projectId = (int) $pdo->lastInsertId();
+            $pdo->commit();
+        } catch (PDOException $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if (($error->errorInfo[1] ?? null) === 1062) {
+                throw new TaskoHttpException(409, 'name_taken', 'Projekt s týmto názvom už existuje.');
+            }
+            throw $error;
+        } catch (Throwable $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $error;
+        }
+        tasko_json_response(201, tasko_project_row($pdo, $userId, $projectId));
+    }
+
+    if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
+        $user = tasko_authenticated_user();
+        $userId = (int) $user['id'];
+        $projectId = $projectRoute[1];
+        if (!tasko_validate_id($projectId)) {
+            throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        }
+        $projectId = (int) $projectId;
+        $pdo = tasko_db();
+
+        if ($method === 'GET') {
+            tasko_json_response(200, tasko_project_row($pdo, $userId, $projectId));
+        }
+
+        if ($method === 'PATCH') {
+            tasko_require_same_origin();
+            $input = tasko_read_json_body();
+            $allowedFields = ['name', 'description', 'icon'];
+            $unknown = array_diff(array_keys($input), $allowedFields);
+            if ($unknown !== [] || array_intersect(array_keys($input), $allowedFields) === []) {
+                tasko_validation_error(['project' => 'Pošli aspoň jedno povolené pole projektu.']);
+            }
+            // Najprv sa overí vlastníctvo, aby sa cudzie ID správalo rovnako ako chýbajúce.
+            tasko_project_row($pdo, $userId, $projectId);
+            $values = [];
+            $fields = [];
+            if (array_key_exists('name', $input)) {
+                $values['name'] = tasko_validate_name($input['name'], 40);
+                if ($values['name'] === null) $fields['name'] = 'Názov musí mať 1 až 40 znakov.';
+            }
+            if (array_key_exists('description', $input)) {
+                $values['description'] = tasko_validate_project_description($input['description']);
+                if ($values['description'] === null) $fields['description'] = 'Popis môže mať najviac 200 znakov.';
+            }
+            if (array_key_exists('icon', $input)) {
+                $icons = ['briefcase', 'house', 'book', 'idea', 'target', 'pin'];
+                $values['icon'] = $input['icon'];
+                if (!is_string($values['icon']) || !in_array($values['icon'], $icons, true)) $fields['icon'] = 'Vyber platnú ikonu.';
+            }
+            if ($fields !== []) tasko_validation_error($fields);
+
+            $assignments = [];
+            foreach ($values as $field => $value) $assignments[] = "`$field` = :$field";
+            $values['project_id'] = $projectId;
+            $values['user_id'] = $userId;
+            try {
+                $update = $pdo->prepare('UPDATE projects SET ' . implode(', ', $assignments) . ' WHERE id = :project_id AND user_id = :user_id');
+                $update->execute($values);
+            } catch (PDOException $error) {
+                if (($error->errorInfo[1] ?? null) === 1062) {
+                    throw new TaskoHttpException(409, 'name_taken', 'Projekt s týmto názvom už existuje.');
+                }
+                throw $error;
+            }
+            tasko_json_response(200, tasko_project_row($pdo, $userId, $projectId));
+        }
+
+        if ($method === 'DELETE') {
+            tasko_require_same_origin();
+            try {
+                $pdo->beginTransaction();
+                // Rovnaký zámok ako pri vytvorení bráni súbehu mazania a vytvárania.
+                $lock = $pdo->prepare('SELECT id FROM users WHERE id = :id FOR UPDATE');
+                $lock->execute(['id' => $userId]);
+                if ($lock->fetchColumn() === false) throw new TaskoHttpException(401, 'unauthenticated', 'Prihlásenie je potrebné.');
+                $owned = $pdo->prepare('SELECT id FROM projects WHERE id = :id AND user_id = :user_id FOR UPDATE');
+                $owned->execute(['id' => $projectId, 'user_id' => $userId]);
+                if ($owned->fetchColumn() === false) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+                $count = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
+                $count->execute(['user_id' => $userId]);
+                if ((int) $count->fetchColumn() <= 1) {
+                    throw new TaskoHttpException(409, 'last_project', 'Posledný projekt nemožno zmazať.');
+                }
+                $delete = $pdo->prepare('DELETE FROM projects WHERE id = :id AND user_id = :user_id');
+                $delete->execute(['id' => $projectId, 'user_id' => $userId]);
+                $pdo->commit();
+            } catch (Throwable $error) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $error;
+            }
+            tasko_json_response(204);
+        }
     }
 
     // Metódy meniace stav sa nikdy nevykonajú bez rovnakého originu.
