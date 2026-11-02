@@ -1737,7 +1737,7 @@
 
     $(document).on('submit', '#project-form', function (event) {
         event.preventDefault();
-        projectManager.save(document.querySelector('[data-action="project-save"]'));
+        projectManager.save(document.querySelector('[type="submit"][form="project-form"]'));
     });
 
     $(document).on('submit', '.comment-form', function (event) {
