@@ -1368,10 +1368,7 @@
                 const locale = {
                     code: 'sk', week: { dow: 1, doy: 4 },
                     buttonText: { prev: 'Predchádzajúci mesiac', next: 'Nasledujúci mesiac', today: 'Dnes', month: 'Mesiac', week: 'Týždeň', day: 'Deň', list: 'Zoznam' },
-                    monthNames: ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl', 'august', 'september', 'október', 'november', 'december'],
-                    monthNamesShort: ['jan', 'feb', 'mar', 'apr', 'máj', 'jún', 'júl', 'aug', 'sep', 'okt', 'nov', 'dec'],
-                    dayNames: ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'],
-                    dayNamesShort: ['ne', 'po', 'ut', 'st', 'št', 'pi', 'so'],
+                    // FullCalendar 6 formátuje názvy dní a mesiacov podľa locale kódu cez Intl.
                     allDayText: 'Celý deň', moreLinkText: 'ďalšie', noEventsText: 'Žiadne úlohy'
                 };
                 this.calendar = new FullCalendar.Calendar(calendarRoot, {
