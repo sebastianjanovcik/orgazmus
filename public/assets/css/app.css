@@ -267,7 +267,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .rich-editor ul, .rich-editor ol { margin: .55em 0 .9em; padding-left: 1.5em; }
 .rich-editor li + li { margin-top: .3em; }
 .rich-editor:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
-.editor-toolbar { display: flex; gap: 6px; margin: 8px 0 0; }
+.editor-toolbar { display: flex; gap: 6px; margin: 8px 0 12px; }
 .editor-toolbar button { min-width: 38px; min-height: 36px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface); }
 .editor-toolbar button:focus-visible, .rich-editor:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
 .task-form-actions { align-items: center; }
