@@ -1048,6 +1048,7 @@
             const editor = $('#task-description');
             editor.summernote({
                 lang: i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK',
+                tooltip: false,
                 height: 150,
                 minHeight: 120,
                 placeholder: editor.attr('data-placeholder'),
