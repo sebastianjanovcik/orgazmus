@@ -81,6 +81,7 @@
             else document.documentElement.dataset.theme = this.preference;
             const selector = document.getElementById('theme-preference');
             if (selector) selector.value = this.preference;
+            if (selector) dropdowns.sync(selector);
         },
         set(preference) {
             if (!['system', 'light', 'dark'].includes(preference)) return;
@@ -137,6 +138,7 @@
             /* Nadpis aktualizujeme až po obnove obsahu, aby sa do šablóny úloh neuložil názov inej trasy. */
             const heading = document.getElementById('page-title');
             if (heading) heading.textContent = title;
+            if (view) dropdowns.init(view);
             document.querySelectorAll('.auth-card').forEach((card) => {
                 card.hidden = card.id === 'login-form' ? route.name !== 'login' : route.name !== 'register';
             });
@@ -199,6 +201,160 @@
             }, next.getTime() - now.getTime());
         }
     };
+
+    /* Vlastné menu dáva ponukám jednotný vzhľad; skrytý select ostáva zdrojom hodnoty formulára. */
+    const dropdowns = {
+        active: null,
+        init(root) {
+            (root || document).querySelectorAll('select').forEach((select) => {
+                if (select.dataset.dropdownReady) { this.sync(select); return; }
+                select.dataset.dropdownReady = 'true';
+                const label = document.querySelector(`label[for="${select.id}"]`);
+                if (label) label.htmlFor = `${select.id}-trigger`;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'styled-select';
+                select.parentNode.insertBefore(wrapper, select);
+                wrapper.append(select);
+                select.classList.add('native-select-source');
+                select.tabIndex = -1;
+                select.setAttribute('aria-hidden', 'true');
+                const trigger = document.createElement('button');
+                trigger.type = 'button';
+                trigger.className = 'styled-select-trigger';
+                trigger.id = `${select.id}-trigger`;
+                trigger.setAttribute('role', 'combobox');
+                trigger.setAttribute('aria-haspopup', 'listbox');
+                trigger.setAttribute('aria-expanded', 'false');
+                trigger.setAttribute('aria-controls', `${select.id}-listbox`);
+                trigger.setAttribute('aria-label', label?.textContent.trim() || select.getAttribute('aria-label') || 'Výber');
+                if (select.required) trigger.setAttribute('aria-required', 'true');
+                if (select.getAttribute('aria-describedby')) trigger.setAttribute('aria-describedby', select.getAttribute('aria-describedby'));
+                const value = document.createElement('span'); value.className = 'styled-select-value';
+                const chevron = document.createElement('span'); chevron.className = 'styled-select-chevron'; chevron.setAttribute('aria-hidden', 'true');
+                trigger.append(value, chevron);
+                wrapper.append(trigger);
+                const listbox = document.createElement('div');
+                listbox.className = 'styled-select-menu';
+                listbox.id = `${select.id}-listbox`;
+                listbox.setAttribute('role', 'listbox');
+                listbox.setAttribute('aria-label', trigger.getAttribute('aria-label'));
+                listbox.hidden = true;
+                wrapper.append(listbox);
+                trigger.addEventListener('click', () => listbox.hidden ? this.open(select) : this.close());
+                trigger.addEventListener('keydown', (event) => this.keydown(event, select));
+                select.addEventListener('change', () => this.sync(select));
+                this.sync(select);
+            });
+        },
+        sync(select) {
+            const wrapper = select.closest('.styled-select');
+            if (!wrapper) return;
+            const trigger = wrapper.querySelector('.styled-select-trigger');
+            const value = wrapper.querySelector('.styled-select-value');
+            const listbox = wrapper.querySelector('.styled-select-menu');
+            const selected = select.options[select.selectedIndex];
+            value.textContent = selected?.textContent || 'Vyber…';
+            trigger.disabled = select.disabled || select.options.length === 0;
+            if (select.getAttribute('aria-invalid') === 'true') trigger.setAttribute('aria-invalid', 'true');
+            else trigger.removeAttribute('aria-invalid');
+            listbox.replaceChildren();
+            Array.from(select.options).forEach((option, index) => {
+                const item = document.createElement('div');
+                item.className = 'styled-select-option';
+                item.id = `${select.id}-option-${index}`;
+                item.setAttribute('role', 'option');
+                item.setAttribute('aria-selected', String(option === selected));
+                item.setAttribute('aria-disabled', String(option.disabled));
+                item.textContent = option.textContent;
+                item.dataset.index = String(index);
+                item.addEventListener('pointerenter', () => this.activate(select, index));
+                item.addEventListener('click', () => { if (!option.disabled) this.choose(select, index); });
+                listbox.append(item);
+            });
+            if (this.active === select && listbox.hidden) this.active = null;
+        },
+        open(select, index) {
+            if (select.disabled) return;
+            this.close();
+            const wrapper = select.closest('.styled-select');
+            const trigger = wrapper.querySelector('.styled-select-trigger');
+            const listbox = wrapper.querySelector('.styled-select-menu');
+            const rect = trigger.getBoundingClientRect();
+            listbox.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8))}px`;
+            listbox.style.width = `${rect.width}px`;
+            const roomBelow = window.innerHeight - rect.bottom - 12;
+            const opensUp = roomBelow < 150 && rect.top > roomBelow;
+            listbox.style.maxHeight = `${Math.max(90, Math.min(240, opensUp ? rect.top - 12 : roomBelow))}px`;
+            listbox.classList.toggle('opens-up', opensUp);
+            listbox.style.top = listbox.classList.contains('opens-up') ? '' : `${rect.bottom + 6}px`;
+            listbox.style.bottom = listbox.classList.contains('opens-up') ? `${window.innerHeight - rect.top + 6}px` : '';
+            listbox.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            this.active = select;
+            this.activate(select, index ?? Math.max(0, select.selectedIndex));
+        },
+        close() {
+            if (!this.active) return;
+            const wrapper = this.active.closest('.styled-select');
+            wrapper.querySelector('.styled-select-menu').hidden = true;
+            wrapper.querySelector('.styled-select-menu').classList.remove('opens-up');
+            wrapper.querySelector('.styled-select-trigger').setAttribute('aria-expanded', 'false');
+            this.active = null;
+        },
+        activate(select, index) {
+            const wrapper = select.closest('.styled-select');
+            const options = Array.from(wrapper.querySelectorAll('.styled-select-option'));
+            const enabled = options.filter((option) => option.getAttribute('aria-disabled') !== 'true');
+            if (!enabled.length) return;
+            let item = options[index];
+            if (!item || item.getAttribute('aria-disabled') === 'true') item = enabled[0];
+            options.forEach((option) => option.classList.toggle('is-active', option === item));
+            wrapper.querySelector('.styled-select-trigger').setAttribute('aria-activedescendant', item.id);
+            item.scrollIntoView({ block: 'nearest' });
+        },
+        choose(select, index) {
+            const option = select.options[index];
+            if (!option || option.disabled) return;
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            this.sync(select);
+            this.close();
+            const trigger = select.closest('.styled-select')?.querySelector('.styled-select-trigger');
+            if (trigger?.isConnected) trigger.focus();
+        },
+        keydown(event, select) {
+            const wrapper = select.closest('.styled-select');
+            const options = Array.from(select.options);
+            const current = select.selectedIndex;
+            let next = current;
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (wrapper.querySelector('.styled-select-menu').hidden) this.open(select, current);
+                next = (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+                this.activate(select, next);
+            } else if (event.key === 'Home' || event.key === 'End') {
+                event.preventDefault();
+                if (wrapper.querySelector('.styled-select-menu').hidden) this.open(select);
+                next = event.key === 'Home' ? 0 : options.length - 1;
+                this.activate(select, next);
+            } else if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                const active = wrapper.querySelector('.styled-select-option.is-active');
+                if (!wrapper.querySelector('.styled-select-menu').hidden && active) this.choose(select, Number(active.dataset.index));
+                else this.open(select);
+            } else if (event.key === 'Escape') this.close();
+            else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+                const start = current + 1;
+                const ordered = options.slice(start).concat(options.slice(0, start));
+                const match = ordered.find((option) => option.textContent.trim().toLocaleLowerCase().startsWith(event.key.toLocaleLowerCase()));
+                if (match) { event.preventDefault(); this.open(select, options.indexOf(match)); }
+            }
+        }
+    };
+
+    document.addEventListener('click', (event) => {
+        if (dropdowns.active && !dropdowns.active.closest('.styled-select').contains(event.target)) dropdowns.close();
+    });
 
     const ui = {
         toastTimer: null,
@@ -739,6 +895,7 @@
             const form = document.getElementById('task-form');
             form.querySelectorAll('.field-error').forEach((node) => { node.textContent = ''; });
             form.querySelectorAll('[aria-invalid="true"]').forEach((node) => node.removeAttribute('aria-invalid'));
+            dropdowns.sync(form.elements.project_id);
         },
         showErrors(fields) {
             const form = document.getElementById('task-form');
@@ -747,10 +904,12 @@
                 const input = name === 'priority' ? form.querySelector('[name="priority"]') : id && document.getElementById(id);
                 const error = document.getElementById(`task-${name.replace('_', '-')}-error`);
                 if (input) input.setAttribute('aria-invalid', 'true');
+                if (input?.tagName === 'SELECT') dropdowns.sync(input);
                 if (error) error.textContent = message;
             });
             const firstInvalid = form.querySelector('[aria-invalid="true"]');
-            if (firstInvalid) firstInvalid.focus();
+            if (firstInvalid?.classList.contains('native-select-source')) firstInvalid.closest('.styled-select')?.querySelector('.styled-select-trigger').focus();
+            else if (firstInvalid) firstInvalid.focus();
         },
         open(task, dueDate) {
             const form = document.getElementById('task-form');
@@ -770,6 +929,7 @@
             }));
             const preferred = task ? task.project_id : state.projects[0]?.id;
             if (preferred != null) select.value = String(preferred);
+            dropdowns.sync(select);
             document.getElementById('task-panel-title').textContent = task ? 'Upraviť úlohu' : 'Nová úloha';
             document.querySelector('.task-delete-button').hidden = !task;
             ui.openPanel('task-panel');
@@ -1415,6 +1575,7 @@
     i18n.init();
     theme.init();
     i18n.apply();
+    dropdowns.init(document);
     views.init();
     notifications.update();
     notifications.scheduleMidnight();
