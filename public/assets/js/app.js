@@ -1444,7 +1444,7 @@
             if (name === 'done') {
                 target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Hotové úlohy</h1><p class="page-subtitle">Dokončené úlohy na jednom mieste.</p></div><button class="button button-danger" type="button" data-action="completed-clear">Zmazať všetky hotové</button></div><section class="task-section"><div id="completed-task-list" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
             } else {
-                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Štatistiky</h1><p class="page-subtitle">Prehľad dokončených úloh a priebehu projektov.</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">Priebeh projektov</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Štatistiky</h1><p class="page-subtitle">Prehľad dokončených úloh a priebehu projektov.</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">Priebeh projektov</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
             }
             try {
                 // Projekty sú dostupné už vo fáze B5, aj keď API úloh ešte nie je hotové.
@@ -1550,7 +1550,8 @@
                 const card = document.createElement('article'); card.className = 'summary-card statistic-card';
                 const number = document.createElement('strong'); number.textContent = String(value);
                 const caption = document.createElement('span'); caption.textContent = label;
-                card.append(number, caption); cards.append(card);
+                const content = document.createElement('div'); content.className = 'statistic-card-content';
+                content.append(number, caption); card.append(content); cards.append(card);
             });
             const list = document.getElementById('project-statistics');
             list.replaceChildren();

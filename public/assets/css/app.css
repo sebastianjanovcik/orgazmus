@@ -342,8 +342,10 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 #task-calendar .fc-daygrid-event { border-radius: 999px; padding: 1px 5px; }
 .calendar-day-section { margin-top: 28px; }
 .statistics-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
-.statistic-card { min-height: 114px; }
+.statistic-card { display: grid; min-height: 114px; place-items: center; text-align: center; }
+.statistic-card-content { display: grid; justify-items: center; gap: 4px; min-width: 0; }
 .statistic-card strong { font-size: 29px; }
+.statistic-card-content span { color: var(--muted); font-size: 13px; }
 .statistics-project-heading { margin: 0 0 14px; font-size: 17px; }
 .statistics-project-list { display: grid; gap: 16px; }
 .statistics-project-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; }
