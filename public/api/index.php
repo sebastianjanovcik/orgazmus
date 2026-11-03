@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../includes/security.php';
 require_once __DIR__ . '/../../includes/rules.php';
 require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/tasks.php';
+require_once __DIR__ . '/../../includes/comments.php';
 
 /** Porovná Origin s originom aktuálneho hostiteľa; API je určené pre rovnaký frontend. */
 function tasko_is_same_origin(string $origin): bool
@@ -180,6 +181,12 @@ try {
         $allowedMethods[$route] = ['POST'];
     }
     if ($route === '/api/tasks/completed') {
+        $allowedMethods[$route] = ['DELETE'];
+    }
+    if (preg_match('#^/api/tasks/([^/]+)/comments$#D', $route, $commentsRoute) === 1) {
+        $allowedMethods[$route] = ['GET', 'POST'];
+    }
+    if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1) {
         $allowedMethods[$route] = ['DELETE'];
     }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
@@ -553,6 +560,113 @@ try {
         );
         $delete->execute(['user_id' => (int) $user['id']]);
         tasko_json_response(200, ['deleted' => $delete->rowCount()]);
+    }
+
+    if (preg_match('#^/api/tasks/([^/]+)/comments$#D', $route, $commentsRoute) === 1 && in_array($method, ['GET', 'POST'], true)) {
+        $user = tasko_authenticated_user();
+        tasko_require_comment_access((string) $user['plan']);
+        if (!tasko_validate_id($commentsRoute[1])) {
+            throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        }
+        $userId = (int) $user['id'];
+        $taskId = (int) $commentsRoute[1];
+        $pdo = tasko_db();
+        tasko_task_find($pdo, $userId, $taskId);
+
+        if ($method === 'GET') {
+            tasko_json_response(200, tasko_comments_find($pdo, $taskId, $userId));
+        }
+
+        tasko_require_same_origin();
+        $input = tasko_read_json_body();
+        $unknown = array_diff(array_keys($input), ['body', 'parent_id', 'depth']);
+        $body = tasko_validate_comment_body($input['body'] ?? null);
+        $fields = [];
+        if ($unknown !== []) $fields['comment'] = 'Pošli iba povolené polia komentára.';
+        if ($body === null) $fields['body'] = 'Komentár musí mať 1 až 1 000 znakov.';
+
+        $parentId = null;
+        $depth = 0;
+        if (array_key_exists('parent_id', $input) && $input['parent_id'] !== null) {
+            if (!tasko_validate_id($input['parent_id'])) {
+                $fields['parent_id'] = 'Vyber platný rodičovský komentár.';
+            } else {
+                $parentId = (int) $input['parent_id'];
+                $parent = $pdo->prepare(
+                    'WITH RECURSIVE comment_tree AS (
+                        SELECT id, task_id, parent_id, 0 AS depth FROM comments
+                        WHERE id = :parent_id AND task_id = :task_id AND parent_id IS NULL
+                        UNION ALL
+                        SELECT child.id, child.task_id, child.parent_id, tree.depth + 1
+                        FROM comments child
+                        INNER JOIN comment_tree tree ON child.parent_id = tree.id AND child.task_id = tree.task_id
+                     )
+                     SELECT depth FROM comment_tree WHERE id = :target_id AND task_id = :target_task_id'
+                );
+                $parent->execute([
+                    'parent_id' => $parentId,
+                    'task_id' => $taskId,
+                    'target_id' => $parentId,
+                    'target_task_id' => $taskId,
+                ]);
+                $parentDepth = $parent->fetchColumn();
+                if ($parentDepth === false) {
+                    $fields['parent_id'] = 'Rodičovský komentár nepatrí k tejto úlohe.';
+                } else {
+                    $depth = (int) $parentDepth + 1;
+                }
+            }
+        }
+        if ($fields !== []) tasko_validation_error($fields);
+        if ($depth > 4) {
+            throw new TaskoHttpException(422, 'comment_too_deep', 'Odpoveď prekračuje maximálnu hĺbku komentárov.');
+        }
+
+        $insert = $pdo->prepare(
+            'INSERT INTO comments (task_id, parent_id, author_id, body)
+             VALUES (:task_id, :parent_id, :author_id, :body)'
+        );
+        $insert->execute([
+            'task_id' => $taskId,
+            'parent_id' => $parentId,
+            'author_id' => $userId,
+            'body' => $body,
+        ]);
+        $newId = (int) $pdo->lastInsertId();
+        $created = $pdo->prepare(
+            'SELECT id, task_id, parent_id, author_id, body, created_at, :depth AS depth,
+                    (SELECT name FROM users WHERE id = :author_id) AS author_name
+             FROM comments WHERE id = :id'
+        );
+        $created->execute(['depth' => $depth, 'author_id' => $userId, 'id' => $newId]);
+        $row = $created->fetch();
+        if (!is_array($row)) throw new RuntimeException('Vložený komentár sa nepodarilo načítať.');
+        tasko_json_response(201, tasko_comment_data($row, $userId));
+    }
+
+    if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1 && $method === 'DELETE') {
+        $user = tasko_authenticated_user();
+        tasko_require_comment_access((string) $user['plan']);
+        tasko_require_same_origin();
+        if (!tasko_validate_id($commentRoute[1])) {
+            throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
+        }
+        // Vlastníctvo úlohy aj autorstvo sa kontrolujú spolu, aby cudzie komentáre nebolo možné rozlíšiť.
+        $delete = tasko_db()->prepare(
+            'DELETE comments FROM comments
+             INNER JOIN tasks ON tasks.id = comments.task_id
+             INNER JOIN projects ON projects.id = tasks.project_id
+             WHERE comments.id = :comment_id AND comments.author_id = :author_id AND projects.user_id = :user_id'
+        );
+        $delete->execute([
+            'comment_id' => (int) $commentRoute[1],
+            'author_id' => (int) $user['id'],
+            'user_id' => (int) $user['id'],
+        ]);
+        if ($delete->rowCount() === 0) {
+            throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
+        }
+        tasko_json_response(204);
     }
 
     if (preg_match('#^/api/tasks/([^/]+)/(complete|uncomplete)$#D', $route, $taskActionRoute) === 1 && $method === 'POST') {
