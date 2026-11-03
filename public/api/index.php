@@ -595,22 +595,17 @@ try {
                 $parent = $pdo->prepare(
                     'WITH RECURSIVE comment_tree AS (
                         SELECT id, task_id, parent_id, 0 AS depth FROM comments
-                        WHERE id = :parent_id AND task_id = :task_id AND parent_id IS NULL
+                        WHERE id = :parent_id AND task_id = :task_id
                         UNION ALL
-                        SELECT child.id, child.task_id, child.parent_id, tree.depth + 1
-                        FROM comments child
-                        INNER JOIN comment_tree tree ON child.parent_id = tree.id AND child.task_id = tree.task_id
+                        SELECT parent.id, parent.task_id, parent.parent_id, tree.depth + 1
+                        FROM comments parent
+                        INNER JOIN comment_tree tree ON tree.parent_id = parent.id AND tree.task_id = parent.task_id
                      )
-                     SELECT depth FROM comment_tree WHERE id = :target_id AND task_id = :target_task_id'
+                     SELECT MAX(depth) FROM comment_tree'
                 );
-                $parent->execute([
-                    'parent_id' => $parentId,
-                    'task_id' => $taskId,
-                    'target_id' => $parentId,
-                    'target_task_id' => $taskId,
-                ]);
+                $parent->execute(['parent_id' => $parentId, 'task_id' => $taskId]);
                 $parentDepth = $parent->fetchColumn();
-                if ($parentDepth === false) {
+                if ($parentDepth === false || $parentDepth === null) {
                     $fields['parent_id'] = 'Rodičovský komentár nepatrí k tejto úlohe.';
                 } else {
                     $depth = (int) $parentDepth + 1;
