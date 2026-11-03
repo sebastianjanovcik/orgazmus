@@ -95,7 +95,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## F10 – Projekty a limit plánu
 
-**Čo sa urobí:** Doplnia sa zoznam projektov, detail projektu, úprava a zmazanie. Nový projekt dostane ikonu a automatickú farbu. Plán Standard zobrazí a vynucuje limit troch projektov v rozhraní.
+**Čo sa urobí:** Doplnia sa zoznam projektov, detail projektu, úprava a zmazanie. Nový projekt dostane ikonu a automatickú farbu. Plán Standard zobrazí a vynucuje limit troch vlastnených projektov v rozhraní. Rozšírenie spolupráce doplní členov a pozvánky podľa `docs/api.md`; zobrazené projekty zahŕňajú aj projekty s aktívnym členstvom.
 
 **Výstupy:** Projektové obrazovky, formulár projektu, počty a vizuálne vysvetlenie limitu.
 
@@ -103,7 +103,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## F11 – Komentáre a odpovede
 
-**Čo sa urobí:** Do detailu úlohy sa pridajú komentáre a odpovede s maximálnou hĺbkou štyroch úrovní. Používateľ Standard uvidí uzamknutú Premium funkciu. Autor môže odstrániť svoj komentár.
+**Čo sa urobí:** Do detailu úlohy sa pridajú komentáre a odpovede s maximálnou hĺbkou štyroch úrovní. Používateľ Standard uvidí uzamknutú Premium funkciu. Autor môže odstrániť svoj komentár. Pri spolupráci sa čítanie riadi prístupom k úlohe, zápis oprávneniami a Premium plánom; doplnia sa aj reakcie.
 
 **Výstupy:** Vlákna komentárov, formulár odpovede a stav zamknutia podľa plánu.
 
@@ -119,7 +119,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## F13 – Notifikácie, nastavenia a jazyk
 
-**Čo sa urobí:** Zvonček zobrazí upozornenia, nastavenia ponúknu vzhľad a prepínač slovenčina/čeština. Texty budú napojené na slovník podľa kľúčov.
+**Čo sa urobí:** Zvonček zobrazí upozornenia vrátane notifikácií spolupráce, nastavenia ponúknu vzhľad a prepínač slovenčina/čeština. Texty budú napojené na slovník podľa kľúčov. Notifikácie sa označia ako prečítané len po zobrazení.
 
 **Zmena poradia:** Na žiadosť používateľa sa výber témy (automatická, svetlá a tmavá) implementuje už pred F7 spolu s úpravami farieb komponentov. V F13 sa táto voľba znovu neimplementuje; zostáva ju zahrnúť do kontroly oboch tém spolu s ostatnými nastaveniami.
 
@@ -145,7 +145,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B1 – Databáza a ukážkové údaje
 
-**Čo sa urobí:** Vytvorí sa MySQL schéma pre používateľov, projekty, úlohy a komentáre, indexy, cudzie kľúče a testovacie údaje. Pripraví sa vzor konfigurácie bez tajných údajov.
+**Čo sa urobí:** Vytvorí sa MySQL schéma pre používateľov, projekty, úlohy, komentáre a návrhové entity spolupráce opísané v `docs/model_spoluprace.md`: členstvá, pozvánky, zdieľania úloh, audit, notifikácie a reakcie. Zachová sa `projects.user_id` ako jediný zdroj vlastníctva. Pridajú sa indexy, cudzie kľúče a testovacie údaje. Pripraví sa vzor konfigurácie bez tajných údajov.
 
 **Výstupy:** SQL schéma, seed skript a `config.example.php` alebo ekvivalentný vzor.
 
@@ -177,7 +177,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B5 – Projekty na serveri
 
-**Čo sa urobí:** Doplnia sa operácie čítať/vytvoriť/upraviť/zmazať projekt, kontrola vlastníctva, minimálne jedného projektu a limitu Standard.
+**Čo sa urobí:** Doplnia sa operácie čítať/vytvoriť/upraviť/zmazať projekt, kontrola prístupu vlastníka alebo člena, minimálne jedného vlastneného projektu a limitu Standard iba pre vlastnené projekty. Správa členov, pozvánok a transakčný prevod vlastníctva sa riadia kontraktom spolupráce.
 
 **Výstupy:** Projektové endpointy s databázovým ukladaním a štruktúrovanými chybami.
 
@@ -185,7 +185,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B6 – Čítanie úloh a filtre
 
-**Čo sa urobí:** Implementuje sa načítanie úloh a detailu s filtrami podľa projektu, dátumu, rozsahu a stavu. Každý dotaz obmedzí výsledky na vlastníka.
+**Čo sa urobí:** Implementuje sa načítanie úloh a detailu s filtrami podľa projektu, dátumu, rozsahu a stavu. Každý dotaz overí efektívny prístup cez vlastníctvo, aktívne členstvo alebo samostatné zdieľanie; samostatné zdieľanie nesmie odhaliť projekt ani iné úlohy.
 
 **Výstupy:** GET endpointy pre zoznam a detail úloh.
 
@@ -193,7 +193,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B7 – Zápis úloh
 
-**Čo sa urobí:** Implementuje sa vytvorenie, úprava a zmazanie úloh vrátane validácie polí, kontroly projektu a sanitizácie popisu.
+**Čo sa urobí:** Implementuje sa vytvorenie, úprava a zmazanie úloh vrátane validácie polí, kontroly efektívneho prístupu, roly a oprávnenia k úlohám a sanitizácie popisu. Významné zmeny sa zapíšu do auditu.
 
 **Výstupy:** POST, PATCH a DELETE endpointy úloh s JSON chybami podľa kontraktu.
 
@@ -201,7 +201,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B8 – Dokončenie úloh
 
-**Čo sa urobí:** Doplnia sa samostatné endpointy na označenie hotovej/nevybavenej úlohy a hromadné zmazanie dokončených úloh.
+**Čo sa urobí:** Doplnia sa samostatné endpointy na označenie hotovej/nevybavenej úlohy a hromadné zmazanie dokončených úloh. Akcie overia vlastníctvo, členstvo alebo rolu editora zdieľanej úlohy; hromadné mazanie zostáva obmedzené na vlastné úlohy.
 
 **Výstupy:** Akčné endpointy a správne časové označenie dokončenia.
 
@@ -209,7 +209,7 @@ Prototyp obsahuje viac obrazoviek a možností než stručný prompt: projekty, 
 
 ## B9 – Komentáre na serveri
 
-**Čo sa urobí:** Implementuje sa čítanie, pridávanie a mazanie komentárov s kontrolou plánu, vlastníctva a hĺbky vlákna.
+**Čo sa urobí:** Implementuje sa čítanie, pridávanie, mazanie a reakcie s kontrolou efektívneho prístupu k úlohe, Premium plánu konajúceho používateľa a hĺbky vlákna. Zmeny podľa kontraktu vytvoria auditné udalosti a notifikácie.
 
 **Výstupy:** Komentárové endpointy s pravidlami Premium a maximálnou hĺbkou päť.
 
@@ -261,13 +261,15 @@ V každom kroku najprv skontroluj, či výstupy predchádzajúceho kroku existuj
 
 ## F2 – API kontrakt: podúlohy a kontrola
 
-1. Zoznam všetkých endpointov z podkladového dokumentu: autentifikácia, profil, projekty, úlohy, dokončenie a komentáre.
+1. Zoznam všetkých endpointov z podkladového dokumentu: autentifikácia, profil, projekty, úlohy, dokončenie, komentáre a reakcie; kontrakt spolupráce navyše zahŕňa členstvo, pozvánky, zdieľanie úloh, audit a notifikácie.
 2. Pre každý endpoint zapísať metódu, cestu, vyžadované prihlásenie, JSON vstup, úspešný stav/odpoveď a chyby.
 3. Ustáliť spoločnú obálku `data` a `error`, typy a formát dátumov; zapísať limity Standard/Premium.
-4. Vytvoriť Postman kolekciu s úspešnými aj chybovými príkladmi a mock server. Mock URL a prípadný kľúč nastaviť tak, aby tajný kľúč nebol v Gite.
+4. Vytvoriť alebo aktualizovať Postman kolekciu s úspešnými aj chybovými príkladmi podľa celého kontraktu. Mock URL a prípadný kľúč nastaviť tak, aby tajný kľúč nebol v Gite.
 5. Poslať vzorový dopyt z Postmanu a overiť, že odpoveď sa zhoduje s dokumentáciou.
 
 **Kontrola:** iný vývojár vie z `docs/api.md` zostaviť jednu požiadavku bez ústneho vysvetľovania. Výstup je zmluva, na ktorej sa budú zakladať F4–F13 a B3–B9.
+
+**Rozšírenie fázy A:** dátový návrh je v `docs/model_spoluprace.md`; schéma B1 a súvisiace kroky F10/F11/F13 a B5–B9 sa riadia týmto dokumentom a rozšíreným API kontraktom. `projects.user_id` zostáva jediným zdrojom vlastníctva projektu.
 
 ## F3 – HTML a vzhľad: podúlohy a kontrola
 

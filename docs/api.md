@@ -85,9 +85,9 @@ Hĺbka sa odvodzuje na serveri; klient ju neposiela. Zoznam sa zoradí podľa
 | `POST /api/tasks/{id}/complete` | Áno, vlastník | Bez tela | `200`, `data: task` | `404 not_found` |
 | `POST /api/tasks/{id}/uncomplete` | Áno, vlastník | Bez tela | `200`, `data: task` | `404 not_found` |
 | `DELETE /api/tasks/completed` | Áno | — | `200`, `data: {deleted}` | `401 unauthenticated` |
-| `GET /api/tasks/{id}/comments` | Áno, Premium | — | `200`, `data: comment[]` | `403 premium_required`, `404 not_found` |
+| `GET /api/tasks/{id}/comments` | Áno, prístup k úlohe | — | `200`, `data: {items: comment[], reactions: reaction[]}` | `403 forbidden`, `404 not_found` |
 | `POST /api/tasks/{id}/comments` | Áno, Premium | `body`, `parent_id` (voliteľné/null) | `201`, `data: comment` | `403 premium_required`, `404 not_found`, `422 validation_failed` alebo `comment_too_deep` |
-| `DELETE /api/comments/{id}` | Áno, Premium autor | — | `204` bez tela | `403 premium_required`, `404 not_found` |
+| `DELETE /api/comments/{id}` | Áno, Premium autor | — | `204` bez tela | `403 premium_required` / `forbidden`, `404 not_found` |
 
 Pri `GET /api/tasks` možno použiť filtre samostatne alebo kombinovať:
 `project_id` je ID projektu, `date` vyberie presný deň a má prednosť pred
@@ -146,6 +146,74 @@ Príklad chyby validácie:
 ```json
 {"error":{"code":"validation_failed","message":"Skontroluj zadané údaje.","fields":{"email":"Zadaj platnú e-mailovú adresu."}}}
 ```
+
+## Spolupráca na projektoch – fáza A
+
+Nasledujúce endpointy rozširujú existujúci kontrakt. Vlastník projektu je vždy `projects.user_id`; členstvo vlastníka sa neukladá druhýkrát. Odpovede a požiadavky na správu rolí nikdy neprijímajú vlastníka, rolu ani oprávnenie ako dôkaz oprávnenia volajúceho. Pri nedostupnom cudzom objekte sa vracia `404`; pri prihlásenom používateľovi bez potrebnej roly `403 forbidden`.
+
+### Roly a prístup
+
+Projektová rola je `viewer`, `commenter` alebo `editor`. Oprávnenie `task_permission` je `read` alebo `manage`; výsledné právo je prienikom roly a tohto oprávnenia. `viewer` iba číta. `commenter` môže čítať a pri Premium účte pridávať komentáre/reakcie, ale neupravuje úlohy. `editor` upravuje projektové údaje a úlohy iba pri `manage`; pri `read` ich iba číta. Samostatný príznak `can_manage_members` udeľuje spravovanie členov/pozvánok. Vlastník má plné oprávnenia. Zdieľanie úlohy používa roly `viewer` a `editor`; správca zdieľania je vlastník projektu úlohy. Aktívny prístup k úlohe je najvyššie oprávnenie z projektového členstva alebo samostatného zdieľania. Odobratie jedného prístupu neruší druhý.
+
+### Objekty spolupráce
+
+`member`: `{user:{id,email,name,plan}, role, task_permission, can_manage_members, created_at, updated_at}`. Vlastník je zahrnutý vo výpise s `role:"owner"`, plnými oprávneniami a časmi projektu, ale je odvodený z `projects.user_id`.
+
+`invitation`: `{id,project_id,invitee_email,role,task_permission,can_manage_members,status,expires_at,created_at,accepted_at,declined_at,revoked_at}`. Nikdy neobsahuje surový token ani jeho hash. `invitee_email` môže byť `null`, ak je pozvánka viazaná priamo na účet.
+
+`audit_event`: `{id,project_id,actor:{id,name}|null,event_type,target:{type,id}|null,summary,changes,created_at}`. `changes` obsahuje iba bezpečné polia pred/po.
+
+`notification`: `{id,type,summary,target:{type,id}|null,project_id,created_at,read_at}`. Typ je `comment`, `change`, `reaction`, `task` alebo `invitation`.
+
+`task_share`: `{id,task_id,recipient:{id,email,name},role,status,created_at,revoked_at}`. `status` je `active` alebo `revoked`; objekt neposkytuje `project_id` ani údaje o iných úlohách.
+
+`reaction`: `{id,comment_id,user:{id,name},reaction,created_at}`. Povolené hodnoty `reaction` sú pevne definované serverom a server vynucuje unikátnu kombináciu komentára, používateľa a reakcie.
+
+### Endpointy členov, pozvánok a prevodu vlastníctva
+
+| Metóda a cesta | JSON vstup | Úspech | Osobitné chyby |
+| --- | --- | --- | --- |
+| `GET /api/projects/{id}/members` | — | `200`, `data: member[]` (vlastník plus členovia) | `403 forbidden`, `404 not_found` |
+| `POST /api/projects/{id}/invitations` | `email` alebo `user_id` (presne jedno), `role`, `task_permission`, voliteľne `can_manage_members` | `201`, `data: invitation` a jednorazový `invitation_url` | `403 forbidden`, `404 not_found`, `409 membership_exists` / `invitation_pending`, `422 validation_failed` |
+| `GET /api/invitations/{token}` | — | `200`, `data: invitation` bez tokenu | `404 not_found`, `410 invitation_expired` |
+| `POST /api/invitations/{token}/accept` | Bez tela | `200`, `data: member` | `403 invitation_account_mismatch`, `404 not_found`, `409 invitation_not_pending`, `410 invitation_expired` |
+| `POST /api/invitations/{token}/decline` | Bez tela | `200`, `data: invitation` | `403 invitation_account_mismatch`, `404 not_found`, `409 invitation_not_pending`, `410 invitation_expired` |
+| `POST /api/projects/{id}/invitations/{invitation_id}/revoke` | Bez tela | `200`, `data: invitation` | `403 forbidden`, `404 not_found`, `409 invitation_not_pending` |
+| `PATCH /api/projects/{id}/members/{user_id}` | `role`, `task_permission`, `can_manage_members` (aspoň jedno pole) | `200`, `data: member` | `403 forbidden`, `404 not_found`, `422 validation_failed` |
+| `DELETE /api/projects/{id}/members/{user_id}` | — | `204` | `403 forbidden`, `404 not_found`, `409 owner_transfer_required` |
+| `POST /api/projects/{id}/ownership-transfer` | `new_owner_id`, `previous_owner_role`, `previous_owner_task_permission`, `previous_owner_can_manage_members`, `confirm:true` | `200`, `data:{project_id,owner,previous_owner}` | `403 forbidden`, `404 not_found`, `409 transfer_conflict`, `422 validation_failed` |
+
+Pozvanie e-mailom sa môže prijať iba po prihlásení účtu s rovnakým normalizovaným e-mailom; pozvanie na `user_id` prijme iba tento účet. Pozvánka sama členstvo ani prístup nevytvára. Platnosť je 7 dní od vytvorenia. Surový náhodný token sa zobrazuje iba pri vytvorení URL; uložený je len jeho hash. `GET` tokenovej cesty nesmie meniť stav. Prevody vlastníctva sú transakčné a pri súbehu môže uspieť iba jeden.
+
+### Audit, notifikácie a reakcie
+
+| Metóda a cesta | JSON vstup / query | Úspech | Osobitné chyby |
+| --- | --- | --- | --- |
+| `GET /api/projects/{id}/audit` | Query: `limit` (1–100, default 50), `before` (kurzor `created_at,id`) | `200`, `data:{items:audit_event[],next_cursor}` | `403 forbidden`, `404 not_found`, `400 bad_request` |
+| `GET /api/notifications` | Query: `limit` (1–100, default 50), `before` (kurzor `created_at,id`), voliteľne `unread=1` | `200`, `data:{items:notification[],next_cursor}` | `400 bad_request` |
+| `POST /api/notifications/read` | `ids` (zoznam ID skutočne zobrazených) | `200`, `data:{updated}` | `422 validation_failed` |
+| `GET /api/tasks/{id}/comments` | — | `200`, `data:{items:comment[],reactions:reaction[]}` | `403 forbidden`, `404 not_found` |
+| `POST /api/comments/{id}/reactions` | `reaction` | `201`, `data:reaction` | `403 forbidden` / `premium_required`, `404 not_found`, `409 reaction_exists`, `422 validation_failed` |
+| `DELETE /api/comments/{id}/reactions/{reaction}` | — | `204` | `403 forbidden` / `premium_required`, `404 not_found` |
+
+Notifikácie patria výlučne príjemcovi. Označenie prečítania ignoruje cudzie ID a aktualizuje iba ID patriace prihlásenému používateľovi; opakovanie je bezpečné. Klient odosiela iba položky skutočne zobrazené v otvorenom paneli. Audit je append-only a stránkovanie používa stabilný kurzor.
+
+### Samostatné zdieľanie úlohy
+
+Samostatný prístup povoľuje iba úlohu a jej komentáre. Neudeľuje prístup k projektu, členom, nastaveniam ani iným úlohám. Vlastník je vlastník projektu úlohy; nemôže sa zmeniť rolou zdieľania.
+
+| Metóda a cesta | JSON vstup | Úspech | Osobitné chyby |
+| --- | --- | --- | --- |
+| `GET /api/tasks/{id}/shares` | — | `200`, `data:task_share[]` (iba vlastník) | `403 forbidden`, `404 not_found` |
+| `POST /api/tasks/{id}/shares` | `recipient_user_id`, `role` (`viewer`/`editor`) | `201`, `data:task_share` | `403 forbidden`, `404 not_found`, `409 share_exists`, `422 validation_failed` |
+| `PATCH /api/tasks/{id}/shares/{share_id}` | `role` | `200`, `data:task_share` | `403 forbidden`, `404 not_found`, `422 validation_failed` |
+| `DELETE /api/tasks/{id}/shares/{share_id}` | — | `204` | `403 forbidden`, `404 not_found` |
+| `GET /api/tasks/{id}` a `GET /api/tasks/{id}/comments` | — | `200`, dostupný stav úlohy/komentáre podľa efektívneho prístupu | `404 not_found` bez prístupu |
+| `PATCH /api/tasks/{id}`, `POST .../complete`, `POST .../uncomplete` | Existujúci vstup úlohy/akcie | `200`, `data:task` pre editora; divák iba číta | `403 forbidden`, `404 not_found`, `422 validation_failed` |
+
+Úloha sa zdieľa iba s konkrétnym existujúcim účtom. Editor smie upravovať a meniť stav; komentovanie a reakcie stále vyžadujú Premium účtu konajúceho používateľa. Divák smie iba čítať. Po odobratí zdieľania priamy API prístup okamžite zaniká, pokiaľ používateľ nemá iný platný prístup cez členstvo projektu.
+
+K `403` pridávajú spoločné odpovede tieto kódy: `forbidden`, `invitation_account_mismatch`, `owner_transfer_required`; `409`: `membership_exists`, `invitation_pending`, `invitation_not_pending`, `transfer_conflict`, `reaction_exists`, `share_exists`; `410`: `invitation_expired`. Všetky validačné chyby používajú existujúci obal a `fields` objekt.
 
 ## Postman mock
 
