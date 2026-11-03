@@ -265,6 +265,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 #task-panel .note-editor.note-frame { overflow: visible; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: var(--surface-solid); }
 #task-panel .note-toolbar { border-color: var(--line); border-radius: 12px 12px 0 0; background: var(--surface); }
 #task-panel .note-btn { color: var(--ink); background: var(--surface-solid); border-color: var(--line); }
+#task-panel .note-btn.active { color: var(--ink); background: color-mix(in srgb, var(--accent) 22%, var(--surface-solid)); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 #task-panel .note-btn:hover, #task-panel .note-btn:focus { color: var(--ink); background: var(--accent-soft); }
 #task-panel .note-editable { min-height: 120px; color: var(--ink); background: var(--surface-solid); overflow-wrap: anywhere; }
 #task-panel .note-editable p, #task-panel .note-editable div { margin-bottom: .8em; }
