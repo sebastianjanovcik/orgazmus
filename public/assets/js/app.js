@@ -1198,7 +1198,13 @@
                 await api.request('DELETE', `/api/tasks/${taskId}`);
                 ui.closePanels();
                 this.editingId = null;
-                if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
+                state.tasks = state.tasks.filter((task) => String(task.id) !== String(taskId));
+                const route = router.current();
+                if (route.name === 'tasks') await views.loadTasks(state.routeSequence);
+                else if (route.name === 'project') {
+                    const project = state.projects.find((item) => Number(item.id) === Number(route.id));
+                    if (project) projectManager.renderDetail(project);
+                }
                 ui.showToast('Úloha bola odstránená.');
             } catch (error) { ui.showToast(error.message || 'Úlohu sa nepodarilo odstrániť.', 'error'); }
             finally { button.disabled = false; }
