@@ -1,6 +1,6 @@
 # Postup vývoja: správa projektov a členov
 
-Tento dokument rozširuje hlavný [plán vývoja aplikácie](plan_vyvoja.md) o spoluprácu viacerých používateľov na jednom projekte. Jeho kroky sa majú zapracovať do existujúcich fáz frontendu a PHP API; nenahrádzajú ich. Pred začiatkom implementácie treba skontrolovať aktuálnu schému, API kontrakt a stav príslušných krokov F a B.
+Tento dokument rozširuje hlavný [plán vývoja aplikácie](plan_vyvoja.md) o spoluprácu viacerých používateľov na jednom projekte. Postupuje v rovnakom poradí ako hlavný plán: najprv sa pripraví frontend nad Postman mockom, potom dátový model a PHP API. Rozhranie používa API kontrakt z hlavného plánu; backend ho následne potvrdí a implementuje. Pred začiatkom treba skontrolovať aktuálnu schému, API kontrakt a stav príslušných krokov F a B.
 
 ## Cieľ
 
@@ -20,7 +20,63 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 - Pri načítaní panela notifikácií sa ako prečítané označia iba notifikácie, ktoré boli v danom otvorenom paneli skutočne zobrazené. Oznámenia doručené neskôr alebo mimo načítanej stránky zostanú neprečítané.
 - Auditný záznam je append-only: členovia ho môžu čítať podľa prístupu k projektu, no bežné API neposkytuje jeho úpravu ani mazanie.
 
-## Fáza A – Dátový model a API kontrakt
+## Fáza A – Frontend nad Postman mockom
+
+Fázu A vykonávať po malých prírastkoch. Pri každom prírastku najprv doplniť iba jeho rozsah do príslušného frontendového kroku F v `docs/plan_vyvoja.md`, potom tento rozsah implementovať a overiť proti Postman mocku. Nepridávať všetky požiadavky fázy A do hlavného plánu naraz. Ďalší prírastok zapísať do plánu až po dokončení predchádzajúceho.
+
+### A1 – Zoznam členov projektu
+
+- **Rozšírenie plánu:** doplniť do F10 zobrazenie členov projektu, ich rolí, oprávnenia k úlohám a stavu členstva.
+- **Práca:** vytvoriť sekciu členov v detaile projektu vrátane načítania, prázdneho a chybového stavu.
+- **Dokončené, keď:** zoznam sa správne zobrazí z mock dát na mobile aj desktope a dá sa ovládať klávesnicou.
+
+### A2 – Odoslanie a stav pozvánky
+
+- **Rozšírenie plánu:** doplniť do F10 formulár pozvania s výberom účtu alebo e-mailu, roly a oprávnenia k úlohám; do F13 zobrazenie čakajúcej pozvánky.
+- **Práca:** vytvoriť formulár a stav pozvánky nad mock odpoveďami. Vysvetliť, že členstvo vznikne až po prijatí.
+- **Dokončené, keď:** pozvánku možno odoslať v UI a jej čakajúci stav je zrozumiteľný.
+
+### A3 – Prijatie pozvánky a správa členov
+
+- **Rozšírenie plánu:** doplniť do F13 prijatie a odmietnutie pozvánky z notifikácie; do F10 zmenu roly, oprávnenia a odobratie člena.
+- **Práca:** implementovať iba tieto akcie a ich stavy nad mockom.
+- **Dokončené, keď:** používateľ vidí výsledok prijatia/odmietnutia a oprávnené ovládacie prvky správy členov.
+
+### A4 – Prevod vlastníctva
+
+- **Rozšírenie plánu:** doplniť do F10 odovzdanie vlastníctva vrátane jasného zhrnutia dôsledkov a jedného potvrdenia.
+- **Práca:** vytvoriť samostatný potvrdzovací tok nad mock odpoveďami.
+- **Dokončené, keď:** pred potvrdením sú zobrazené dôsledky a po odpovedi mocku je zobrazený nový stav vlastníctva.
+
+### A5 – Rozhranie podľa oprávnení
+
+- **Rozšírenie plánu:** doplniť do relevantných krokov F7–F10, ako sa podľa roly a oprávnenia zobrazujú alebo zakazujú akcie pri projekte a úlohách.
+- **Práca:** skryť alebo zakázať nepovolené ovládacie prvky a zobraziť zrozumiteľnú správu pri odpovedi `403`; rozhodnutie servera zostáva autoritatívne.
+- **Dokončené, keď:** scenáre vlastníka, editora, komentujúceho a diváka majú konzistentné ovládanie vrátane chybovej odpovede.
+
+### A6 – Notifikácie a história zmien
+
+- **Rozšírenie plánu:** doplniť do F13 panel kategorizovaných notifikácií a označovanie iba skutočne zobrazených položiek; históriu zmien zaradiť do F10 alebo F13 podľa umiestnenia v rozhraní.
+- **Práca:** vytvoriť panel a históriu s načítavaním, prázdnym stavom a stránkovaním podľa mock dát.
+- **Dokončené, keď:** panel zobrazuje kategórie a stav prečítania bez označenia nenačítaných notifikácií.
+
+### A7 – Samostatné zdieľanie úlohy
+
+- **Rozšírenie plánu:** doplniť do F8 správu príjemcov samostatného zdieľania úlohy a správanie rolí Divák a Editor.
+- **Práca:** pridať ovládanie zdieľania v detaile úlohy a varianty zobrazenia podľa roly.
+- **Dokončené, keď:** divák nemá úpravy a editor vidí iba akcie povolené jeho rolou.
+
+### A8 – Komentáre a Premium
+
+- **Rozšírenie plánu:** doplniť do F11 čitateľnosť komentárov bez Premium a obmedzenie ich pridávania; uviesť, že rovnaké pravidlo platí pre komentovanie pri samostatne zdieľanej úlohe.
+- **Práca:** zobraziť komentáre podľa oprávnenia a zrozumiteľné vysvetlenie obmedzenia pre účet bez Premium.
+- **Dokončené, keď:** komentáre zostanú čitateľné a ovládanie pridania zodpovedá plánu účtu.
+
+Pri každom A1–A8 najprv skontrolovať príslušné predpoklady v hlavnom pláne a mock kontrakte. Po dokončení prírastku overiť jeho používateľský tok, skontrolovať `git status` a diff a podľa projektových pravidiel samostatne commitnúť a pushnúť zmenu. Zvyšné prírastky fázy A neimplementovať ani nepridávať do hlavného plánu vopred.
+
+**Výstup fázy:** Spolupráca sa dopĺňa do frontendu po overiteľných, samostatných prírastkoch; každý prírastok je zaznamenaný v hlavnom pláne a dokončený pred začiatkom ďalšieho.
+
+## Fáza B – Backend: dátový model a API kontrakt
 
 1. Rozšíriť `docs/api.md` o členstvo v projekte, pozvánky, roly, oprávnenie k úlohám, prevod vlastníctva, auditné udalosti, notifikácie a reakcie.
 2. Navrhnúť väzobnú tabuľku členov projektu s používateľom, rolou, oprávnením k úlohám, stavom a časmi vytvorenia/aktualizácie. Vlastníka evidovať jednoznačne; nepridávať druhú nezávislú autoritatívnu informáciu o vlastníkovi.
@@ -33,7 +89,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 
 **Výstup:** Schéma a API kontrakt určujú jednoznačne, kto môže čo urobiť a aké stavy sa vracajú.
 
-## Fáza B – Serverové oprávnenia a operácie
+## Fáza C – Backend: serverové oprávnenia a operácie
 
 1. Vytvoriť spoločnú serverovú kontrolu prístupu, ktorá pri každej operácii načíta členstvo a rolu z databázy. Nikdy nedôverovať role ani oprávneniu zaslanému prehliadačom.
 2. Zaviesť pravidlá čítania projektu a úloh pre vlastníka, aktívnych členov a pozvaných čakajúcich používateľov. Používateľ s pending pozvánkou nemá prístup k obsahu projektu.
@@ -48,7 +104,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 
 **Výstup:** API vynucuje prístupové pravidlá aj bez použitia webového rozhrania.
 
-## Fáza C – Notifikácie a audit
+## Fáza D – Backend: notifikácie a audit
 
 1. Vytvárať notifikáciu pri pozvánke, prijatí/odmietnutí, priradení alebo zmene úlohy, komentári, reakcii a významnej zmene projektu.
 2. Zabezpečiť, aby každý používateľ načítal iba svoje notifikácie. Vrátiť ich stránkovane, zoradené od najnovších, spolu s údajom o prečítaní.
@@ -57,21 +113,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 
 **Výstup:** Notifikácie majú spoľahlivý stav prečítania a projekt má dohľadateľnú históriu zmien.
 
-## Fáza D – Používateľské rozhranie
-
-1. V detaile projektu pridať sekciu „Členovia“ so zoznamom, rolou, oprávnením k úlohám a stavom pozvánky/členstva.
-2. Pridať formulár pozvania s výberom používateľa alebo e-mailu, projektovej roly a oprávnenia k úlohám. Zobraziť jasne, že členstvo vznikne až po prijatí.
-3. Pridať prijatie/odmietnutie pozvánky v notifikáciách a zrozumiteľný stav čakajúcej, prijatej, odmietnutej, odvolanej alebo expirovanej pozvánky.
-4. Zobraziť a ovládať zmenu role, oprávnenia a odobratie člena iba používateľom s príslušným oprávnením. Odovzdanie vlastníctva musí mať jasné zhrnutie dôsledkov a jedno potvrdenie.
-5. V úlohách skryť alebo zakázať akcie, ktoré používateľ nemôže vykonať; po odpovedi servera `403` zobraziť zrozumiteľné vysvetlenie. UI je pomôcka, nie náhrada serverovej kontroly.
-6. Vytvoriť panel notifikácií s kategóriami komentáre, zmeny, reakcie, úlohy a pozvánky. Po otvorení označiť prečítané len načítané a zobrazené položky.
-7. Pridať históriu zmien projektu s načítavacím skeletonom, prázdnym stavom a stránkovaním.
-8. Pri účte bez Premium ponechať komentáre a reakcie čitateľné, ale vysvetliť, prečo nie je dostupné pridávanie.
-9. V detaile úlohy umožniť vlastníkovi zdieľať ju s konkrétnym používateľom a nastaviť rolu Divák alebo Editor; zobraziť existujúcich príjemcov a umožniť zmenu či odobratie ich prístupu. Divákovi zobraziť stav a komentáre bez ovládacích prvkov na zmenu; Editorovi sprístupniť úpravy, odškrtnutie a komentovanie podľa jeho oprávnenia a pravidla Premium.
-
-**Výstup:** Člen projektu vie zistiť svoje oprávnenia a vykonať dostupné akcie na desktope aj mobile a klávesnicou.
-
-## Fáza E – Overenie a vydanie
+## Fáza E – Integrácia, overenie a vydanie
 
 1. Skontrolovať prístupové matice pre vlastníka, editora, rolu Komentár a rolu Náhľad, vždy v kombinácii s oboma oprávneniami k úlohám.
 2. Overiť pozvánku odoslanú, čakajúcu, prijatú, odmietnutú, odvolanú, expirovanú aj určenú inému účtu; skontrolovať, že pending používateľ nevidí projekt.
@@ -86,6 +128,6 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 
 ## Závislosti a poradie
 
-Najprv dokončiť dátový model a API kontrakt (A), potom serverové kontroly a operácie (B). Notifikácie a audit na serveri (C) možno pripravovať súbežne s UI návrhom, ale UI musí vychádzať zo schváleného kontraktu. Rozhranie (D) napojiť až na stabilné endpointy. Overenie (E) vykonať po integrácii.
+Najprv dokončiť frontend (A) nad Postman mockom a kontraktom pripraveným v kroku F2 hlavného plánu. Potom pokračovať backendom: potvrdiť dátový model a API kontrakt (B), implementovať serverové oprávnenia a operácie (C) a následne notifikácie a audit (D). Po dokončení endpointov frontend integrovať s PHP API a vykonať spoločné overenie (E).
 
 Tieto funkcie nadväzujú najmä na F10/B5 (projekty), F11/B9 (komentáre), F13 (notifikácie), B1 (databáza), B3 (relácie) a B6–B8 (úlohy). Pred implementáciou upraviť príslušné kroky v hlavnom pláne a API kontrakte tak, aby sa rovnaká funkcionalita neimplementovala dvakrát.
