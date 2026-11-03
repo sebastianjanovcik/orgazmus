@@ -1179,10 +1179,20 @@
             form.elements.description.value = data.description || '';
             button.disabled = true;
             try {
-                await api.request(this.editingId ? 'PATCH' : 'POST', this.editingId ? `/api/tasks/${this.editingId}` : '/api/tasks', data);
+                const savedTask = await api.request(this.editingId ? 'PATCH' : 'POST', this.editingId ? `/api/tasks/${this.editingId}` : '/api/tasks', data);
+                if (savedTask) {
+                    const savedIndex = state.tasks.findIndex((task) => String(task.id) === String(savedTask.id));
+                    if (savedIndex === -1) state.tasks.push(savedTask);
+                    else state.tasks[savedIndex] = savedTask;
+                }
                 ui.closePanels();
-                if (router.current().name === 'tasks') await views.loadTasks(state.routeSequence);
-                if (router.current().name === 'calendar') views.reloadCalendar();
+                const route = router.current();
+                if (route.name === 'tasks') await views.loadTasks(state.routeSequence);
+                else if (route.name === 'project') {
+                    const project = state.projects.find((item) => Number(item.id) === Number(route.id));
+                    if (project) projectManager.renderDetail(project);
+                }
+                if (route.name === 'calendar') views.reloadCalendar();
                 ui.showToast(this.editingId ? 'Úloha bola upravená.' : 'Úloha bola vytvorená.');
             } catch (error) {
                 if (error.status === 422) this.showErrors(error.fields);
