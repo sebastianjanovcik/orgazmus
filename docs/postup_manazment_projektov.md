@@ -4,7 +4,7 @@ Tento dokument rozširuje hlavný [plán vývoja aplikácie](plan_vyvoja.md) o s
 
 ## Cieľ
 
-Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu a samostatne určiť, či môžu spravovať úlohy. Pozvaný používateľ musí pozvánku prijať. Členovia vidia projekt podľa svojich oprávnení, zmeny sa zaznamenávajú a notifikácie možno prečítať v spoločnom paneli.
+Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu a samostatne určiť, či môžu spravovať úlohy. Jednotlivú úlohu možno zdieľať aj samostatne s používateľom, ktorý nemá prístup k celému projektu. Pozvaný používateľ musí pozvánku prijať. Členovia a príjemcovia zdieľania vidia obsah podľa svojich oprávnení, zmeny sa zaznamenávajú a notifikácie možno prečítať v spoločnom paneli.
 
 ## Pravidlá a pojmy
 
@@ -13,6 +13,8 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 - **Komentár** povoľuje náhľad a pridávanie komentárov a reakcií, ak má používateľ Premium.
 - **Editor** povoľuje náhľad a úpravy projektových údajov a úloh v rozsahu ďalšieho oprávnenia k úlohám.
 - **Oprávnenie k úlohám** sa nastavuje každému členovi samostatne: „Spravovať úlohy“ povoľuje vytvárať, meniť a mazať úlohy; „Iba náhľad úloh“ povoľuje ich čítanie. Toto oprávnenie nemôže rozšíriť projektovú rolu: rola Náhľad zostáva iba na čítanie a Komentár neudeľuje úpravy úloh. Vlastník má vždy plné oprávnenia.
+- **Samostatné zdieľanie úlohy** udeľuje prístup iba ku konkrétnej úlohe a jej komentárom; samo osebe nezakladá členstvo v projekte ani prístup k projektu, jeho ďalším úlohám či nastaveniam. Roly zdieľania sú nezávislé od projektových rolí: **Vlastník** spravuje zdieľanie a má plnú kontrolu nad úlohou, **Divák** môže zobraziť stav úlohy a komentáre a **Editor** môže upravovať úlohu, meniť jej stav vrátane odškrtnutia a pridávať komentáre. Komentovanie naďalej podlieha pravidlu Premium uvedenému nižšie. Vlastník projektu si zachováva prístup podľa svojej projektovej roly; zdieľanie konkrétnej úlohy nemení projektové oprávnenia.
+- Príjemca samostatného zdieľania musí byť identifikovaný konkrétnym účtom a zdieľanie musí byť aktívne, aby mohol úlohu otvoriť. Vlastník úlohy môže prístup zmeniť alebo odobrať; odobratý príjemca už nesmie čítať úlohu ani komentáre. Pri kombinácii projektového členstva a samostatného zdieľania sa uplatní najvyššie oprávnenie, ktoré používateľ získava z platného prístupu; odobratie jedného prístupu nezruší druhý.
 - **Premium sa kontroluje podľa účtu konajúceho používateľa**. Člen bez Premium môže prezerať komentáre a reakcie, ale nemôže ich pridávať ani meniť; túto kontrolu vynucuje server aj pri priamom volaní API. Rovnaké pravidlo platí pre vlastníka bez Premium po prevode projektu.
 - Pozvánka má stav **pending**, kým ju príjemca neprijme alebo neodmietne. Samotné odoslanie pozvánky nepridáva príjemcu medzi členov a neudeľuje mu prístup k projektu. Prijatie vytvorí členstvo podľa pozvánky; odmietnutie alebo odvolanie pozvánky prístup nevytvorí.
 - Pri načítaní panela notifikácií sa ako prečítané označia iba notifikácie, ktoré boli v danom otvorenom paneli skutočne zobrazené. Oznámenia doručené neskôr alebo mimo načítanej stránky zostanú neprečítané.
@@ -27,6 +29,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 5. Navrhnúť notifikácie viazané na príjemcu a voliteľne projekt/objekt, s typom, stručným obsahom, odkazom na cieľ a `read_at`. Typy pokryjú komentáre, zmeny, reakcie, úlohy a pozvánky.
 6. Určiť databázové obmedzenia: unikátne členstvo používateľa v projekte, indexy pre čakajúce pozvánky, audit podľa projektu/času a notifikácie podľa príjemcu/stavu/času. Zmeny vlastníka a členstva vykonávať v transakcii.
 7. Doplniť API cesty a odpovede pre zoznam členov, odoslanie/zmenu/odobratie člena, prijatie/odmietnutie/odvolanie pozvánky, prevod vlastníctva, načítanie auditu, načítanie notifikácií a označenie zobrazených notifikácií ako prečítaných.
+8. Doplniť kontrakt zdieľania samostatnej úlohy: príjemca, rola Vlastník/Divák/Editor, stav a časy udelenia či odobratia. Určiť operácie na udelenie, zmenu a odobratie prístupu a odpovede na čítanie stavu, komentárov a úpravy úlohy; výslovne uviesť, že tento prístup neposkytuje prístup k projektu ani iným úlohám.
 
 **Výstup:** Schéma a API kontrakt určujú jednoznačne, kto môže čo urobiť a aké stavy sa vracajú.
 
@@ -41,6 +44,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 7. V každom endpoint-e úloh kontrolovať súčasne prístup k projektu, projektovú rolu a oprávnenie k úlohám. Pri zamietnutí vrátiť konzistentnú odpoveď `403` bez úniku cudzích údajov.
 8. Pre komentáre a reakcie povoľovať čítanie členom s prístupom k úlohe; zápis povoliť len účtu Premium a podľa oprávnení projektu. Premium kontrolovať serverovo pri každej zmene.
 9. Všetky významné akcie zapisovať do auditu: pozvanie a jeho stav, zmena člena/role/oprávnenia, odobratie člena, zmena úlohy, komentár/reakcia podľa bezpečne určeného rozsahu a prevod vlastníctva.
+10. Vynucovať oprávnenia samostatného zdieľania pri každom endpoint-e úlohy aj komentárov: Divák smie iba čítať stav a komentáre; Editor smie upravovať zdieľanú úlohu, meniť jej stav a pridávať komentáre; vlastník môže zdieľanie spravovať. Overiť, že takýto prístup neumožní načítať projekt ani susedné úlohy a že zmena alebo odobratie zdieľania sa prejaví aj pri priamom volaní API.
 
 **Výstup:** API vynucuje prístupové pravidlá aj bez použitia webového rozhrania.
 
@@ -63,6 +67,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 6. Vytvoriť panel notifikácií s kategóriami komentáre, zmeny, reakcie, úlohy a pozvánky. Po otvorení označiť prečítané len načítané a zobrazené položky.
 7. Pridať históriu zmien projektu s načítavacím skeletonom, prázdnym stavom a stránkovaním.
 8. Pri účte bez Premium ponechať komentáre a reakcie čitateľné, ale vysvetliť, prečo nie je dostupné pridávanie.
+9. V detaile úlohy umožniť vlastníkovi zdieľať ju s konkrétnym používateľom a nastaviť rolu Divák alebo Editor; zobraziť existujúcich príjemcov a umožniť zmenu či odobratie ich prístupu. Divákovi zobraziť stav a komentáre bez ovládacích prvkov na zmenu; Editorovi sprístupniť úpravy, odškrtnutie a komentovanie podľa jeho oprávnenia a pravidla Premium.
 
 **Výstup:** Člen projektu vie zistiť svoje oprávnenia a vykonať dostupné akcie na desktope aj mobile a klávesnicou.
 
@@ -75,6 +80,7 @@ Vlastník projektu môže pozvať používateľov, priradiť im projektovú rolu
 5. Overiť notifikácie rôznych typov, viac strán výsledkov a označenie len skutočne zobrazených položiek ako prečítaných.
 6. Overiť úplnosť a prístup k auditným udalostiam, odolnosť voči podvrhnutiu ID projektu/člena a absenciu tajomstiev v odpovediach.
 7. Skontrolovať mobilné rozloženie, klávesnicu, chybové stavy, skeletony a prázdne stavy. Zapísať, ktoré scenáre boli skutočne overené.
+8. Overiť samostatné zdieľanie úlohy pre vlastníka, diváka a editora: čítanie stavu/komentárov, úpravy, odškrtnutie, pridávanie komentárov, zmenu a odobratie prístupu, ako aj zákaz prístupu k projektu a ostatným úlohám. Skontrolovať aj kombináciu s členstvom v projekte a obmedzenie Premium pri komentovaní.
 
 **Výstup:** Spolupráca na projektoch je pripravená na vydanie a jej limity sú zdokumentované.
 
