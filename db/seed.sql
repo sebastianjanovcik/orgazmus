@@ -6,8 +6,8 @@ USE tasko;
 START TRANSACTION;
 
 INSERT INTO users (id, email, name, password_hash, plan) VALUES
-    (1, 'jana@example.sk', 'Jana Nová', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'standard'),
-    (2, 'premium@example.sk', 'Peter Prémiový', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi', 'premium')
+    (1, 'jana@example.sk', 'Jana Nová', '$2y$10$K7mVvbbzAUOQbhLe2bRXfuP9S6wjJ7hA/lroIxbkdM0eD.pckdUHW', 'standard'),
+    (2, 'premium@example.sk', 'Peter Prémiový', '$2y$10$K7mVvbbzAUOQbhLe2bRXfuP9S6wjJ7hA/lroIxbkdM0eD.pckdUHW', 'premium')
 ON DUPLICATE KEY UPDATE email = VALUES(email), name = VALUES(name),
     password_hash = VALUES(password_hash), plan = VALUES(plan);
 
