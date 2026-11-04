@@ -410,7 +410,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .project-invitation-dropdown .project-invitation-list { margin: 10px; }
 .project-invitation-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
 .project-invitation-row > span { min-width: 0; flex: 1 1 auto; }
-.project-invitation-row > button { width: auto; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
+.project-invitation-row > button { width: auto; max-width: 100%; min-height: 36px; flex: 0 0 auto; margin-left: auto; padding: 6px 12px; border-radius: 10px; font-size: 13px; white-space: nowrap; }
 .project-invitation-status { display: grid; gap: 8px; }
 .invitation-accept-card { max-width: 620px; margin: clamp(24px, 8vh, 80px) auto; padding: clamp(22px, 5vw, 38px); border: 1px solid var(--glass-border); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
 .invitation-accept-card h1 { margin: 0 0 12px; font-size: clamp(24px, 5vw, 34px); }
