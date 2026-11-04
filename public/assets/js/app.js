@@ -1383,13 +1383,11 @@
                     [['can_add_tasks'], 'Pridávať úlohy'],
                     [['can_complete_tasks'], 'Dokončiť úlohy'],
                     [['can_edit_own_tasks', 'can_edit_other_tasks'], 'Upraviť úlohy'],
-                    [['can_delete_own_tasks', 'can_delete_other_tasks'], 'Zmazať úlohy']
+                    [['can_delete_other_tasks'], 'Zmazať úlohy ostatných']
                 ]],
                 ['Komentáre', [
-                    [['can_view_comments'], 'Zobraziť komentáre'],
                     [['can_add_comments'], 'Pridávať komentáre'],
-                    [['can_edit_own_comments', 'can_edit_other_comments'], 'Upraviť komentáre'],
-                    [['can_delete_own_comments', 'can_delete_other_comments'], 'Zmazať komentáre']
+                    [['can_delete_other_comments'], 'Zmazať komentáre ostatných']
                 ]]
             ];
             const memberList = document.createElement('div'); memberList.className = 'project-member-list';
