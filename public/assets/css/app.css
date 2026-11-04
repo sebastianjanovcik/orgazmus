@@ -151,7 +151,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .task-title { display: block; max-width: 100%; padding: 0; border: 0; color: var(--ink); background: none; cursor: pointer; text-align: left; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
 .task-description { margin: 3px 0 9px; color: var(--muted); font-size: 12px; }
 .task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
-.task-creator { color: var(--muted); font-size: 12px; }
+.task-creator { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
 .meta-project { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
 .priority { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 650; }
 .priority-low { color: #777; background: rgba(119, 119, 119, .14); }.priority-high { color: #d8902e; background: rgba(216, 144, 46, .15); }.priority-medium { color: #4285d4; background: rgba(66, 133, 212, .14); }.priority-critical { color: #d95359; background: rgba(217, 83, 89, .14); }

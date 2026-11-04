@@ -926,15 +926,15 @@
                 dot.setAttribute('aria-hidden', 'true');
                 projectLabel.append(dot, document.createTextNode(project.name));
                 meta.append(projectLabel);
-                // V zdieľanom projekte je autor dôležitý na rozlíšenie vlastných a cudzích úloh.
-                if (!project.is_owner && task.creator_name) {
-                    const creator = document.createElement('span');
-                    creator.className = 'task-creator';
-                    creator.textContent = `Pridal – ${task.creator_name}`;
-                    meta.append(creator);
-                }
             }
             main.append(meta);
+            // Údaj o autorovi ostáva samostatne pod prioritou a názvom projektu.
+            if (project && !project.is_owner && task.creator_name) {
+                const creator = document.createElement('span');
+                creator.className = 'task-creator';
+                creator.textContent = `Pridal – ${task.creator_name}`;
+                main.append(creator);
+            }
             const due = document.createElement('time');
             due.className = 'task-date';
             due.dateTime = task.due_date || '';
