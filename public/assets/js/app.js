@@ -1382,7 +1382,7 @@
                 ['Úlohy', [
                     [['can_add_tasks'], 'Pridávať úlohy'],
                     [['can_complete_tasks'], 'Dokončiť úlohy'],
-                    [['can_edit_own_tasks', 'can_edit_other_tasks'], 'Upraviť úlohy'],
+                    [['can_edit_other_tasks'], 'Upraviť úlohy ostatných'],
                     [['can_delete_other_tasks'], 'Zmazať úlohy ostatných']
                 ]],
                 ['Komentáre', [
