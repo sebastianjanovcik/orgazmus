@@ -401,9 +401,9 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .invitation-copy-button:focus-visible { outline: 3px solid color-mix(in srgb, #4866e8 60%, white); outline-offset: 3px; }
 .project-invite-permissions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 4px 12px; margin: 6px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
 .project-invite-permissions legend { padding: 0 6px; font-weight: 700; }
-.project-member-actions { justify-content: flex-end; margin-top: 12px; }
+.project-member-actions { grid-column: 1 / -1; width: 100%; box-sizing: border-box; justify-content: flex-end; margin-top: 12px; }
 .project-member-actions .action-spacer { display: none; }
-.project-member-actions .button { flex: 0 1 150px; }
+.project-member-actions .button { width: auto; min-width: 0; min-height: 40px; flex: 0 0 auto; padding: 8px 13px; font-size: 14px; }
 .project-invitation-dropdown { border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-solid) 75%, transparent); }
 .project-invitation-dropdown > summary { min-height: 48px; padding: 13px 16px; cursor: pointer; font-weight: 700; }
 .project-invitation-dropdown > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, white); outline-offset: 2px; border-radius: 12px; }
