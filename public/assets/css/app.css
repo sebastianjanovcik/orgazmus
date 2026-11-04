@@ -407,9 +407,15 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .project-transfer-content { display: grid; gap: 12px; padding: 14px 16px 16px; }
 .project-transfer-content > label { margin-bottom: -7px; color: var(--ink); font-size: 13px; font-weight: 700; }
 .project-transfer-content > select, .project-transfer-name { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
-.project-transfer-help { margin: 0; }
+.project-transfer-help { margin: 0; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); line-height: 1.5; }
 .project-transfer-content .project-invite-permissions { margin: 0; }
-.project-transfer-content .panel-actions { margin-top: 2px; }
+.project-transfer-rights { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 7px 18px; padding: 16px; }
+.project-transfer-rights > legend { grid-column: 1 / -1; width: 100%; margin: 0 0 5px; padding: 0 0 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 16px; font-weight: 750; line-height: 1.4; }
+.project-transfer-rights .project-permission { min-height: 38px; }
+.project-transfer-actions { justify-content: stretch; margin: 0 -16px -16px; padding: 16px 10px 0; border-top: 1px solid var(--line); }
+.project-transfer-actions .button { width: 100%; min-height: 54px; flex: 1 1 100%; border-radius: 14px; font-weight: 750; }
+.project-transfer-content > select:focus-visible, .project-transfer-name:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; border-color: var(--accent); }
+@media (max-width: 600px) { .project-transfer-rights { grid-template-columns: 1fr; } }
 .project-invitation-form > input, .project-invitation-form > select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
 .project-invitation-link { display: block; max-width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: transparent; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; word-break: break-all; }
 .invitation-copy-button { min-height: 48px; color: #fff; background: #4866e8; }
