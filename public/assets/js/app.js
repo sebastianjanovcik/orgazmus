@@ -1580,7 +1580,7 @@
             const isOwner = Boolean(currentMember?.is_owner);
             // Prevod je samostatné rozbaľovacie menu, aby zostal dostupný aj pri zbalenom zozname členov.
             if (isOwner && members.some((member) => Number(member.id) !== Number(state.user?.id))) {
-                transferSection = document.createElement('details'); transferSection.className = 'task-section project-transfer';
+                transferSection = document.createElement('details'); transferSection.className = 'task-section project-invitations project-transfer';
                 const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading'; heading.textContent = 'Previesť vlastníctvo';
                 const label = document.createElement('label'); label.htmlFor = 'project-transfer-member'; label.textContent = 'Nový vlastník';
                 const select = document.createElement('select'); select.id = 'project-transfer-member'; select.dataset.projectId = String(project.id);
@@ -1591,9 +1591,9 @@
                 const defaultRights = this.presetPermissions('viewer');
                 this.permissionFields.forEach((field) => { const item = document.createElement('label'); item.className = 'project-permission'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.name = field; checkbox.checked = defaultRights[field]; const text = document.createElement('span'); text.textContent = this.permissionLabels[field]; item.append(checkbox, text); rights.append(item); });
                 const help = document.createElement('p'); help.className = 'helper-text project-transfer-help'; help.textContent = 'Prevod je trvalý. Ak má nový vlastník projekt s rovnakým názvom, zadaj pre tento projekt iný názov.';
-                const actions = document.createElement('div'); actions.className = 'panel-actions project-transfer-actions'; const button = document.createElement('button'); button.type = 'button'; button.className = 'button button-primary'; button.dataset.action = 'ownership-transfer'; button.dataset.projectId = String(project.id); button.textContent = 'Previesť vlastníctvo'; actions.append(button);
-                const content = document.createElement('div'); content.className = 'project-transfer-content';
-                content.append(help, label, select, nameLabel, name, rights, actions);
+                const button = document.createElement('button'); button.type = 'button'; button.className = 'button button-primary project-transfer-submit'; button.dataset.action = 'ownership-transfer'; button.dataset.projectId = String(project.id); button.textContent = 'Previesť vlastníctvo';
+                const content = document.createElement('div'); content.className = 'project-invitation-form project-transfer-content';
+                content.append(label, select, nameLabel, name, rights, help, button);
                 transferSection.append(heading, content);
             }
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
