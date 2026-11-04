@@ -15,6 +15,7 @@ function tasko_task_data(array $task): array
     return [
         'id' => (int) $task['id'],
         'project_id' => (int) $task['project_id'],
+        'created_by' => (int) $task['created_by'],
         'title' => (string) $task['title'],
         'description' => $task['description'] === null ? null : (string) $task['description'],
         'priority' => (int) $task['priority'],
@@ -92,7 +93,7 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
     }
 
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
@@ -108,7 +109,7 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
 {
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id

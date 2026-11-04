@@ -19,12 +19,25 @@ INSERT INTO projects (id, user_id, name, description, icon, color) VALUES
 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), name = VALUES(name),
     description = VALUES(description), icon = VALUES(icon), color = VALUES(color);
 
-INSERT INTO tasks (id, project_id, title, description, priority, due_date, is_done, completed_at) VALUES
-    (100, 10, 'Pripraviť návrh', '<p>Prvá verzia návrhu na kontrolu.</p>', 3, '2026-11-06', FALSE, NULL),
-    (101, 10, 'Poslať podklady tímu', NULL, 2, '2026-11-03', TRUE, '2026-10-30 12:00:00'),
-    (102, 11, 'Kúpiť žiarovky', NULL, 1, '2026-11-08', FALSE, NULL),
-    (103, 20, 'Skontrolovať spätnú väzbu', '<p>Zhrnúť pripomienky z posledného kola.</p>', 4, '2026-11-05', FALSE, NULL)
-ON DUPLICATE KEY UPDATE project_id = VALUES(project_id), title = VALUES(title),
+-- Vlastník má vždy všetky oprávnenia; členstvo sa eviduje aj pre vlastníka.
+INSERT INTO project_members (project_id, user_id, can_view_project, can_manage_project, can_manage_members,
+    can_view_tasks, can_add_tasks, can_complete_tasks, can_edit_own_tasks, can_edit_other_tasks,
+    can_delete_own_tasks, can_delete_other_tasks, can_view_comments, can_add_comments,
+    can_edit_own_comments, can_edit_other_comments, can_delete_own_comments, can_delete_other_comments)
+SELECT id, user_id, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE
+FROM projects
+ON DUPLICATE KEY UPDATE can_view_project = TRUE, can_manage_project = TRUE, can_manage_members = TRUE,
+    can_view_tasks = TRUE, can_add_tasks = TRUE, can_complete_tasks = TRUE, can_edit_own_tasks = TRUE,
+    can_edit_other_tasks = TRUE, can_delete_own_tasks = TRUE, can_delete_other_tasks = TRUE,
+    can_view_comments = TRUE, can_add_comments = TRUE, can_edit_own_comments = TRUE,
+    can_edit_other_comments = TRUE, can_delete_own_comments = TRUE, can_delete_other_comments = TRUE;
+
+INSERT INTO tasks (id, project_id, created_by, title, description, priority, due_date, is_done, completed_at) VALUES
+    (100, 10, 1, 'Pripraviť návrh', '<p>Prvá verzia návrhu na kontrolu.</p>', 3, '2026-11-06', FALSE, NULL),
+    (101, 10, 1, 'Poslať podklady tímu', NULL, 2, '2026-11-03', TRUE, '2026-10-30 12:00:00'),
+    (102, 11, 1, 'Kúpiť žiarovky', NULL, 1, '2026-11-08', FALSE, NULL),
+    (103, 20, 2, 'Skontrolovať spätnú väzbu', '<p>Zhrnúť pripomienky z posledného kola.</p>', 4, '2026-11-05', FALSE, NULL)
+ON DUPLICATE KEY UPDATE project_id = VALUES(project_id), created_by = VALUES(created_by), title = VALUES(title),
     description = VALUES(description), priority = VALUES(priority), due_date = VALUES(due_date),
     is_done = VALUES(is_done), completed_at = VALUES(completed_at);
 

@@ -106,7 +106,7 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Záznam postupu
 
-- Krok 1: čaká na realizáciu.
+- Krok 1: implementovaný. Schéma `project_members` uchováva 16 individuálnych oprávnení a `added_at`; vlastník je zároveň členom a jeho práva sú pri čítaní vždy úplné. Úlohy uchovávajú serverom nastavené `created_by`. API `GET /api/projects/{id}/members` kontroluje prístup a detail projektu zobrazuje členov, dátum pridania a checkboxy oprávnení. Pri existujúcej databáze treba pred nasadením nového kódu jednorazovo spustiť `db/migration_project_members.sql`; migrácia spätne priradí úlohy súčasnému vlastníkovi. Nové databázy používajú `db/schema.sql`. Pozývanie členov a zmena oprávnení patria do kroku 2.
 - Krok 2: čaká na realizáciu.
 - Krok 3: čaká na realizáciu.
 - Krok 4: čaká na realizáciu.

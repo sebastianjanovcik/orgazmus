@@ -13,6 +13,59 @@ require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/tasks.php';
 require_once __DIR__ . '/../../includes/comments.php';
 
+/** Číta členov iba v projekte, ku ktorému má prihlásený účet prístup. */
+function tasko_project_members(PDO $pdo, int $projectId, int $userId): array
+{
+    $access = $pdo->prepare(
+        'SELECT p.user_id FROM projects p
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+         WHERE p.id = :project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)'
+    );
+    $access->execute(['member_id' => $userId, 'project_id' => $projectId, 'owner_id' => $userId]);
+    $ownerId = $access->fetchColumn();
+    if ($ownerId === false) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+
+    $statement = $pdo->prepare(
+        'SELECT u.id, u.name, u.email, pm.added_at, pm.can_view_project, pm.can_manage_project, pm.can_manage_members,
+                pm.can_view_tasks, pm.can_add_tasks, pm.can_complete_tasks, pm.can_edit_own_tasks,
+                pm.can_edit_other_tasks, pm.can_delete_own_tasks, pm.can_delete_other_tasks,
+                pm.can_view_comments, pm.can_add_comments, pm.can_edit_own_comments,
+                pm.can_edit_other_comments, pm.can_delete_own_comments, pm.can_delete_other_comments
+         FROM project_members pm INNER JOIN users u ON u.id = pm.user_id
+         WHERE pm.project_id = :project_id ORDER BY (u.id = :owner_id) DESC, u.name, u.id'
+    );
+    $statement->execute(['project_id' => $projectId, 'owner_id' => (int) $ownerId]);
+    $permissionFields = [
+        'can_view_project', 'can_manage_project', 'can_manage_members', 'can_view_tasks', 'can_add_tasks',
+        'can_complete_tasks', 'can_edit_own_tasks', 'can_edit_other_tasks', 'can_delete_own_tasks',
+        'can_delete_other_tasks', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments',
+        'can_edit_other_comments', 'can_delete_own_comments', 'can_delete_other_comments',
+    ];
+    return array_map(static function (array $member) use ($ownerId, $permissionFields): array {
+        $isOwner = (int) $member['id'] === (int) $ownerId;
+        $permissions = [];
+        foreach ($permissionFields as $field) $permissions[$field] = $isOwner || (bool) $member[$field];
+        return [
+            'id' => (int) $member['id'], 'name' => (string) $member['name'],
+            'email' => (string) $member['email'], 'is_owner' => $isOwner,
+            'added_at' => (new DateTimeImmutable((string) $member['added_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z'),
+            'permissions' => $permissions,
+        ];
+    }, $statement->fetchAll());
+}
+
+/** Založí vlastníka aj v tabuľke členstva; vlastnícke práva sú v API vždy úplné. */
+function tasko_add_project_owner(PDO $pdo, int $projectId, int $userId): void
+{
+    $pdo->prepare(
+        'INSERT INTO project_members (project_id, user_id, can_view_project, can_manage_project, can_manage_members,
+         can_view_tasks, can_add_tasks, can_complete_tasks, can_edit_own_tasks, can_edit_other_tasks,
+         can_delete_own_tasks, can_delete_other_tasks, can_view_comments, can_add_comments,
+         can_edit_own_comments, can_edit_other_comments, can_delete_own_comments, can_delete_other_comments)
+         VALUES (:project_id, :user_id, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)'
+    )->execute(['project_id' => $projectId, 'user_id' => $userId]);
+}
+
 /** Porovná Origin s originom aktuálneho hostiteľa; API je určené pre rovnaký frontend. */
 function tasko_is_same_origin(string $origin): bool
 {
@@ -174,6 +227,9 @@ try {
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
+    if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1) {
+        $allowedMethods[$route] = ['GET'];
+    }
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
@@ -223,6 +279,7 @@ try {
                 "INSERT INTO projects (user_id, name, description, icon, color) VALUES (:user_id, 'Osobné', '', 'star', '#6558d3')"
             );
             $project->execute(['user_id' => $userId]);
+            tasko_add_project_owner($pdo, (int) $pdo->lastInsertId(), $userId);
             $pdo->commit();
         } catch (PDOException $error) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -403,6 +460,7 @@ try {
                 'color' => $color,
             ]);
             $projectId = (int) $pdo->lastInsertId();
+            tasko_add_project_owner($pdo, $projectId, $userId);
             $pdo->commit();
         } catch (PDOException $error) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -415,6 +473,15 @@ try {
             throw $error;
         }
         tasko_json_response(201, tasko_project_row($pdo, $userId, $projectId));
+    }
+
+    // Členovia sa načítajú cez samostatnú cestu a kontrolu prístupu vykoná SQL.
+    if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1 && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($membersRoute[1])) {
+            throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        }
+        tasko_json_response(200, tasko_project_members(tasko_db(), (int) $membersRoute[1], (int) $user['id']));
     }
 
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
@@ -532,11 +599,12 @@ try {
             if ($project->fetchColumn() === false) tasko_validation_error(['project_id' => 'Vybraný projekt neexistuje.']);
 
             $insert = $pdo->prepare(
-                'INSERT INTO tasks (project_id, title, description, priority, due_date)
-                 VALUES (:project_id, :title, :description, :priority, :due_date)'
+                'INSERT INTO tasks (project_id, created_by, title, description, priority, due_date)
+                 VALUES (:project_id, :created_by, :title, :description, :priority, :due_date)'
             );
             $insert->execute([
                 'project_id' => (int) $projectId,
+                'created_by' => (int) $user['id'],
                 'title' => $title,
                 'description' => $description,
                 'priority' => (int) $priority,

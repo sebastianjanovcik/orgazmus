@@ -64,7 +64,7 @@
         }
     };
 
-    const state = { routeSequence: 0, user: null, projects: [], tasks: [], authReady: false };
+    const state = { routeSequence: 0, user: null, projects: [], tasks: [], projectMembers: [], authReady: false };
 
     /* Používateľská voľba témy sa uloží lokálne; režim systém preberie nastavenie zariadenia. */
     const theme = {
@@ -1361,7 +1361,7 @@
             } catch (error) { ui.showToast(error.code === 'last_project' ? 'Posledný projekt nemožno odstrániť.' : error.message || 'Projekt sa nepodarilo odstrániť.', 'error'); }
             finally { button.disabled = false; }
         },
-        renderDetail(project) {
+        renderDetail(project, members = state.projectMembers) {
             const root = document.getElementById('project-detail-view'); if (!root) return;
             const counts = this.counts(project);
             root.replaceChildren();
@@ -1371,6 +1371,39 @@
             const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || 'Bez popisu'; text.append(title, desc);
             const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-primary'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
             const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
+            // Checkboxy sú zatiaľ iba náhľad serverových práv; ich editovanie patrí do kroku 2.
+            const memberSection = document.createElement('section'); memberSection.className = 'task-section project-members';
+            const memberHeading = document.createElement('h3'); memberHeading.className = 'project-task-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
+            const permissionGroups = [
+                ['Projekt', [['can_view_project', 'Zobraziť projekt'], ['can_manage_project', 'Spravovať projekt'], ['can_manage_members', 'Spravovať členov']]],
+                ['Úlohy', [['can_view_tasks', 'Zobraziť úlohy'], ['can_add_tasks', 'Pridávať úlohy'], ['can_complete_tasks', 'Dokončiť úlohy'], ['can_edit_own_tasks', 'Upraviť vlastné úlohy'], ['can_edit_other_tasks', 'Upraviť úlohy ostatných'], ['can_delete_own_tasks', 'Zmazať vlastné úlohy'], ['can_delete_other_tasks', 'Zmazať úlohy ostatných']]],
+                ['Komentáre', [['can_view_comments', 'Zobraziť komentáre'], ['can_add_comments', 'Pridávať komentáre'], ['can_edit_own_comments', 'Upraviť vlastné komentáre'], ['can_edit_other_comments', 'Upraviť komentáre ostatných'], ['can_delete_own_comments', 'Zmazať vlastné komentáre'], ['can_delete_other_comments', 'Zmazať komentáre ostatných']]]
+            ];
+            const tableWrap = document.createElement('div'); tableWrap.className = 'project-members-scroll'; tableWrap.tabIndex = 0; tableWrap.setAttribute('role', 'region'); tableWrap.setAttribute('aria-label', 'Oprávnenia členov projektu; posúvaj tabuľku vodorovne');
+            const table = document.createElement('table'); table.className = 'project-members-table';
+            const thead = document.createElement('thead'); const header = document.createElement('tr');
+            const memberColumn = document.createElement('th'); memberColumn.scope = 'col'; memberColumn.textContent = 'Člen'; header.append(memberColumn);
+            permissionGroups.forEach(([group, permissions]) => permissions.forEach(([key, label], index) => {
+                const th = document.createElement('th'); th.scope = 'col'; th.textContent = `${group}: ${label}`; th.title = th.textContent;
+                const hidden = document.createElement('span'); hidden.className = 'visually-hidden'; hidden.textContent = `${group} – ${label}`; th.replaceChildren(hidden); header.append(th);
+            }));
+            thead.append(header); table.append(thead);
+            const tbody = document.createElement('tbody');
+            members.forEach((member) => {
+                const row = document.createElement('tr'); const identity = document.createElement('th'); identity.scope = 'row';
+                const name = document.createElement('span'); name.textContent = member.name;
+                const email = document.createElement('small'); email.textContent = member.email;
+                const added = document.createElement('small'); added.textContent = `Pridaný ${member.added_at ? new Date(member.added_at).toLocaleDateString('sk-SK') : '—'}`;
+                const role = document.createElement('span'); role.className = 'project-member-role'; role.textContent = member.is_owner ? 'Vlastník' : 'Člen';
+                identity.append(name, email, role, added); row.append(identity);
+                permissionGroups.forEach(([, permissions]) => permissions.forEach(([key, label]) => {
+                    const cell = document.createElement('td'); const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox'; checkbox.disabled = true; checkbox.checked = Boolean(member.permissions?.[key]);
+                    checkbox.setAttribute('aria-label', `${member.name}: ${label}`); cell.append(checkbox); row.append(cell);
+                }));
+                tbody.append(row);
+            });
+            table.append(tbody); tableWrap.append(table); memberSection.append(tableWrap); root.append(memberSection);
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
             [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
@@ -1607,6 +1640,7 @@
                 projectManager.renderSidebar();
                 if (route.name === 'projects') projectManager.renderList();
                 else {
+                    state.projectMembers = [];
                     // Úlohy detailu projektu načítajú samostatne; zoznam projektov funguje už vo fáze B5.
                     try {
                         const tasks = await api.request('GET', '/api/tasks');
@@ -1619,9 +1653,16 @@
                     notifications.update();
                     const cached = state.projects.find((item) => String(item.id) === String(route.id));
                     if (!cached) { document.getElementById('project-detail-view').textContent = 'Projekt sa nenašiel.'; return; }
-                    try { await Promise.all([api.request('GET', `/api/projects/${encodeURIComponent(route.id)}`), api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`)]); }
-                    catch (_) { /* Detail zostane použiteľný z už načítaného zoznamu aj pri obmedzenom mocku. */ }
-                    if (routeSequence === state.routeSequence) projectManager.renderDetail(cached);
+                    const [detail, tasks, members] = await Promise.all([
+                        api.request('GET', `/api/projects/${encodeURIComponent(route.id)}`),
+                        api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`),
+                        api.request('GET', `/api/projects/${encodeURIComponent(route.id)}/members`)
+                    ]);
+                    if (routeSequence === state.routeSequence) {
+                        state.projectMembers = Array.isArray(members) ? members : [];
+                        state.tasks = Array.isArray(tasks) ? tasks : state.tasks;
+                        projectManager.renderDetail(detail || cached, state.projectMembers);
+                    }
                 }
             } catch (error) {
                 const target = document.getElementById(route.name === 'projects' ? 'project-list' : 'project-detail-view');

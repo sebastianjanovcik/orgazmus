@@ -66,16 +66,31 @@ try {
         $projectStatement->execute($project);
     }
 
+    // Seed udržiava vlastníkovo členstvo úplné aj po opakovanom obnovení dema.
+    $ownerMembership = $pdo->prepare(
+        'INSERT INTO project_members (project_id, user_id, can_view_project, can_manage_project, can_manage_members,
+         can_view_tasks, can_add_tasks, can_complete_tasks, can_edit_own_tasks, can_edit_other_tasks,
+         can_delete_own_tasks, can_delete_other_tasks, can_view_comments, can_add_comments,
+         can_edit_own_comments, can_edit_other_comments, can_delete_own_comments, can_delete_other_comments)
+         VALUES (?, ?, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+         ON DUPLICATE KEY UPDATE can_view_project = 1, can_manage_project = 1, can_manage_members = 1,
+         can_view_tasks = 1, can_add_tasks = 1, can_complete_tasks = 1, can_edit_own_tasks = 1,
+         can_edit_other_tasks = 1, can_delete_own_tasks = 1, can_delete_other_tasks = 1,
+         can_view_comments = 1, can_add_comments = 1, can_edit_own_comments = 1,
+         can_edit_other_comments = 1, can_delete_own_comments = 1, can_delete_other_comments = 1'
+    );
+    foreach ($projects as [$projectId, $ownerId]) $ownerMembership->execute([$projectId, $ownerId]);
+
     $tasks = [
-        [100, 10, 'Pripraviť návrh', '<p>Prvá verzia návrhu na kontrolu.</p>', 3, '2026-11-06', false, null],
-        [101, 10, 'Poslať podklady tímu', null, 2, '2026-11-03', true, '2026-10-30 12:00:00'],
-        [102, 11, 'Kúpiť žiarovky', null, 1, '2026-11-08', false, null],
-        [103, 20, 'Skontrolovať spätnú väzbu', '<p>Zhrnúť pripomienky z posledného kola.</p>', 4, '2026-11-05', false, null],
+        [100, 10, 1, 'Pripraviť návrh', '<p>Prvá verzia návrhu na kontrolu.</p>', 3, '2026-11-06', false, null],
+        [101, 10, 1, 'Poslať podklady tímu', null, 2, '2026-11-03', true, '2026-10-30 12:00:00'],
+        [102, 11, 1, 'Kúpiť žiarovky', null, 1, '2026-11-08', false, null],
+        [103, 20, 2, 'Skontrolovať spätnú väzbu', '<p>Zhrnúť pripomienky z posledného kola.</p>', 4, '2026-11-05', false, null],
     ];
     $taskStatement = $pdo->prepare(
-        'INSERT INTO tasks (id, project_id, title, description, priority, due_date, is_done, completed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE project_id = VALUES(project_id), title = VALUES(title),
+        'INSERT INTO tasks (id, project_id, created_by, title, description, priority, due_date, is_done, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE project_id = VALUES(project_id), created_by = VALUES(created_by), title = VALUES(title),
              description = VALUES(description), priority = VALUES(priority), due_date = VALUES(due_date),
              is_done = VALUES(is_done), completed_at = VALUES(completed_at)'
     );

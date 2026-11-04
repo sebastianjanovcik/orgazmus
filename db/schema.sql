@@ -33,9 +33,37 @@ CREATE TABLE IF NOT EXISTS projects (
     CONSTRAINT chk_projects_color CHECK (color REGEXP '^#[0-9A-Fa-f]{6}$')
 ) ENGINE=InnoDB;
 
+-- Každý projekt má jedného vlastníka a samostatné riadky pre ďalších členov.
+CREATE TABLE IF NOT EXISTS project_members (
+    project_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    can_view_project BOOLEAN NOT NULL DEFAULT FALSE,
+    can_manage_project BOOLEAN NOT NULL DEFAULT FALSE,
+    can_manage_members BOOLEAN NOT NULL DEFAULT FALSE,
+    can_view_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_add_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_complete_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_own_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_other_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_own_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_other_tasks BOOLEAN NOT NULL DEFAULT FALSE,
+    can_view_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_add_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_own_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_other_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_own_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_other_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (project_id, user_id),
+    KEY idx_project_members_user (user_id, project_id),
+    CONSTRAINT fk_project_members_project FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+    CONSTRAINT fk_project_members_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS tasks (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     project_id BIGINT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
     title VARCHAR(150) NOT NULL,
     description TEXT NULL,
     priority TINYINT UNSIGNED NOT NULL DEFAULT 2,
@@ -48,6 +76,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     KEY idx_tasks_project_state_date (project_id, is_done, due_date, priority, id),
     KEY idx_tasks_due_date (due_date),
     CONSTRAINT fk_tasks_project FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+    CONSTRAINT fk_tasks_creator FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT chk_tasks_priority CHECK (priority BETWEEN 1 AND 4),
     CONSTRAINT chk_tasks_completion CHECK (
         (is_done = FALSE AND completed_at IS NULL) OR
