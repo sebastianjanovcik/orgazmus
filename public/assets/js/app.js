@@ -1434,7 +1434,8 @@
             const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
             try {
                 const result = await api.request('POST', `/api/projects/${form.dataset.projectId}/invitations`, payload);
-                const link = `${window.location.origin}${window.location.pathname}#invite-${result.id}-${result.token}`;
+                const invitationBaseUrl = String((window.TASKO_CONFIG || {}).invitationBaseUrl || window.location.origin).replace(/\/$/, '');
+                const link = `${invitationBaseUrl}/#invite-${result.id}-${result.token}`;
                 const label = document.createElement('p'); label.textContent = `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
                 // Textové pole zobrazuje celý tokenizovaný odkaz; type=url niektoré prehliadače pri hash route vizuálne skracujú.
                 const url = document.createElement('textarea'); url.readOnly = true; url.rows = 2; url.value = link; url.setAttribute('aria-label', 'Odkaz na pozvánku'); url.spellcheck = false;
