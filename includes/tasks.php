@@ -22,6 +22,11 @@ function tasko_task_data(array $task): array
         'due_date' => (string) $task['due_date'],
         'is_done' => (bool) $task['is_done'],
         'completed_at' => $completedAt,
+        'can_edit' => (bool) $task['can_edit'],
+        'can_delete' => (bool) $task['can_delete'],
+        'can_complete' => (bool) $task['can_complete'],
+        'can_view_comments' => (bool) $task['can_view_comments'],
+        'can_add_comments' => (bool) $task['can_add_comments'],
     ];
 }
 
@@ -64,11 +69,15 @@ function tasko_task_filters(array $query): array
     return $filters;
 }
 
-/** Vráti zoradené úlohy iba z projektov vlastníka; SQL podmienky sú pevne určené. */
+/** Vráti úlohy iba z projektov, v ktorých má používateľ právo čítať úlohy. */
 function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 {
-    $conditions = ['p.user_id = :user_id'];
-    $parameters = ['user_id' => $userId];
+    $conditions = ['(p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1))'];
+    $parameters = ['owner_id' => $userId, 'member_id' => $userId, 'edit_owner' => $userId,
+        'edit_creator_own' => $userId, 'edit_creator_other' => $userId, 'delete_owner' => $userId,
+        'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
+        'complete_owner' => $userId, 'complete_creator' => $userId,
+        'comments_view_owner' => $userId, 'comments_add_owner' => $userId];
     if (isset($filters['project_id'])) {
         $conditions[] = 't.project_id = :project_id';
         $parameters['project_id'] = (int) $filters['project_id'];
@@ -94,9 +103,15 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 
     $statement = $pdo->prepare(
         'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
-                t.due_date, t.is_done, t.completed_at
+                t.due_date, t.is_done, t.completed_at,
+                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
+                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
+                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR pm.can_complete_tasks = 1) AS can_complete,
+                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1) AS can_view_comments,
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
          WHERE ' . implode(' AND ', $conditions) . '
          ORDER BY t.is_done ASC, t.due_date ASC, t.priority DESC, t.id ASC'
     );
@@ -105,17 +120,27 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
     return array_map('tasko_task_data', $statement->fetchAll());
 }
 
-/** Detail sa vyhľadá cez vlastníctvo projektu, aby cudzie ID vyzeralo ako chýbajúce. */
+/** Detail sa vyhľadá cez členstvo a právo čítať úlohy; cudzie ID zostáva skryté. */
 function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
 {
     $statement = $pdo->prepare(
         'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
-                t.due_date, t.is_done, t.completed_at
+                t.due_date, t.is_done, t.completed_at,
+                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
+                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
+                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR pm.can_complete_tasks = 1) AS can_complete,
+                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1) AS can_view_comments,
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
-         WHERE p.user_id = :user_id AND t.id = :task_id'
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+         WHERE (p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1)) AND t.id = :task_id'
     );
-    $statement->execute(['user_id' => $userId, 'task_id' => $taskId]);
+    $statement->execute(['member_id' => $userId, 'owner_id' => $userId, 'task_id' => $taskId,
+        'edit_owner' => $userId, 'edit_creator_own' => $userId, 'edit_creator_other' => $userId,
+        'delete_owner' => $userId, 'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
+        'complete_owner' => $userId, 'complete_creator' => $userId,
+        'comments_view_owner' => $userId, 'comments_add_owner' => $userId]);
     $task = $statement->fetch();
     if (!is_array($task)) {
         throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');

@@ -694,7 +694,7 @@
 
     /* Plochý zoznam API sa skladá do stromu; text používateľa sa vždy vkladá cez textContent. */
     const commentThreads = {
-        taskId: null, items: [], container: null, requestSequence: 0,
+        taskId: null, items: [], container: null, requestSequence: 0, canAdd: false,
         /* Štandardný plán zostane zamknutý; poradové číslo zabráni starej odpovedi prepísať novšiu úlohu. */
         async load(taskId) {
             this.taskId = Number(taskId); const sequence = ++this.requestSequence; this.container = document.getElementById('task-comments');
@@ -707,7 +707,7 @@
                 this.items = Array.isArray(items) ? items : []; this.render();
             } catch (error) {
                 if (sequence !== this.requestSequence || this.taskId !== Number(taskId) || !this.container?.isConnected) return;
-                if (error.status === 403 || error.code === 'premium_required') this.renderLocked();
+                if (error.code === 'premium_required') this.renderLocked();
                 else this.renderError(error);
             }
         },
@@ -735,7 +735,7 @@
         render() {
             const root = document.createElement('section'); root.className = 'comments-section'; root.setAttribute('aria-labelledby', 'comments-heading');
             const heading = document.createElement('h4'); heading.id = 'comments-heading'; heading.textContent = `Komentáre (${this.items.length})`; root.append(heading);
-            root.append(this.makeForm(null));
+            if (this.canAdd) root.append(this.makeForm(null));
             const list = document.createElement('div'); list.className = 'comment-tree';
             const children = new Map();
             this.items.forEach((item) => { const key = item.parent_id == null ? null : String(item.parent_id); if (!children.has(key)) children.set(key, []); children.get(key).push(item); });
@@ -751,7 +751,8 @@
                     meta.append(author, date);
                     const body = document.createElement('p'); body.className = 'comment-body'; body.textContent = item.body || ''; article.append(meta, body);
                     const controls = document.createElement('div'); controls.className = 'comment-controls';
-                    if (depth < 4) { const reply = document.createElement('button'); reply.type = 'button'; reply.className = 'text-button'; reply.dataset.action = 'comment-reply'; reply.textContent = 'Odpovedať'; controls.append(reply); }
+                    if (this.canAdd && depth < 4) { const reply = document.createElement('button'); reply.type = 'button'; reply.className = 'text-button'; reply.dataset.action = 'comment-reply'; reply.textContent = 'Odpovedať'; controls.append(reply); }
+                    if (item.can_edit) { const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'text-button'; edit.dataset.action = 'comment-edit'; edit.textContent = 'Upraviť'; controls.append(edit); }
                     if (item.can_delete) { const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button comment-delete'; remove.dataset.action = 'comment-delete'; remove.textContent = 'Odstrániť'; controls.append(remove); }
                     article.append(controls); (parentNode || list).append(article); appendBranch(id, depth + 1, article);
                 });
@@ -810,6 +811,17 @@
             button.disabled = true;
             try { await api.request('DELETE', `/api/comments/${encodeURIComponent(item.apiId ?? item.id)}`); this.items = this.items.filter((entry) => !descendants.has(String(entry.id))); this.render(); }
             catch (error) { button.disabled = false; ui.showToast(error.message || 'Komentár sa nepodarilo odstrániť.', 'error'); }
+        },
+        async edit(button) {
+            const item = this.items.find((entry) => String(entry.id) === button.closest('.comment-item')?.dataset.commentId);
+            if (!item?.can_edit) return;
+            const body = window.prompt('Upraviť komentár', item.body);
+            if (body === null || body.trim() === item.body) return;
+            button.disabled = true;
+            try {
+                const saved = await api.request('PATCH', `/api/comments/${encodeURIComponent(item.apiId ?? item.id)}`, { body: body.trim() });
+                item.body = saved.body; this.render();
+            } catch (error) { button.disabled = false; ui.showToast(error.message || 'Komentár sa nepodarilo upraviť.', 'error'); }
         }
     };
 
@@ -843,6 +855,8 @@
             check.type = 'button';
             check.className = `task-check priority-${['low', 'medium', 'high', 'critical'][priority - 1]}`;
             check.dataset.action = 'task-complete';
+            check.disabled = !task.can_complete;
+            if (check.disabled) check.title = 'Na dokončenie tejto úlohy nemáš oprávnenie.';
             check.setAttribute('aria-label', `${task.is_done ? 'Znovu otvoriť' : 'Označiť ako hotovú'} úlohu ${task.title}`);
             check.setAttribute('aria-pressed', String(Boolean(task.is_done)));
             const main = document.createElement('div');
@@ -1035,12 +1049,14 @@
                 remove.type = 'button'; remove.className = 'button button-danger';
                 remove.dataset.action = 'task-delete'; remove.dataset.taskId = String(task.id);
                 remove.textContent = 'Odstrániť úlohu';
+                remove.hidden = !task.can_delete;
                 actions.append(remove);
             } else {
                 const edit = document.createElement('button');
                 edit.type = 'button'; edit.className = 'button button-primary';
                 edit.dataset.action = 'task-edit'; edit.dataset.taskId = String(task.id);
                 edit.textContent = 'Upraviť úlohu';
+                edit.hidden = !task.can_edit;
                 actions.append(edit);
             }
             content.append(actions);
@@ -1056,6 +1072,7 @@
             }
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             ui.openPanel('task-detail-panel');
+            commentThreads.canAdd = Boolean(task.can_add_comments);
             commentThreads.load(task.id);
         }
     };
@@ -1299,7 +1316,7 @@
                 const stats = document.createElement('div'); stats.className = 'project-card-stats'; stats.textContent = `${counts.done} z ${counts.total} hotových`;
                 const progress = document.createElement('progress'); progress.max = counts.total || 1; progress.value = counts.done; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
                 const edit = document.createElement('button'); edit.className = 'project-edit'; edit.type = 'button'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť'; edit.setAttribute('aria-label', `Upraviť projekt ${project.name}`);
-                edit.hidden = project.is_owner === false;
+                edit.hidden = !project.can_manage_project;
                 card.append(open, stats, progress, edit); list.append(card);
             });
         },
@@ -1435,6 +1452,21 @@
             try { await api.request('DELETE', `/api/projects/${router.current().id}/members`, { user_id: Number(button.dataset.userId) }); ui.showToast('Člen bol odstránený.'); await views.loadProjects(state.routeSequence, router.current()); }
             catch (error) { ui.showToast(error.message || 'Člena sa nepodarilo odstrániť.', 'error'); } finally { button.disabled = false; }
         },
+        async transferOwnership(button) {
+            const projectId = Number(button.dataset.projectId);
+            const select = document.getElementById('project-transfer-member');
+            const member = state.projectMembers.find((entry) => Number(entry.id) === Number(select?.value));
+            if (!member || !await ui.confirm(`Vlastníkom projektu sa stane ${member.name}. Tvoje ďalšie oprávnenia budú nastavené podľa výberu.`, 'Potvrdiť prevod vlastníctva?', 'Previesť')) return;
+            const payload = { user_id: Number(member.id), confirmed: true };
+            this.permissionFields.forEach((field) => { payload[field] = Boolean(button.closest('.project-transfer').querySelector(`[name="${field}"]`).checked); });
+            button.disabled = true;
+            try {
+                await api.request('POST', `/api/projects/${projectId}/transfer-ownership`, payload);
+                ui.showToast('Vlastníctvo projektu bolo prevedené.');
+                window.location.hash = 'projects';
+            } catch (error) { ui.showToast(error.message || 'Vlastníctvo sa nepodarilo previesť.', 'error'); }
+            finally { button.disabled = false; }
+        },
         async createInvitation(form) {
             const status = form.querySelector('.project-invitation-status');
             const payload = { email: form.elements.email.value.trim().toLowerCase() };
@@ -1482,7 +1514,7 @@
             const icon = document.createElement('span'); icon.className = 'project-card-icon'; icon.textContent = this.icons[project.icon] || '📁'; icon.setAttribute('aria-hidden', 'true');
             const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || 'Bez popisu'; text.append(title, desc);
             const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-primary'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
-            edit.hidden = project.is_owner === false;
+            edit.hidden = !project.can_manage_project;
             const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
             // Checkboxy sú zatiaľ iba náhľad serverových práv; ich editovanie patrí do kroku 2.
             const memberSection = document.createElement('details'); memberSection.className = 'task-section project-members';
@@ -1543,6 +1575,18 @@
                 item.append(permissionPanel); memberList.append(item);
             });
             memberSection.append(memberList);
+            const isOwner = Boolean(currentMember?.is_owner);
+            if (isOwner && members.some((member) => Number(member.id) !== Number(state.user?.id))) {
+                const transfer = document.createElement('section'); transfer.className = 'task-section project-transfer';
+                const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'Previesť vlastníctvo';
+                const label = document.createElement('label'); label.htmlFor = 'project-transfer-member'; label.textContent = 'Nový vlastník';
+                const select = document.createElement('select'); select.id = 'project-transfer-member'; select.dataset.projectId = String(project.id);
+                members.filter((member) => Number(member.id) !== Number(state.user?.id)).forEach((member) => { const option = document.createElement('option'); option.value = String(member.id); option.textContent = `${member.name} (${member.email})`; select.append(option); });
+                const rights = document.createElement('fieldset'); rights.className = 'project-invite-permissions'; const legend = document.createElement('legend'); legend.textContent = 'Oprávnenia, ktoré zostanú pôvodnému vlastníkovi'; rights.append(legend);
+                this.permissionFields.forEach((field) => { const item = document.createElement('label'); item.className = 'project-permission'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.name = field; const text = document.createElement('span'); text.textContent = this.permissionLabels[field]; item.append(checkbox, text); rights.append(item); });
+                const actions = document.createElement('div'); actions.className = 'panel-actions'; const button = document.createElement('button'); button.type = 'button'; button.className = 'button button-danger'; button.dataset.action = 'ownership-transfer'; button.dataset.projectId = String(project.id); button.textContent = 'Previesť vlastníctvo'; actions.append(button);
+                transfer.append(heading, label, select, rights, actions); memberSection.append(transfer);
+            }
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
             [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
@@ -1934,6 +1978,7 @@
         if (action === 'comments-retry') commentThreads.load(commentThreads.taskId);
         if (action === 'comment-reply') commentThreads.toggleReply(this);
         if (action === 'comment-delete') commentThreads.remove(this);
+        if (action === 'comment-edit') commentThreads.edit(this);
         if (action === 'menu-toggle') ui.openPanel('navigation-drawer');
         if (action === 'menu-close' || action === 'panel-close' || action === 'overlay-close') ui.closePanels();
         if (action === 'task-create') taskForm.open(null);
@@ -1964,6 +2009,7 @@
         if (action === 'project-save') projectManager.save(this);
         if (action === 'member-save') projectManager.saveMember(this);
         if (action === 'member-remove') projectManager.removeMember(this);
+        if (action === 'ownership-transfer') projectManager.transferOwnership(this);
         if (action === 'invitation-revoke') {
             const button = this; button.disabled = true;
             api.request('DELETE', `/api/projects/${button.dataset.projectId}/invitations/${button.dataset.invitationId}`)

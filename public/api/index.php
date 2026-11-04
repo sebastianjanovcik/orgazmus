@@ -184,14 +184,14 @@ function tasko_validation_error(array $fields): never
 function tasko_project_row(PDO $pdo, int $userId, int $projectId): array
 {
     $statement = $pdo->prepare(
-        'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color,
+        'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color, pm.can_manage_project,
                 COUNT(t.id) AS task_count,
                 COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
          FROM projects p
          LEFT JOIN tasks t ON t.project_id = p.id
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
          WHERE p.id = :project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)
-         GROUP BY p.id, p.name, p.description, p.icon, p.color'
+         GROUP BY p.id, p.name, p.description, p.icon, p.color, pm.can_manage_project'
     );
     $statement->execute(['member_id' => $userId, 'project_id' => $projectId, 'owner_id' => $userId]);
     $project = $statement->fetch();
@@ -202,6 +202,7 @@ function tasko_project_row(PDO $pdo, int $userId, int $projectId): array
     return [
         'id' => (int) $project['id'],
         'is_owner' => (int) $project['user_id'] === $userId,
+        'can_manage_project' => (int) $project['user_id'] === $userId || (bool) $project['can_manage_project'],
         'name' => (string) $project['name'],
         'description' => (string) $project['description'],
         'icon' => (string) $project['icon'],
@@ -271,6 +272,9 @@ try {
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
+    if (preg_match('#^/api/projects/([^/]+)/transfer-ownership$#D', $route) === 1) {
+        $allowedMethods[$route] = ['POST'];
+    }
     if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
@@ -299,7 +303,7 @@ try {
         $allowedMethods[$route] = ['GET', 'POST'];
     }
     if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1) {
-        $allowedMethods[$route] = ['DELETE'];
+        $allowedMethods[$route] = ['PATCH', 'DELETE'];
     }
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
@@ -457,20 +461,21 @@ try {
 
         if ($method === 'GET') {
             $statement = $pdo->prepare(
-                'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color,
+                'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color, pm.can_manage_project,
                         COUNT(t.id) AS task_count,
                         COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
                  FROM projects p
                  LEFT JOIN tasks t ON t.project_id = p.id
                  LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
                  WHERE p.user_id = :owner_id OR pm.can_view_project = 1
-                 GROUP BY p.id, p.name, p.description, p.icon, p.color
+                 GROUP BY p.id, p.name, p.description, p.icon, p.color, pm.can_manage_project
                  ORDER BY p.id'
             );
             $statement->execute(['member_id' => $userId, 'owner_id' => $userId]);
             $projects = array_map(static fn (array $project): array => [
                 'id' => (int) $project['id'],
                 'is_owner' => (int) $project['user_id'] === $userId,
+                'can_manage_project' => (int) $project['user_id'] === $userId || (bool) $project['can_manage_project'],
                 'name' => (string) $project['name'],
                 'description' => (string) $project['description'],
                 'icon' => (string) $project['icon'],
@@ -702,8 +707,7 @@ try {
             if ($unknown !== [] || array_intersect(array_keys($input), $allowedFields) === []) {
                 tasko_validation_error(['project' => 'Pošli aspoň jedno povolené pole projektu.']);
             }
-            // Najprv sa overí vlastníctvo, aby sa cudzie ID správalo rovnako ako chýbajúce.
-            tasko_project_row($pdo, $userId, $projectId);
+            tasko_require_project_permission($pdo, $projectId, $userId, 'can_manage_project');
             $values = [];
             $fields = [];
             if (array_key_exists('name', $input)) {
@@ -739,22 +743,26 @@ try {
 
         if ($method === 'DELETE') {
             tasko_require_same_origin();
+            tasko_require_project_permission($pdo, $projectId, $userId, 'can_manage_project');
             try {
                 $pdo->beginTransaction();
                 // Rovnaký zámok ako pri vytvorení bráni súbehu mazania a vytvárania.
                 $lock = $pdo->prepare('SELECT id FROM users WHERE id = :id FOR UPDATE');
                 $lock->execute(['id' => $userId]);
                 if ($lock->fetchColumn() === false) throw new TaskoHttpException(401, 'unauthenticated', 'Prihlásenie je potrebné.');
-                $owned = $pdo->prepare('SELECT id FROM projects WHERE id = :id AND user_id = :user_id FOR UPDATE');
-                $owned->execute(['id' => $projectId, 'user_id' => $userId]);
-                if ($owned->fetchColumn() === false) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
-                $count = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
-                $count->execute(['user_id' => $userId]);
-                if ((int) $count->fetchColumn() <= 1) {
-                    throw new TaskoHttpException(409, 'last_project', 'Posledný projekt nemožno zmazať.');
+                $owned = $pdo->prepare('SELECT id, user_id FROM projects WHERE id = :id FOR UPDATE');
+            $owned->execute(['id' => $projectId]);
+                $lockedProject = $owned->fetch();
+                if (!is_array($lockedProject)) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+                if ((int) $lockedProject['user_id'] === $userId) {
+                    $count = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
+                    $count->execute(['user_id' => $userId]);
+                    if ((int) $count->fetchColumn() <= 1) {
+                        throw new TaskoHttpException(409, 'last_project', 'Posledný projekt nemožno zmazať.');
+                    }
                 }
-                $delete = $pdo->prepare('DELETE FROM projects WHERE id = :id AND user_id = :user_id');
-                $delete->execute(['id' => $projectId, 'user_id' => $userId]);
+                $delete = $pdo->prepare('DELETE FROM projects WHERE id = :id');
+                $delete->execute(['id' => $projectId]);
                 $pdo->commit();
             } catch (Throwable $error) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
@@ -762,6 +770,41 @@ try {
             }
             tasko_json_response(204);
         }
+    }
+
+    if (preg_match('#^/api/projects/([^/]+)/transfer-ownership$#D', $route, $transferRoute) === 1 && $method === 'POST') {
+        $user = tasko_authenticated_user();
+        tasko_require_same_origin();
+        if (!tasko_validate_id($transferRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašlo.');
+        $input = tasko_read_json_body();
+        $newOwnerId = $input['user_id'] ?? null;
+        if (!tasko_validate_id($newOwnerId) || ($input['confirmed'] ?? null) !== true) {
+            tasko_validation_error(['transfer' => 'Potvrď prevod a vyber člena projektu.']);
+        }
+        $pdo = tasko_db(); $projectId = (int) $transferRoute[1]; $oldOwnerId = (int) $user['id']; $newOwnerId = (int) $newOwnerId;
+        try {
+            $pdo->beginTransaction();
+            $project = $pdo->prepare('SELECT user_id FROM projects WHERE id = :id FOR UPDATE');
+            $project->execute(['id' => $projectId]);
+            $currentOwner = $project->fetchColumn();
+            if ($currentOwner === false) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašlo.');
+            if ((int) $currentOwner !== $oldOwnerId) throw new TaskoHttpException(403, 'forbidden', 'Prevod môže potvrdiť iba súčasný vlastník.');
+            if ($newOwnerId === $oldOwnerId) throw new TaskoHttpException(422, 'validation_error', 'Novým vlastníkom musí byť iný člen.');
+            $member = $pdo->prepare('SELECT 1 FROM project_members WHERE project_id = :project_id AND user_id = :user_id FOR UPDATE');
+            $member->execute(['project_id' => $projectId, 'user_id' => $newOwnerId]);
+            if (!$member->fetchColumn()) throw new TaskoHttpException(422, 'validation_error', 'Novým vlastníkom môže byť iba existujúci člen projektu.');
+            $permissionFields = tasko_project_permission_fields();
+            $unknown = array_diff(array_keys($input), ['user_id', 'confirmed', ...$permissionFields]);
+            if ($unknown !== []) tasko_validation_error(['permissions' => 'Požiadavka obsahuje neznáme oprávnenia.']);
+            foreach ($permissionFields as $field) if (!is_bool($input[$field] ?? null)) tasko_validation_error([$field => 'Nastav oprávnenia pôvodného vlastníka.']);
+            $assignments = implode(', ', array_map(static fn (string $field): string => "`$field` = :$field", $permissionFields));
+            $values = array_map(static fn (string $field): int => (int) $input[$field], $permissionFields);
+            $values += ['project_id' => $projectId, 'user_id' => $oldOwnerId];
+            $pdo->prepare("UPDATE project_members SET $assignments WHERE project_id = :project_id AND user_id = :user_id")->execute($values);
+            $pdo->prepare('UPDATE projects SET user_id = :new_owner WHERE id = :id')->execute(['new_owner' => $newOwnerId, 'id' => $projectId]);
+            $pdo->commit();
+        } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
+        tasko_json_response(200, tasko_project_row($pdo, $newOwnerId, $projectId));
     }
 
     if ($route === '/api/tasks' && in_array($method, ['GET', 'POST'], true)) {
@@ -788,11 +831,8 @@ try {
             if (!tasko_validate_date($dueDate)) $fields['due_date'] = 'Zadaj platný dátum YYYY-MM-DD.';
             if ($fields !== []) tasko_validation_error($fields);
 
-            // Vlastníctvo projektu overuje server ešte pred zápisom, aj keď ho klient zobrazil vo výbere.
             $pdo = tasko_db();
-            $project = $pdo->prepare('SELECT id FROM projects WHERE id = :project_id AND user_id = :user_id');
-            $project->execute(['project_id' => (int) $projectId, 'user_id' => $user['id']]);
-            if ($project->fetchColumn() === false) tasko_validation_error(['project_id' => 'Vybraný projekt neexistuje.']);
+            tasko_require_project_permission($pdo, (int) $projectId, (int) $user['id'], 'can_add_tasks');
 
             $insert = $pdo->prepare(
                 'INSERT INTO tasks (project_id, created_by, title, description, priority, due_date)
@@ -835,13 +875,15 @@ try {
         $userId = (int) $user['id'];
         $taskId = (int) $commentsRoute[1];
         $pdo = tasko_db();
-        tasko_task_find($pdo, $userId, $taskId);
+        $task = tasko_task_find($pdo, $userId, $taskId);
+        tasko_require_project_permission($pdo, (int) $task['project_id'], $userId, 'can_view_comments');
 
         if ($method === 'GET') {
             tasko_json_response(200, tasko_comments_find($pdo, $taskId, $userId));
         }
 
         tasko_require_same_origin();
+        tasko_require_project_permission($pdo, (int) $task['project_id'], $userId, 'can_add_comments');
         $input = tasko_read_json_body();
         $unknown = array_diff(array_keys($input), ['body', 'parent_id', 'depth']);
         $body = tasko_validate_comment_body($input['body'] ?? null);
@@ -900,31 +942,40 @@ try {
         $created->execute(['depth' => $depth, 'author_id' => $userId, 'id' => $newId]);
         $row = $created->fetch();
         if (!is_array($row)) throw new RuntimeException('Vložený komentár sa nepodarilo načítať.');
-        tasko_json_response(201, tasko_comment_data($row, $userId));
+        $commentRights = $pdo->prepare(
+            'SELECT p.user_id AS owner_id, pm.can_edit_own_comments, pm.can_delete_own_comments
+             FROM tasks t INNER JOIN projects p ON p.id = t.project_id
+             LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id
+             WHERE t.id = :task_id'
+        );
+        $commentRights->execute(['user_id' => $userId, 'task_id' => $taskId]);
+        $rights = $commentRights->fetch() ?: [];
+        $owner = (int) ($rights['owner_id'] ?? 0) === $userId;
+        tasko_json_response(201, tasko_comment_data($row, $userId, $owner || (bool) ($rights['can_edit_own_comments'] ?? false), $owner || (bool) ($rights['can_delete_own_comments'] ?? false)));
     }
 
-    if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1 && $method === 'DELETE') {
+    if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1 && in_array($method, ['PATCH', 'DELETE'], true)) {
         $user = tasko_authenticated_user();
         tasko_require_comment_access((string) $user['plan']);
         tasko_require_same_origin();
         if (!tasko_validate_id($commentRoute[1])) {
             throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
         }
-        // Vlastníctvo úlohy aj autorstvo sa kontrolujú spolu, aby cudzie komentáre nebolo možné rozlíšiť.
-        $delete = tasko_db()->prepare(
-            'DELETE comments FROM comments
-             INNER JOIN tasks ON tasks.id = comments.task_id
-             INNER JOIN projects ON projects.id = tasks.project_id
-             WHERE comments.id = :comment_id AND comments.author_id = :author_id AND projects.user_id = :user_id'
-        );
-        $delete->execute([
-            'comment_id' => (int) $commentRoute[1],
-            'author_id' => (int) $user['id'],
-            'user_id' => (int) $user['id'],
-        ]);
-        if ($delete->rowCount() === 0) {
-            throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
+        $pdo = tasko_db();
+        $comment = $pdo->prepare('SELECT c.author_id, t.project_id FROM comments c INNER JOIN tasks t ON t.id = c.task_id WHERE c.id = :id');
+        $comment->execute(['id' => (int) $commentRoute[1]]);
+        $row = $comment->fetch();
+        if (!is_array($row)) throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
+        tasko_require_record_permission($pdo, (int) $row['project_id'], (int) $user['id'], (int) $row['author_id'], 'comments', $method === 'PATCH' ? 'edit' : 'delete');
+        if ($method === 'PATCH') {
+            $input = tasko_read_json_body();
+            if (array_diff(array_keys($input), ['body']) !== []) tasko_validation_error(['comment' => 'Pošli iba text komentára.']);
+            $body = tasko_validate_comment_body($input['body'] ?? null);
+            if ($body === null) tasko_validation_error(['body' => 'Komentár musí mať 1 až 1 000 znakov.']);
+            $pdo->prepare('UPDATE comments SET body = :body WHERE id = :id')->execute(['body' => $body, 'id' => (int) $commentRoute[1]]);
+            tasko_json_response(200, ['id' => (int) $commentRoute[1], 'body' => $body]);
         }
+        $pdo->prepare('DELETE FROM comments WHERE id = :id')->execute(['id' => (int) $commentRoute[1]]);
         tasko_json_response(204);
     }
 
@@ -936,22 +987,24 @@ try {
         }
         $taskId = (int) $taskActionRoute[1];
         $pdo = tasko_db();
-        // Pred zmenou stavu sa kontroluje vlastníctvo; cudzie ID má rovnakú odpoveď ako neexistujúce.
-        tasko_task_find($pdo, (int) $user['id'], $taskId);
+        $task = tasko_task_find($pdo, (int) $user['id'], $taskId);
+        if ((int) $task['created_by'] !== (int) $user['id']) {
+            tasko_require_project_permission($pdo, (int) $task['project_id'], (int) $user['id'], 'can_complete_tasks');
+        }
         if ($taskActionRoute[2] === 'complete') {
             $update = $pdo->prepare(
                 'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
                  SET t.is_done = 1, t.completed_at = COALESCE(t.completed_at, UTC_TIMESTAMP())
-                 WHERE t.id = :task_id AND p.user_id = :user_id'
+                 WHERE t.id = :task_id AND (p.user_id = :user_id OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = :member_id AND (pm.can_complete_tasks = 1 OR t.created_by = :creator_id)))'
             );
         } else {
             $update = $pdo->prepare(
                 'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
                  SET t.is_done = 0, t.completed_at = NULL
-                 WHERE t.id = :task_id AND p.user_id = :user_id'
+                 WHERE t.id = :task_id AND (p.user_id = :user_id OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = :member_id AND (pm.can_complete_tasks = 1 OR t.created_by = :creator_id)))'
             );
         }
-        $update->execute(['task_id' => $taskId, 'user_id' => (int) $user['id']]);
+        $update->execute(['task_id' => $taskId, 'user_id' => (int) $user['id'], 'member_id' => (int) $user['id'], 'creator_id' => (int) $user['id']]);
         tasko_json_response(200, tasko_task_find($pdo, (int) $user['id'], $taskId));
     }
 
@@ -967,13 +1020,12 @@ try {
         if ($method === 'GET') tasko_json_response(200, $current);
         tasko_require_same_origin();
         if ($method === 'DELETE') {
-            $delete = $pdo->prepare(
-                'DELETE t FROM tasks t INNER JOIN projects p ON p.id = t.project_id
-                 WHERE t.id = :task_id AND p.user_id = :user_id'
-            );
-            $delete->execute(['task_id' => $taskId, 'user_id' => $user['id']]);
+            tasko_require_record_permission($pdo, (int) $current['project_id'], (int) $user['id'], (int) $current['created_by'], 'tasks', 'delete');
+            $pdo->prepare('DELETE FROM tasks WHERE id = :task_id')->execute(['task_id' => $taskId]);
             tasko_json_response(204);
         }
+
+        tasko_require_record_permission($pdo, (int) $current['project_id'], (int) $user['id'], (int) $current['created_by'], 'tasks', 'edit');
 
         $input = tasko_read_json_body();
         // Povolené názvy polí tvoria aj zoznam SQL identifikátorov; hodnoty ostávajú parametrizované.
@@ -1003,10 +1055,14 @@ try {
             if (!tasko_validate_id($values['project_id'])) {
                 $fields['project_id'] = 'Vyber platný projekt.';
             } else {
-                $project = $pdo->prepare('SELECT id FROM projects WHERE id = :project_id AND user_id = :user_id');
-                $project->execute(['project_id' => (int) $values['project_id'], 'user_id' => $user['id']]);
-                if ($project->fetchColumn() === false) $fields['project_id'] = 'Vybraný projekt neexistuje.';
-                else $values['project_id'] = (int) $values['project_id'];
+                try {
+                    if ((int) $values['project_id'] !== (int) $current['project_id']) {
+                        tasko_require_project_permission($pdo, (int) $values['project_id'], (int) $user['id'], 'can_add_tasks');
+                    }
+                    $values['project_id'] = (int) $values['project_id'];
+                } catch (TaskoHttpException) {
+                    $fields['project_id'] = 'Vybraný projekt neexistuje alebo k nemu nemáš oprávnenie.';
+                }
             }
         }
         if (array_key_exists('priority', $input)) {
@@ -1023,10 +1079,9 @@ try {
         $assignments = [];
         foreach (array_keys($values) as $field) $assignments[] = "t.`$field` = :$field";
         $values['task_id'] = $taskId;
-        $values['user_id'] = (int) $user['id'];
         $update = $pdo->prepare(
             'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id SET ' . implode(', ', $assignments) .
-            ' WHERE t.id = :task_id AND p.user_id = :user_id'
+            ' WHERE t.id = :task_id'
         );
         $update->execute($values);
         tasko_json_response(200, tasko_task_find($pdo, (int) $user['id'], $taskId));

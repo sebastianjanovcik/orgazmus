@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /** Vráti komentár v tvare API vrátane autora a oprávnenia mazať ho. */
-function tasko_comment_data(array $row, int $userId): array
+function tasko_comment_data(array $row, int $userId, bool $canEdit = false, bool $canDelete = false): array
 {
     return [
         'id' => (int) $row['id'],
@@ -12,13 +12,23 @@ function tasko_comment_data(array $row, int $userId): array
         'body' => (string) $row['body'],
         'author' => ['id' => (int) $row['author_id'], 'name' => (string) $row['author_name']],
         'created_at' => (string) $row['created_at'],
-        'can_delete' => (int) $row['author_id'] === $userId,
+        'can_edit' => $canEdit,
+        'can_delete' => $canDelete,
     ];
 }
 
 /** Načíta komentáre danej úlohy; hĺbka sa počíta z reťazca rodičov v databáze. */
 function tasko_comments_find(PDO $pdo, int $taskId, int $userId): array
 {
+    $access = $pdo->prepare(
+        'SELECT p.user_id AS owner_id, pm.can_edit_own_comments, pm.can_edit_other_comments,
+                pm.can_delete_own_comments, pm.can_delete_other_comments
+         FROM tasks t INNER JOIN projects p ON p.id = t.project_id
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id
+         WHERE t.id = :task_id'
+    );
+    $access->execute(['user_id' => $userId, 'task_id' => $taskId]);
+    $rights = $access->fetch() ?: [];
     $statement = $pdo->prepare(
         'WITH RECURSIVE comment_tree AS (
             SELECT id, task_id, parent_id, author_id, body, created_at, 0 AS depth
@@ -38,7 +48,12 @@ function tasko_comments_find(PDO $pdo, int $taskId, int $userId): array
     $statement->execute(['task_id' => $taskId]);
 
     return array_map(
-        static fn (array $row): array => tasko_comment_data($row, $userId),
+        static function (array $row) use ($userId, $rights): array {
+            $owner = (int) ($rights['owner_id'] ?? 0) === $userId;
+            $own = (int) $row['author_id'] === $userId;
+            return tasko_comment_data($row, $userId, $owner || (bool) ($rights[$own ? 'can_edit_own_comments' : 'can_edit_other_comments'] ?? false),
+                $owner || (bool) ($rights[$own ? 'can_delete_own_comments' : 'can_delete_other_comments'] ?? false));
+        },
         $statement->fetchAll()
     );
 }
