@@ -1383,8 +1383,7 @@
         },
         renderInvitationTools(root, project, groups) {
             const section = document.createElement('details'); section.className = 'task-section project-invitations';
-            const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading';
-            const headingText = document.createElement('span'); headingText.textContent = 'Pozvať člena'; heading.append(headingText); section.append(heading);
+            const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading'; heading.textContent = 'Pozvať člena'; section.append(heading);
             const form = document.createElement('form'); form.className = 'project-invitation-form'; form.dataset.projectId = String(project.id);
             const emailLabel = document.createElement('label'); emailLabel.textContent = 'E-mail pozvaného'; emailLabel.htmlFor = 'project-invite-email';
             const email = document.createElement('input'); email.id = 'project-invite-email'; email.name = 'email'; email.type = 'email'; email.autocomplete = 'email'; email.required = true; email.maxLength = 254;
