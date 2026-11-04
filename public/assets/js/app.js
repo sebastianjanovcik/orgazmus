@@ -1400,6 +1400,8 @@
             const submit = document.createElement('button'); submit.type = 'submit'; submit.className = 'button button-primary'; submit.textContent = 'Vytvoriť pozvánku';
             const status = document.createElement('div'); status.className = 'project-invitation-status'; status.setAttribute('aria-live', 'polite');
             form.append(emailLabel, email, presetLabel, preset, fieldset, note, submit, status); section.append(form);
+            // Predvoľba používa rovnaký prístupný vlastný select ako ostatné výbery v aplikácii.
+            dropdowns.init(form);
             const dropdown = document.createElement('details'); dropdown.className = 'project-invitation-dropdown';
             const dropdownHeading = document.createElement('summary'); dropdownHeading.textContent = 'Pozvánky a ich stav';
             const list = document.createElement('div'); list.className = 'project-invitation-list'; list.setAttribute('aria-live', 'polite'); list.textContent = 'Načítavam pozvánky…';
