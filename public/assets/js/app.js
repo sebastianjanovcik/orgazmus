@@ -166,41 +166,78 @@
         }
     };
 
-    /* Upozornenia sú odvodené z už načítaných otvorených úloh; mock API sa tým nemení. */
+    /* Panel číta iba serverové upozornenia a označí prečítanými až vykreslené riadky. */
     const notifications = {
-        relevantTasks() {
-            const today = components.today();
-            return state.tasks.filter((task) => !task.is_done && task.due_date && task.due_date <= today)
-                .sort((a, b) => a.due_date.localeCompare(b.due_date));
-        },
+        items: [],
+        nextBefore: null,
+        unreadCount: 0,
         update() {
             const button = document.querySelector('.notification-button');
             const badge = document.querySelector('.notification-dot');
             if (!button || !badge) return;
-            const count = this.relevantTasks().length;
+            const count = this.unreadCount;
             badge.hidden = count === 0;
-            badge.setAttribute('aria-label', i18n.t('overdue_count').replace('{count}', count));
             button.setAttribute('aria-label', `${i18n.t('notifications')} (${count})`);
         },
-        show() {
-            const tasks = this.relevantTasks();
+        async show() {
             const panel = document.getElementById('notification-panel');
             const list = document.getElementById('notification-list');
             if (!panel || !list) return;
-            list.replaceChildren();
-            if (!tasks.length) {
-                const empty = document.createElement('li'); empty.className = 'notification-empty';
-                empty.textContent = i18n.t('no_notifications'); list.append(empty);
-            } else tasks.forEach((task) => {
-                const row = document.createElement('li');
-                const label = document.createElement('span');
-                label.className = task.due_date < components.today() ? 'notification-overdue' : 'notification-today';
-                label.textContent = task.due_date < components.today() ? i18n.t('overdue') : i18n.t('due_today');
-                const title = document.createElement('span'); title.textContent = task.title;
-                row.append(label, title); list.append(row);
-            });
             panel.hidden = false;
             document.querySelector('.notification-button').setAttribute('aria-expanded', 'true');
+            list.innerHTML = '<li class="notification-skeleton" aria-hidden="true"></li><li class="notification-skeleton" aria-hidden="true"></li><li class="notification-skeleton" aria-hidden="true"></li>';
+            try {
+                const page = await api.request('GET', '/api/me/notifications');
+                this.items = Array.isArray(page?.items) ? page.items : [];
+                this.nextBefore = page?.next_before ?? null;
+                this.unreadCount = Number(page?.unread_count) || 0;
+                list.replaceChildren();
+                if (!this.items.length) {
+                    const empty = document.createElement('li'); empty.className = 'notification-empty';
+                    empty.textContent = 'Zatiaľ nemáš žiadne upozornenia.'; list.append(empty);
+                } else this.renderItems(this.items, list);
+                const visibleIds = this.items.filter((item) => !item.is_read).map((item) => item.id);
+                if (visibleIds.length) {
+                    const result = await api.request('POST', '/api/me/notifications', { ids: visibleIds });
+                    this.items.forEach((item) => { if (visibleIds.includes(item.id)) item.is_read = true; });
+                    list.querySelectorAll('.notification-unread').forEach((row) => row.classList.remove('notification-unread'));
+                    this.unreadCount = Number(result?.unread_count) || 0;
+                }
+                this.update(); this.renderMoreButton(list);
+            } catch (error) {
+                list.replaceChildren(); const row = document.createElement('li'); row.className = 'notification-error'; row.textContent = error.message || 'Upozornenia sa nepodarilo načítať.'; list.append(row);
+            }
+        },
+        renderItems(items, list) {
+            items.forEach((item) => {
+                const row = document.createElement('li'); row.classList.toggle('notification-unread', !item.is_read);
+                const message = document.createElement('span'); message.textContent = item.message;
+                const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
+                row.append(message, time); list.append(row);
+            });
+        },
+        renderMoreButton(list) {
+            const oldButton = list.parentElement.querySelector('.notification-more'); if (oldButton) oldButton.remove();
+            if (!this.nextBefore) return;
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'button button-quiet notification-more'; button.textContent = 'Načítať staršie';
+            button.addEventListener('click', async () => {
+                button.disabled = true;
+                try {
+                    const page = await api.request('GET', `/api/me/notifications?before=${this.nextBefore}`);
+                    const rows = Array.isArray(page?.items) ? page.items : [];
+                    this.items.push(...rows); this.nextBefore = page?.next_before ?? null;
+                    this.renderItems(rows, list);
+                    const ids = rows.filter((item) => !item.is_read).map((item) => item.id);
+                    if (ids.length) { const result = await api.request('POST', '/api/me/notifications', { ids }); this.unreadCount = Number(result?.unread_count) || 0; list.querySelectorAll('.notification-unread').forEach((row) => row.classList.remove('notification-unread')); }
+                    this.update(); this.renderMoreButton(list);
+                } catch (error) { button.textContent = error.message || 'Načítanie zlyhalo'; button.disabled = false; }
+            });
+            list.parentElement.append(button);
+        },
+        async refresh() {
+            if (!state.user) { this.items = []; this.unreadCount = 0; this.update(); return; }
+            try { const page = await api.request('GET', '/api/me/notifications'); this.items = Array.isArray(page?.items) ? page.items : []; this.unreadCount = Number(page?.unread_count) || 0; this.update(); }
+            catch (_) { /* Zlyhanie čítania neblokuje zvyšok aplikácie; panel zobrazí konkrétnu chybu. */ }
         },
         scheduleMidnight() {
             const now = new Date();
@@ -1608,6 +1645,38 @@
             root.append(memberSection);
             if (transferSection) root.append(transferSection);
             if (canManageMembers) this.renderInvitationTools(root, project, permissionGroups);
+            this.renderAudit(root, project.id);
+        },
+        async renderAudit(root, projectId) {
+            const section = document.createElement('section'); section.className = 'task-section project-audit';
+            const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'História zmien';
+            const list = document.createElement('ol'); list.className = 'project-audit-list'; list.setAttribute('aria-live', 'polite');
+            const skeleton = () => { list.replaceChildren(); for (let index = 0; index < 3; index += 1) { const row = document.createElement('li'); row.className = 'project-audit-skeleton'; row.setAttribute('aria-hidden', 'true'); list.append(row); } };
+            section.append(heading, list); root.append(section); skeleton();
+            const labels = { invitation_created: 'Vytvorená pozvánka', invitation_accepted: 'Prijatá pozvánka', member_removed: 'Odstránený člen', permissions_changed: 'Zmenené oprávnenia člena', ownership_transferred: 'Prevedené vlastníctvo' };
+            let before = null;
+            const load = async (append = false) => {
+                if (!append) skeleton();
+                try {
+                    const page = await api.request('GET', `/api/projects/${encodeURIComponent(projectId)}/audit${before ? `?before=${before}` : ''}`);
+                    if (!append) list.replaceChildren();
+                    const items = Array.isArray(page?.items) ? page.items : [];
+                    if (!items.length && !append) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = 'V projekte zatiaľ nie sú zaznamenané zmeny.'; list.append(empty); }
+                    items.forEach((item) => {
+                        const row = document.createElement('li');
+                        const title = document.createElement('strong'); title.textContent = labels[item.event_type] || 'Zmena v projekte';
+                        const by = document.createElement('span'); by.textContent = item.actor_name ? `Používateľ: ${item.actor_name}` : 'Používateľský účet už nie je dostupný';
+                        const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString('sk-SK');
+                        row.append(title, by, time); list.append(row);
+                    });
+                    before = page?.next_before ?? null;
+                    const oldButton = section.querySelector('.project-audit-more'); if (oldButton) oldButton.remove();
+                    if (before) { const more = document.createElement('button'); more.type = 'button'; more.className = 'button button-quiet project-audit-more'; more.textContent = 'Načítať staršie zmeny'; more.addEventListener('click', () => load(true)); section.append(more); }
+                } catch (error) {
+                    list.replaceChildren(); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message || 'Históriu zmien sa nepodarilo načítať.'; list.append(failure);
+                }
+            };
+            await load();
         }
     };
 
@@ -1883,6 +1952,7 @@
             api.request('GET', '/api/me').then((user) => {
                 state.user = user;
                 profile.render();
+                notifications.refresh();
             }).catch((error) => {
                 if (error.status !== 401) ui.showToast('Nepodarilo sa overiť prihlásenie. Skús to znova.', 'error');
                 state.user = null;

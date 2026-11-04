@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../includes/rules.php';
 require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/tasks.php';
 require_once __DIR__ . '/../../includes/comments.php';
+require_once __DIR__ . '/../../includes/notifications.php';
 
 /** Číta členov iba v projekte, ku ktorému má prihlásený účet prístup. */
 function tasko_project_members(PDO $pdo, int $projectId, int $userId): array
@@ -268,12 +269,16 @@ try {
         '/api/me/plan' => ['GET', 'PATCH'],
         '/api/projects' => ['GET', 'POST'],
         '/api/tasks' => ['GET', 'POST'],
+        '/api/me/notifications' => ['GET', 'POST'],
     ];
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
     if (preg_match('#^/api/projects/([^/]+)/transfer-ownership$#D', $route) === 1) {
         $allowedMethods[$route] = ['POST'];
+    }
+    if (preg_match('#^/api/projects/([^/]+)/audit$#D', $route) === 1) {
+        $allowedMethods[$route] = ['GET'];
     }
     if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
@@ -308,6 +313,51 @@ try {
     if (isset($allowedMethods[$route]) && !in_array($method, $allowedMethods[$route], true)) {
         header('Allow: ' . implode(', ', [...$allowedMethods[$route], 'OPTIONS']));
         throw new TaskoHttpException(405, 'method_not_allowed', 'Táto HTTP metóda nie je na danej ceste podporovaná.');
+    }
+
+    // Notifikácie sú vždy viazané na session používateľa; potvrdenie prijíma iba zobrazené ID.
+    if ($route === '/api/me/notifications') {
+        $user = tasko_authenticated_user();
+        $pdo = tasko_db();
+        if ($method === 'GET') {
+            $before = $_GET['before'] ?? '0';
+            if (!is_string($before) || !preg_match('/^(0|[1-9][0-9]{0,18})$/D', $before)) tasko_validation_error(['before' => 'Kurzor notifikácií nie je platný.']);
+            $rows = tasko_user_notifications($pdo, (int) $user['id'], (int) $before, 25);
+            $unread = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0');
+            $unread->execute(['user_id' => (int) $user['id']]);
+            tasko_json_response(200, ['items' => $rows, 'next_before' => count($rows) === 25 ? end($rows)['id'] : null, 'unread_count' => (int) $unread->fetchColumn()]);
+        }
+        tasko_require_same_origin();
+        $input = tasko_read_json_body();
+        $ids = $input['ids'] ?? null;
+        if (!is_array($ids) || $ids === [] || count($ids) > 50 || array_filter($ids, static fn ($id): bool => !tasko_validate_id($id))) {
+            tasko_validation_error(['ids' => 'Označ najviac 50 zobrazených notifikácií.']);
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $mark = $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = UTC_TIMESTAMP() WHERE user_id = ? AND is_read = 0 AND id IN ($placeholders)");
+        $mark->execute([(int) $user['id'], ...array_map('intval', $ids)]);
+        $unread = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0');
+        $unread->execute(['user_id' => (int) $user['id']]);
+        tasko_json_response(200, ['updated' => $mark->rowCount(), 'unread_count' => (int) $unread->fetchColumn()]);
+    }
+
+    // Audit projektu je dostupný iba členovi s právom zobraziť daný projekt.
+    if (preg_match('#^/api/projects/([^/]+)/audit$#D', $route, $auditRoute) === 1 && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($auditRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        $projectId = (int) $auditRoute[1]; $pdo = tasko_db();
+        $access = $pdo->prepare('SELECT 1 FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id WHERE p.id = :project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)');
+        $access->execute(['user_id' => (int) $user['id'], 'project_id' => $projectId, 'owner_id' => (int) $user['id']]);
+        if (!$access->fetchColumn()) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        $before = $_GET['before'] ?? '0';
+        if (!is_string($before) || !preg_match('/^(0|[1-9][0-9]{0,18})$/D', $before)) tasko_validation_error(['before' => 'Kurzor auditu nie je platný.']);
+        $cursor = (int) $before > 0 ? ' AND a.id < :before_id' : '';
+        $query = $pdo->prepare('SELECT a.id, a.actor_id, u.name AS actor_name, a.event_type, a.details, a.created_at FROM project_audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE a.project_id = :project_id' . $cursor . ' ORDER BY a.id DESC LIMIT 25');
+        $query->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        if ((int) $before > 0) $query->bindValue(':before_id', (int) $before, PDO::PARAM_INT);
+        $query->execute();
+        $rows = array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'actor_name' => $row['actor_name'], 'event_type' => (string) $row['event_type'], 'details' => json_decode((string) $row['details'], true) ?: [], 'created_at' => (new DateTimeImmutable((string) $row['created_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z')], $query->fetchAll());
+        tasko_json_response(200, ['items' => $rows, 'next_before' => count($rows) === 25 ? end($rows)['id'] : null]);
     }
 
     if ($route === '/api/auth/register' && $method === 'POST') {
@@ -561,8 +611,13 @@ try {
         $exists->execute(['project_id' => $projectId, 'user_id' => $memberId]);
         if (!$exists->fetchColumn()) throw new TaskoHttpException(404, 'not_found', 'Člen sa nenašiel.');
         if ($method === 'DELETE') {
-            $delete = $pdo->prepare('DELETE FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
-            $delete->execute(['project_id' => $projectId, 'user_id' => $memberId]);
+            $pdo->beginTransaction();
+            try {
+                $delete = $pdo->prepare('DELETE FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
+                $delete->execute(['project_id' => $projectId, 'user_id' => $memberId]);
+                tasko_record_project_event($pdo, $projectId, $managerId, 'member_removed', ['member_id' => $memberId], [$memberId]);
+                $pdo->commit();
+            } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
             tasko_json_response(204);
         }
         $unknown = array_diff(array_keys($input), ['user_id', ...tasko_project_permission_fields()]);
@@ -574,8 +629,13 @@ try {
         }
         $assignments = array_map(static fn (string $field): string => "`$field` = :$field", array_keys($values));
         $values += ['project_id' => $projectId, 'user_id' => $memberId];
-        $update = $pdo->prepare('UPDATE project_members SET ' . implode(', ', $assignments) . ' WHERE project_id = :project_id AND user_id = :user_id');
-        $update->execute($values);
+        $pdo->beginTransaction();
+        try {
+            $update = $pdo->prepare('UPDATE project_members SET ' . implode(', ', $assignments) . ' WHERE project_id = :project_id AND user_id = :user_id');
+            $update->execute($values);
+            tasko_record_project_event($pdo, $projectId, $managerId, 'permissions_changed', ['member_id' => $memberId], [$memberId]);
+            $pdo->commit();
+        } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
         tasko_json_response(200, tasko_project_members($pdo, $projectId, $managerId));
     }
 
@@ -624,6 +684,7 @@ try {
         $insert = $pdo->prepare("INSERT INTO project_invitations (project_id, invited_email, invited_user_id, invited_by, token_hash, expires_at, $columns) VALUES (:project_id, :email, :invitee_id, :invited_by, :token_hash, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 7 DAY), $params)");
         $insert->execute($permissions + ['project_id' => $projectId, 'email' => $email, 'invitee_id' => $inviteeId === false ? null : (int) $inviteeId, 'invited_by' => $userId, 'token_hash' => $tokenHash]);
         $invitationId = (int) $pdo->lastInsertId();
+        tasko_record_project_event($pdo, $projectId, $userId, 'invitation_created', ['invitation_id' => $invitationId, 'invited_user_id' => $inviteeId === false ? null : (int) $inviteeId], $inviteeId === false ? [] : [(int) $inviteeId]);
         $pdo->commit();
         } catch (Throwable $error) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -636,9 +697,17 @@ try {
         tasko_require_same_origin(); $user = tasko_authenticated_user();
         if (!tasko_validate_id($invitationRevokeRoute[1]) || !tasko_validate_id($invitationRevokeRoute[2])) throw new TaskoHttpException(404, 'not_found', 'Pozvánka sa nenašla.');
         $pdo = tasko_db(); $projectId = (int) $invitationRevokeRoute[1]; tasko_require_project_member_manager($pdo, $projectId, (int) $user['id']);
-        $update = $pdo->prepare("UPDATE project_invitations SET status = 'revoked', responded_at = UTC_TIMESTAMP() WHERE id = :id AND project_id = :project_id AND status = 'pending'");
-        $update->execute(['id' => (int) $invitationRevokeRoute[2], 'project_id' => $projectId]);
-        if ($update->rowCount() === 0) throw new TaskoHttpException(404, 'not_found', 'Aktívna pozvánka sa nenašla.');
+        $pdo->beginTransaction();
+        try {
+            $find = $pdo->prepare("SELECT invited_user_id FROM project_invitations WHERE id = :id AND project_id = :project_id AND status = 'pending' FOR UPDATE");
+            $find->execute(['id' => (int) $invitationRevokeRoute[2], 'project_id' => $projectId]);
+            $inviteeId = $find->fetchColumn();
+            if ($inviteeId === false) throw new TaskoHttpException(404, 'not_found', 'Aktívna pozvánka sa nenašla.');
+            $update = $pdo->prepare("UPDATE project_invitations SET status = 'revoked', responded_at = UTC_TIMESTAMP() WHERE id = :id AND project_id = :project_id");
+            $update->execute(['id' => (int) $invitationRevokeRoute[2], 'project_id' => $projectId]);
+            tasko_record_project_event($pdo, $projectId, (int) $user['id'], 'invitation_revoked', ['invitation_id' => (int) $invitationRevokeRoute[2]], $inviteeId === null ? [] : [(int) $inviteeId]);
+            $pdo->commit();
+        } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
         tasko_json_response(204);
     }
 
@@ -680,6 +749,12 @@ try {
             }
             $status = $invitationActionRoute[2] === 'accept' ? 'accepted' : 'declined';
             $pdo->prepare('UPDATE project_invitations SET status = :status, invited_user_id = :user_id, responded_at = UTC_TIMESTAMP() WHERE id = :id')->execute(['status' => $status, 'user_id' => (int) $user['id'], 'id' => (int) $invitation['id']]);
+            if ($status === 'accepted') {
+                $ownerQuery = $pdo->prepare('SELECT user_id FROM projects WHERE id = :project_id');
+                $ownerQuery->execute(['project_id' => (int) $invitation['project_id']]);
+                $ownerId = (int) $ownerQuery->fetchColumn();
+                tasko_record_project_event($pdo, (int) $invitation['project_id'], (int) $user['id'], 'invitation_accepted', ['member_id' => (int) $user['id']], [$ownerId]);
+            }
             $pdo->commit();
         } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
         tasko_json_response(200, ['status' => $status, 'project_id' => (int) $invitation['project_id']]);
@@ -825,6 +900,7 @@ try {
             $values += ['project_id' => $projectId, 'user_id' => $oldOwnerId];
             $pdo->prepare("UPDATE project_members SET $assignments WHERE project_id = :project_id AND user_id = :user_id")->execute($values);
             $pdo->prepare('UPDATE projects SET user_id = :new_owner, name = :name WHERE id = :id')->execute(['new_owner' => $newOwnerId, 'name' => $projectName, 'id' => $projectId]);
+            tasko_record_project_event($pdo, $projectId, $oldOwnerId, 'ownership_transferred', ['new_owner_id' => $newOwnerId], [$newOwnerId]);
             $pdo->commit();
         } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
         tasko_json_response(200, tasko_project_row($pdo, $newOwnerId, $projectId));
