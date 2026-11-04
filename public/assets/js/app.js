@@ -1457,7 +1457,8 @@
             const select = document.getElementById('project-transfer-member');
             const member = state.projectMembers.find((entry) => Number(entry.id) === Number(select?.value));
             if (!member || !await ui.confirm(`Vlastníkom projektu sa stane ${member.name}. Tvoje ďalšie oprávnenia budú nastavené podľa výberu.`, 'Potvrdiť prevod vlastníctva?', 'Previesť')) return;
-            const payload = { user_id: Number(member.id), confirmed: true };
+            const payload = { user_id: Number(member.id), confirmed: true, name: button.closest('.project-transfer').querySelector('.project-transfer-name').value.trim() };
+            if (!payload.name || payload.name.length > 40) { ui.showToast('Názov projektu musí mať 1 až 40 znakov.', 'error'); return; }
             this.permissionFields.forEach((field) => { payload[field] = Boolean(button.closest('.project-transfer').querySelector(`[name="${field}"]`).checked); });
             button.disabled = true;
             try {
@@ -1575,17 +1576,25 @@
                 item.append(permissionPanel); memberList.append(item);
             });
             memberSection.append(memberList);
+            let transferSection = null;
             const isOwner = Boolean(currentMember?.is_owner);
+            // Prevod je samostatné rozbaľovacie menu, aby zostal dostupný aj pri zbalenom zozname členov.
             if (isOwner && members.some((member) => Number(member.id) !== Number(state.user?.id))) {
-                const transfer = document.createElement('section'); transfer.className = 'task-section project-transfer';
-                const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'Previesť vlastníctvo';
+                transferSection = document.createElement('details'); transferSection.className = 'task-section project-transfer';
+                const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading'; heading.textContent = 'Previesť vlastníctvo';
                 const label = document.createElement('label'); label.htmlFor = 'project-transfer-member'; label.textContent = 'Nový vlastník';
                 const select = document.createElement('select'); select.id = 'project-transfer-member'; select.dataset.projectId = String(project.id);
                 members.filter((member) => Number(member.id) !== Number(state.user?.id)).forEach((member) => { const option = document.createElement('option'); option.value = String(member.id); option.textContent = `${member.name} (${member.email})`; select.append(option); });
+                const nameLabel = document.createElement('label'); nameLabel.htmlFor = 'project-transfer-name'; nameLabel.textContent = 'Názov projektu po prevode';
+                const name = document.createElement('input'); name.id = 'project-transfer-name'; name.className = 'project-transfer-name'; name.type = 'text'; name.maxLength = 40; name.required = true; name.value = project.name;
                 const rights = document.createElement('fieldset'); rights.className = 'project-invite-permissions'; const legend = document.createElement('legend'); legend.textContent = 'Oprávnenia, ktoré zostanú pôvodnému vlastníkovi'; rights.append(legend);
-                this.permissionFields.forEach((field) => { const item = document.createElement('label'); item.className = 'project-permission'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.name = field; const text = document.createElement('span'); text.textContent = this.permissionLabels[field]; item.append(checkbox, text); rights.append(item); });
+                const defaultRights = this.presetPermissions('viewer');
+                this.permissionFields.forEach((field) => { const item = document.createElement('label'); item.className = 'project-permission'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.name = field; checkbox.checked = defaultRights[field]; const text = document.createElement('span'); text.textContent = this.permissionLabels[field]; item.append(checkbox, text); rights.append(item); });
+                const help = document.createElement('p'); help.className = 'helper-text project-transfer-help'; help.textContent = 'Prevod je trvalý. Ak má nový vlastník projekt s rovnakým názvom, zadaj pre tento projekt iný názov.';
                 const actions = document.createElement('div'); actions.className = 'panel-actions'; const button = document.createElement('button'); button.type = 'button'; button.className = 'button button-danger'; button.dataset.action = 'ownership-transfer'; button.dataset.projectId = String(project.id); button.textContent = 'Previesť vlastníctvo'; actions.append(button);
-                transfer.append(heading, label, select, rights, actions); memberSection.append(transfer);
+                const content = document.createElement('div'); content.className = 'project-transfer-content';
+                content.append(help, label, select, nameLabel, name, rights, actions);
+                transferSection.append(heading, content);
             }
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
@@ -1597,6 +1606,7 @@
             });
             // Obsah projektu je prehľadnejší pred správou členov a pozvánok.
             root.append(memberSection);
+            if (transferSection) root.append(transferSection);
             if (canManageMembers) this.renderInvitationTools(root, project, permissionGroups);
         }
     };

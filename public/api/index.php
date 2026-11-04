@@ -778,8 +778,13 @@ try {
         if (!tasko_validate_id($transferRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašlo.');
         $input = tasko_read_json_body();
         $newOwnerId = $input['user_id'] ?? null;
-        if (!tasko_validate_id($newOwnerId) || ($input['confirmed'] ?? null) !== true) {
-            tasko_validation_error(['transfer' => 'Potvrď prevod a vyber člena projektu.']);
+        $projectName = tasko_validate_name($input['name'] ?? null, 40);
+        $transferFields = [];
+        if (!tasko_validate_id($newOwnerId)) $transferFields['user_id'] = 'Vyber platného člena projektu.';
+        if (($input['confirmed'] ?? null) !== true) $transferFields['confirmed'] = 'Potvrď prevod vlastníctva.';
+        if ($projectName === null) $transferFields['name'] = 'Názov projektu musí mať 1 až 40 znakov.';
+        if ($transferFields !== []) {
+            tasko_validation_error($transferFields);
         }
         $pdo = tasko_db(); $projectId = (int) $transferRoute[1]; $oldOwnerId = (int) $user['id']; $newOwnerId = (int) $newOwnerId;
         try {
@@ -793,15 +798,33 @@ try {
             $member = $pdo->prepare('SELECT 1 FROM project_members WHERE project_id = :project_id AND user_id = :user_id FOR UPDATE');
             $member->execute(['project_id' => $projectId, 'user_id' => $newOwnerId]);
             if (!$member->fetchColumn()) throw new TaskoHttpException(422, 'validation_error', 'Novým vlastníkom môže byť iba existujúci člen projektu.');
+            $target = $pdo->prepare('SELECT plan FROM users WHERE id = :id FOR UPDATE');
+            $target->execute(['id' => $newOwnerId]);
+            $targetPlan = $target->fetchColumn();
+            if (!is_string($targetPlan)) throw new TaskoHttpException(422, 'validation_error', 'Účet nového vlastníka sa nenašiel.');
+            // Prevod pridá projekt do vlastníctva príjemcu, preto musí dodržať jeho limit aj unikátny názov.
+            $capacity = tasko_project_limit($targetPlan);
+            if ($capacity !== null) {
+                $count = $pdo->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
+                $count->execute(['user_id' => $newOwnerId]);
+                if ((int) $count->fetchColumn() >= $capacity) {
+                    throw new TaskoHttpException(409, 'plan_limit', 'Nový vlastník dosiahol limit projektov svojho plánu.');
+                }
+            }
+            $duplicateName = $pdo->prepare('SELECT 1 FROM projects WHERE user_id = :user_id AND name = :name AND id <> :project_id');
+            $duplicateName->execute(['user_id' => $newOwnerId, 'name' => $projectName, 'project_id' => $projectId]);
+            if ($duplicateName->fetchColumn()) {
+                throw new TaskoHttpException(409, 'name_taken', 'Nový vlastník už má projekt s týmto názvom. Zmeň názov projektu pred prevodom.');
+            }
             $permissionFields = tasko_project_permission_fields();
-            $unknown = array_diff(array_keys($input), ['user_id', 'confirmed', ...$permissionFields]);
+            $unknown = array_diff(array_keys($input), ['user_id', 'confirmed', 'name', ...$permissionFields]);
             if ($unknown !== []) tasko_validation_error(['permissions' => 'Požiadavka obsahuje neznáme oprávnenia.']);
             foreach ($permissionFields as $field) if (!is_bool($input[$field] ?? null)) tasko_validation_error([$field => 'Nastav oprávnenia pôvodného vlastníka.']);
             $assignments = implode(', ', array_map(static fn (string $field): string => "`$field` = :$field", $permissionFields));
             $values = array_map(static fn (string $field): int => (int) $input[$field], $permissionFields);
             $values += ['project_id' => $projectId, 'user_id' => $oldOwnerId];
             $pdo->prepare("UPDATE project_members SET $assignments WHERE project_id = :project_id AND user_id = :user_id")->execute($values);
-            $pdo->prepare('UPDATE projects SET user_id = :new_owner WHERE id = :id')->execute(['new_owner' => $newOwnerId, 'id' => $projectId]);
+            $pdo->prepare('UPDATE projects SET user_id = :new_owner, name = :name WHERE id = :id')->execute(['new_owner' => $newOwnerId, 'name' => $projectName, 'id' => $projectId]);
             $pdo->commit();
         } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
         tasko_json_response(200, tasko_project_row($pdo, $newOwnerId, $projectId));
