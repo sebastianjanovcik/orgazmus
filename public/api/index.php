@@ -668,7 +668,8 @@ try {
                     $permissionFields = tasko_project_permission_fields();
                     $columns = implode(', ', array_map(static fn (string $field): string => "`$field`", $permissionFields));
                     $values = implode(', ', array_map(static fn (string $field): string => ":$field", $permissionFields));
-                    $params = array_map(static fn (string $field): int => (int) $invitation[$field], $permissionFields);
+                    // PDO potrebuje pomenované kľúče zhodné s placeholdermi, nie číselné indexy.
+                    $params = array_combine($permissionFields, array_map(static fn (string $field): int => (int) $invitation[$field], $permissionFields));
                     $pdo->prepare("INSERT INTO project_members (project_id, user_id, $columns) VALUES (:project_id, :user_id, $values)")->execute($params + ['project_id' => (int) $invitation['project_id'], 'user_id' => (int) $user['id']]);
                 }
             }
