@@ -1437,10 +1437,21 @@
                 const invitationBaseUrl = String((window.TASKO_CONFIG || {}).invitationBaseUrl || window.location.origin).replace(/\/$/, '');
                 const link = `${invitationBaseUrl}/#invite-${result.id}-${result.token}`;
                 const label = document.createElement('p'); label.textContent = `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
-                // Textové pole zobrazuje celý tokenizovaný odkaz; type=url niektoré prehliadače pri hash route vizuálne skracujú.
+                const visibleLink = document.createElement('a'); visibleLink.className = 'project-invitation-link'; visibleLink.href = link; visibleLink.textContent = link; visibleLink.setAttribute('aria-label', 'Otvoriť odkaz na pozvánku');
+                // Viditeľný odkaz aj textové pole ponechávajú adresu dostupnú pri kopírovaní v HTTP LAN prostredí.
                 const url = document.createElement('textarea'); url.readOnly = true; url.rows = 2; url.value = link; url.setAttribute('aria-label', 'Odkaz na pozvánku'); url.spellcheck = false;
-                const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-primary invitation-copy-button'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); copy.textContent = 'Skopírované'; } catch (_) { url.focus(); url.select(); document.execCommand('copy'); copy.textContent = 'Skopírované'; } });
-                status.replaceChildren(label, url, copy); form.reset(); this.loadProjectInvitations(form.dataset.projectId, form.closest('.project-invitations').querySelector('.project-invitation-list'));
+                const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-primary invitation-copy-button'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => {
+                    let copied = false;
+                    if (window.isSecureContext && navigator.clipboard?.writeText) {
+                        try { await navigator.clipboard.writeText(link); copied = true; } catch (_) { /* V LAN HTTP sa pokračuje synchronným fallbackom. */ }
+                    }
+                    if (!copied) {
+                        url.focus(); url.select();
+                        try { copied = document.execCommand('copy'); } catch (_) { copied = false; }
+                    }
+                    copy.textContent = copied ? 'Skopírované' : 'Odkaz označený – stlač Ctrl+C';
+                });
+                status.replaceChildren(label, visibleLink, url, copy); form.reset(); this.loadProjectInvitations(form.dataset.projectId, form.closest('.project-invitations').querySelector('.project-invitation-list'));
             } catch (error) { status.textContent = error.message || 'Pozvánku sa nepodarilo vytvoriť.'; } finally { submit.disabled = false; }
         },
         async respondInvitation(action) {
