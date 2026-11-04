@@ -54,6 +54,48 @@ function tasko_project_members(PDO $pdo, int $projectId, int $userId): array
     }, $statement->fetchAll());
 }
 
+/** Jednotný zoznam práv zdieľaný medzi validáciou API a uložením členstva. */
+function tasko_project_permission_fields(): array
+{
+    return [
+        'can_view_project', 'can_manage_project', 'can_manage_members', 'can_view_tasks', 'can_add_tasks',
+        'can_complete_tasks', 'can_edit_own_tasks', 'can_edit_other_tasks', 'can_delete_own_tasks',
+        'can_delete_other_tasks', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments',
+        'can_edit_other_comments', 'can_delete_own_comments', 'can_delete_other_comments',
+    ];
+}
+
+/** Vlastník aj člen s právom správy členov môžu spravovať pozvánky a členstvo. */
+function tasko_require_project_member_manager(PDO $pdo, int $projectId, int $userId): int
+{
+    $query = $pdo->prepare(
+        'SELECT p.user_id, pm.can_manage_members FROM projects p
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+         WHERE p.id = :project_id'
+    );
+    $query->execute(['member_id' => $userId, 'project_id' => $projectId]);
+    $row = $query->fetch();
+    if (!is_array($row)) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+    if ((int) $row['user_id'] !== $userId && !(bool) $row['can_manage_members']) {
+        throw new TaskoHttpException(403, 'forbidden', 'Nemáš právo spravovať členov projektu.');
+    }
+    return (int) $row['user_id'];
+}
+
+/** Serializuje oprávnenia v stabilnom tvare API bez stavu databázových hodnôt. */
+function tasko_invitation_row(array $row): array
+{
+    $permissions = [];
+    foreach (tasko_project_permission_fields() as $field) $permissions[$field] = (bool) $row[$field];
+    return [
+        'id' => (int) $row['id'], 'project_id' => (int) $row['project_id'],
+        'project_name' => (string) $row['project_name'], 'email' => (string) $row['invited_email'],
+        'status' => (string) $row['status'], 'expires_at' => (new DateTimeImmutable((string) $row['expires_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z'),
+        'created_at' => (new DateTimeImmutable((string) $row['created_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z'),
+        'permissions' => $permissions,
+    ];
+}
+
 /** Založí vlastníka aj v tabuľke členstva; vlastnícke práva sú v API vždy úplné. */
 function tasko_add_project_owner(PDO $pdo, int $projectId, int $userId): void
 {
@@ -138,19 +180,20 @@ function tasko_validation_error(array $fields): never
     throw new TaskoHttpException(422, 'validation_failed', 'Skontroluj zadané údaje.', $fields);
 }
 
-/** Vráti projekt aj so súhrnnými počtami; každý výber je viazaný na vlastníka. */
+/** Vráti projekt vlastníkovi alebo členovi, ktorý smie projekt zobraziť. */
 function tasko_project_row(PDO $pdo, int $userId, int $projectId): array
 {
     $statement = $pdo->prepare(
-        'SELECT p.id, p.name, p.description, p.icon, p.color,
+        'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color,
                 COUNT(t.id) AS task_count,
                 COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
          FROM projects p
          LEFT JOIN tasks t ON t.project_id = p.id
-         WHERE p.user_id = :user_id AND p.id = :project_id
+         LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+         WHERE p.id = :project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)
          GROUP BY p.id, p.name, p.description, p.icon, p.color'
     );
-    $statement->execute(['user_id' => $userId, 'project_id' => $projectId]);
+    $statement->execute(['member_id' => $userId, 'project_id' => $projectId, 'owner_id' => $userId]);
     $project = $statement->fetch();
     if (!is_array($project)) {
         throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
@@ -158,6 +201,7 @@ function tasko_project_row(PDO $pdo, int $userId, int $projectId): array
 
     return [
         'id' => (int) $project['id'],
+        'is_owner' => (int) $project['user_id'] === $userId,
         'name' => (string) $project['name'],
         'description' => (string) $project['description'],
         'icon' => (string) $project['icon'],
@@ -228,7 +272,19 @@ try {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
     if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1) {
+        $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
+    }
+    if (preg_match('#^/api/projects/([^/]+)/invitations$#D', $route) === 1) {
+        $allowedMethods[$route] = ['GET', 'POST'];
+    }
+    if (preg_match('#^/api/projects/([^/]+)/invitations/([^/]+)$#D', $route) === 1) {
+        $allowedMethods[$route] = ['DELETE'];
+    }
+    if ($route === '/api/me/invitations') {
         $allowedMethods[$route] = ['GET'];
+    }
+    if (preg_match('#^/api/invitations/([^/]+)/(accept|decline)$#D', $route) === 1) {
+        $allowedMethods[$route] = ['POST'];
     }
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
@@ -401,18 +457,20 @@ try {
 
         if ($method === 'GET') {
             $statement = $pdo->prepare(
-                'SELECT p.id, p.name, p.description, p.icon, p.color,
+                'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color,
                         COUNT(t.id) AS task_count,
                         COALESCE(SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END), 0) AS done_count
                  FROM projects p
                  LEFT JOIN tasks t ON t.project_id = p.id
-                 WHERE p.user_id = :user_id
+                 LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+                 WHERE p.user_id = :owner_id OR pm.can_view_project = 1
                  GROUP BY p.id, p.name, p.description, p.icon, p.color
                  ORDER BY p.id'
             );
-            $statement->execute(['user_id' => $userId]);
+            $statement->execute(['member_id' => $userId, 'owner_id' => $userId]);
             $projects = array_map(static fn (array $project): array => [
                 'id' => (int) $project['id'],
+                'is_owner' => (int) $project['user_id'] === $userId,
                 'name' => (string) $project['name'],
                 'description' => (string) $project['description'],
                 'icon' => (string) $project['icon'],
@@ -482,6 +540,143 @@ try {
             throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
         }
         tasko_json_response(200, tasko_project_members(tasko_db(), (int) $membersRoute[1], (int) $user['id']));
+    }
+
+    if (preg_match('#^/api/projects/([^/]+)/members$#D', $route, $membersRoute) === 1 && in_array($method, ['PATCH', 'DELETE'], true)) {
+        tasko_require_same_origin();
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($membersRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        $pdo = tasko_db(); $projectId = (int) $membersRoute[1]; $managerId = (int) $user['id'];
+        $ownerId = tasko_require_project_member_manager($pdo, $projectId, $managerId);
+        $input = tasko_read_json_body();
+        if (!tasko_validate_id($input['user_id'] ?? null)) tasko_validation_error(['user_id' => 'Vyber platného člena.']);
+        $memberId = (int) $input['user_id'];
+        if ($memberId === $ownerId) throw new TaskoHttpException(403, 'owner_immutable', 'Oprávnenia vlastníka sa nemenia cez správu členov.');
+        $exists = $pdo->prepare('SELECT 1 FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
+        $exists->execute(['project_id' => $projectId, 'user_id' => $memberId]);
+        if (!$exists->fetchColumn()) throw new TaskoHttpException(404, 'not_found', 'Člen sa nenašiel.');
+        if ($method === 'DELETE') {
+            $delete = $pdo->prepare('DELETE FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
+            $delete->execute(['project_id' => $projectId, 'user_id' => $memberId]);
+            tasko_json_response(204);
+        }
+        $unknown = array_diff(array_keys($input), ['user_id', ...tasko_project_permission_fields()]);
+        if ($unknown !== []) tasko_validation_error(['permissions' => 'Požiadavka obsahuje neznáme oprávnenia.']);
+        $values = [];
+        foreach (tasko_project_permission_fields() as $field) {
+            if (!is_bool($input[$field] ?? null)) tasko_validation_error([$field => 'Oprávnenie musí byť true alebo false.']);
+            $values[$field] = $input[$field] ? 1 : 0;
+        }
+        $assignments = array_map(static fn (string $field): string => "`$field` = :$field", array_keys($values));
+        $values += ['project_id' => $projectId, 'user_id' => $memberId];
+        $update = $pdo->prepare('UPDATE project_members SET ' . implode(', ', $assignments) . ' WHERE project_id = :project_id AND user_id = :user_id');
+        $update->execute($values);
+        tasko_json_response(200, tasko_project_members($pdo, $projectId, $managerId));
+    }
+
+    if (preg_match('#^/api/projects/([^/]+)/invitations$#D', $route, $invitationListRoute) === 1 && in_array($method, ['GET', 'POST'], true)) {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($invitationListRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        $pdo = tasko_db(); $projectId = (int) $invitationListRoute[1]; $userId = (int) $user['id'];
+        tasko_require_project_member_manager($pdo, $projectId, $userId);
+        if ($method === 'GET') {
+            $expire = $pdo->prepare("UPDATE project_invitations SET status = 'expired', responded_at = UTC_TIMESTAMP() WHERE project_id = :project_id AND status = 'pending' AND expires_at <= UTC_TIMESTAMP()");
+            $expire->execute(['project_id' => $projectId]);
+            $query = $pdo->prepare('SELECT i.*, p.name AS project_name FROM project_invitations i INNER JOIN projects p ON p.id = i.project_id WHERE i.project_id = :project_id ORDER BY i.created_at DESC');
+            $query->execute(['project_id' => $projectId]);
+            tasko_json_response(200, array_map('tasko_invitation_row', $query->fetchAll()));
+        }
+        tasko_require_same_origin();
+        $input = tasko_read_json_body();
+        $email = tasko_validate_email($input['email'] ?? null);
+        if ($email === null) tasko_validation_error(['email' => 'Zadaj platnú e-mailovú adresu.']);
+        if (strcasecmp($email, (string) $user['email']) === 0) tasko_validation_error(['email' => 'Svoj účet už vlastníš v tomto projekte.']);
+        $permissions = [];
+        foreach (tasko_project_permission_fields() as $field) {
+            if (!is_bool($input[$field] ?? null)) tasko_validation_error([$field => 'Vyber každé oprávnenie ako true alebo false.']);
+            $permissions[$field] = $input[$field] ? 1 : 0;
+        }
+        if (!$permissions['can_view_project']) tasko_validation_error(['can_view_project' => 'Pozvaný člen musí mať právo zobraziť projekt.']);
+        // Zámok projektu serializuje kontrolu duplicít aj súbežné vytváranie pozvánok.
+        $pdo->beginTransaction();
+        try {
+            $projectLock = $pdo->prepare('SELECT id FROM projects WHERE id = :id FOR UPDATE');
+            $projectLock->execute(['id' => $projectId]);
+            if (!$projectLock->fetchColumn()) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
+        $invitee = $pdo->prepare('SELECT id FROM users WHERE email = :email'); $invitee->execute(['email' => $email]);
+        $inviteeId = $invitee->fetchColumn();
+        if ($inviteeId !== false) {
+            $member = $pdo->prepare('SELECT 1 FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
+            $member->execute(['project_id' => $projectId, 'user_id' => (int) $inviteeId]);
+            if ($member->fetchColumn()) throw new TaskoHttpException(409, 'already_member', 'Tento účet už je členom projektu.');
+        }
+        $duplicate = $pdo->prepare("SELECT id FROM project_invitations WHERE project_id = :project_id AND invited_email = :email AND status = 'pending' AND expires_at > UTC_TIMESTAMP() LIMIT 1");
+        $duplicate->execute(['project_id' => $projectId, 'email' => $email]);
+        if ($duplicate->fetchColumn()) throw new TaskoHttpException(409, 'invitation_pending', 'Pre tento e-mail už čaká platná pozvánka.');
+        $token = bin2hex(random_bytes(32)); $tokenHash = hash('sha256', $token);
+        $fields = array_keys($permissions); $columns = implode(', ', array_map(static fn (string $field): string => "`$field`", $fields));
+        $params = implode(', ', array_map(static fn (string $field): string => ":$field", $fields));
+        $insert = $pdo->prepare("INSERT INTO project_invitations (project_id, invited_email, invited_user_id, invited_by, token_hash, expires_at, $columns) VALUES (:project_id, :email, :invitee_id, :invited_by, :token_hash, DATE_ADD(UTC_TIMESTAMP(), INTERVAL 7 DAY), $params)");
+        $insert->execute($permissions + ['project_id' => $projectId, 'email' => $email, 'invitee_id' => $inviteeId === false ? null : (int) $inviteeId, 'invited_by' => $userId, 'token_hash' => $tokenHash]);
+        $invitationId = (int) $pdo->lastInsertId();
+        $pdo->commit();
+        } catch (Throwable $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $error;
+        }
+        tasko_json_response(201, ['id' => $invitationId, 'email' => $email, 'status' => 'pending', 'expires_at' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 7 * 86400), 'token' => $token]);
+    }
+
+    if (preg_match('#^/api/projects/([^/]+)/invitations/([^/]+)$#D', $route, $invitationRevokeRoute) === 1 && $method === 'DELETE') {
+        tasko_require_same_origin(); $user = tasko_authenticated_user();
+        if (!tasko_validate_id($invitationRevokeRoute[1]) || !tasko_validate_id($invitationRevokeRoute[2])) throw new TaskoHttpException(404, 'not_found', 'Pozvánka sa nenašla.');
+        $pdo = tasko_db(); $projectId = (int) $invitationRevokeRoute[1]; tasko_require_project_member_manager($pdo, $projectId, (int) $user['id']);
+        $update = $pdo->prepare("UPDATE project_invitations SET status = 'revoked', responded_at = UTC_TIMESTAMP() WHERE id = :id AND project_id = :project_id AND status = 'pending'");
+        $update->execute(['id' => (int) $invitationRevokeRoute[2], 'project_id' => $projectId]);
+        if ($update->rowCount() === 0) throw new TaskoHttpException(404, 'not_found', 'Aktívna pozvánka sa nenašla.');
+        tasko_json_response(204);
+    }
+
+    if ($route === '/api/me/invitations' && $method === 'GET') {
+        $user = tasko_authenticated_user(); $pdo = tasko_db();
+        $pdo->prepare("UPDATE project_invitations SET status = 'expired', responded_at = UTC_TIMESTAMP() WHERE invited_email = :email AND status = 'pending' AND expires_at <= UTC_TIMESTAMP()")->execute(['email' => $user['email']]);
+        $query = $pdo->prepare("SELECT i.*, p.name AS project_name FROM project_invitations i INNER JOIN projects p ON p.id = i.project_id WHERE i.invited_email = :email AND i.status = 'pending' AND i.expires_at > UTC_TIMESTAMP() ORDER BY i.created_at DESC");
+        $query->execute(['email' => $user['email']]);
+        tasko_json_response(200, array_map('tasko_invitation_row', $query->fetchAll()));
+    }
+
+    if (preg_match('#^/api/invitations/([^/]+)/(accept|decline)$#D', $route, $invitationActionRoute) === 1 && $method === 'POST') {
+        tasko_require_same_origin(); $user = tasko_authenticated_user(); $input = tasko_read_json_body();
+        $token = $input['token'] ?? null;
+        if (!tasko_validate_id($invitationActionRoute[1]) || !is_string($token) || !preg_match('/^[a-f0-9]{64}$/D', $token)) throw new TaskoHttpException(404, 'not_found', 'Pozvánka sa nenašla.');
+        $pdo = tasko_db();
+        try {
+            $pdo->beginTransaction();
+            $query = $pdo->prepare('SELECT * FROM project_invitations WHERE id = :id FOR UPDATE'); $query->execute(['id' => (int) $invitationActionRoute[1]]); $invitation = $query->fetch();
+            if (!is_array($invitation) || !hash_equals((string) $invitation['token_hash'], hash('sha256', $token))) throw new TaskoHttpException(404, 'not_found', 'Pozvánka sa nenašla.');
+            if (strcasecmp((string) $invitation['invited_email'], (string) $user['email']) !== 0) throw new TaskoHttpException(403, 'wrong_account', 'Pozvánku môže spracovať iba účet pozvaný na tento e-mail.');
+            if ($invitation['invited_user_id'] !== null && (int) $invitation['invited_user_id'] !== (int) $user['id']) throw new TaskoHttpException(403, 'wrong_account', 'Pozvánka patrí inému používateľskému účtu.');
+            if ($invitation['status'] !== 'pending') throw new TaskoHttpException(409, 'invitation_inactive', 'Pozvánka už nie je aktívna.');
+            if (strtotime((string) $invitation['expires_at'] . ' UTC') <= time()) {
+                $pdo->prepare("UPDATE project_invitations SET status = 'expired', responded_at = UTC_TIMESTAMP() WHERE id = :id")->execute(['id' => (int) $invitation['id']]);
+                $pdo->commit(); throw new TaskoHttpException(409, 'invitation_expired', 'Platnosť pozvánky vypršala.');
+            }
+            if ($invitationActionRoute[2] === 'accept') {
+                $existing = $pdo->prepare('SELECT 1 FROM project_members WHERE project_id = :project_id AND user_id = :user_id');
+                $existing->execute(['project_id' => (int) $invitation['project_id'], 'user_id' => (int) $user['id']]);
+                if (!$existing->fetchColumn()) {
+                    $permissionFields = tasko_project_permission_fields();
+                    $columns = implode(', ', array_map(static fn (string $field): string => "`$field`", $permissionFields));
+                    $values = implode(', ', array_map(static fn (string $field): string => ":$field", $permissionFields));
+                    $params = array_map(static fn (string $field): int => (int) $invitation[$field], $permissionFields);
+                    $pdo->prepare("INSERT INTO project_members (project_id, user_id, $columns) VALUES (:project_id, :user_id, $values)")->execute($params + ['project_id' => (int) $invitation['project_id'], 'user_id' => (int) $user['id']]);
+                }
+            }
+            $status = $invitationActionRoute[2] === 'accept' ? 'accepted' : 'declined';
+            $pdo->prepare('UPDATE project_invitations SET status = :status, invited_user_id = :user_id, responded_at = UTC_TIMESTAMP() WHERE id = :id')->execute(['status' => $status, 'user_id' => (int) $user['id'], 'id' => (int) $invitation['id']]);
+            $pdo->commit();
+        } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
+        tasko_json_response(200, ['status' => $status, 'project_id' => (int) $invitation['project_id']]);
     }
 
     if (preg_match('#^/api/projects/([^/]+)$#D', $route, $projectRoute) === 1) {

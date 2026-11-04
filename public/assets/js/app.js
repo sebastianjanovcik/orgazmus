@@ -103,7 +103,10 @@
             stats: { title: 'stats' }, settings: { title: 'settings' }
         },
         current() {
-            const parts = window.location.hash.replace(/^#\/?/, '').split('-');
+            const value = window.location.hash.replace(/^#\/?/, '');
+            const invitation = value.match(/^invite-(\d+)-([a-f0-9]{64})$/);
+            if (invitation) return { name: 'invitation', id: invitation[1], token: invitation[2] };
+            const parts = value.split('-');
             return { name: parts[0] || 'tasks', id: parts.slice(1).join('-') };
         },
         navigate() {
@@ -113,6 +116,7 @@
             const route = this.current();
             /* Aplikačné obrazovky sú súkromné; samotná kontrola prehliadača je len UX vrstva. */
             if (state.authReady && !state.user && !['login', 'register'].includes(route.name)) {
+                if (route.name === 'invitation') window.sessionStorage.setItem('tasko-pending-invitation', window.location.hash);
                 window.location.hash = 'login';
                 return;
             }
@@ -131,6 +135,7 @@
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
                 else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
+                else if (route.name === 'invitation') view.innerHTML = `<section class="invitation-accept-card" aria-labelledby="invitation-title"><p class="eyebrow">TASKO</p><h1 id="invitation-title">Pozvánka do projektu</h1><p id="invitation-message">Skontroluj účet a potvrď pozvánku.</p><div class="panel-actions"><button class="button button-quiet" type="button" data-action="invitation-decline">Odmietnuť</button><span class="action-spacer"></span><button class="button button-primary" type="button" data-action="invitation-accept">Prijať pozvánku</button></div></section>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
                     document.getElementById('language-preference').value = i18n.language;
@@ -155,6 +160,7 @@
             if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
             if (['calendar', 'done', 'stats'].includes(route.name) && state.user) views.loadInsights(sequence, route.name);
             if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
+            if (route.name === 'invitation' && state.user) views.loadInvitation(sequence, route);
             if (route.name === 'settings' && state.user) views.loadSidebarProjects(sequence);
             if (sequence !== state.routeSequence) return;
         }
@@ -1293,6 +1299,7 @@
                 const stats = document.createElement('div'); stats.className = 'project-card-stats'; stats.textContent = `${counts.done} z ${counts.total} hotových`;
                 const progress = document.createElement('progress'); progress.max = counts.total || 1; progress.value = counts.done; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
                 const edit = document.createElement('button'); edit.className = 'project-edit'; edit.type = 'button'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť'; edit.setAttribute('aria-label', `Upraviť projekt ${project.name}`);
+                edit.hidden = project.is_owner === false;
                 card.append(open, stats, progress, edit); list.append(card);
             });
         },
@@ -1361,6 +1368,88 @@
             } catch (error) { ui.showToast(error.code === 'last_project' ? 'Posledný projekt nemožno odstrániť.' : error.message || 'Projekt sa nepodarilo odstrániť.', 'error'); }
             finally { button.disabled = false; }
         },
+        permissionFields: ['can_view_project', 'can_manage_project', 'can_manage_members', 'can_view_tasks', 'can_add_tasks', 'can_complete_tasks', 'can_edit_own_tasks', 'can_edit_other_tasks', 'can_delete_own_tasks', 'can_delete_other_tasks', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments', 'can_edit_other_comments', 'can_delete_own_comments', 'can_delete_other_comments'],
+        permissionLabels: { can_view_project: 'Zobraziť projekt', can_manage_project: 'Spravovať projekt', can_manage_members: 'Spravovať členov', can_view_tasks: 'Zobraziť úlohy', can_add_tasks: 'Pridávať úlohy', can_complete_tasks: 'Dokončiť úlohy ostatných', can_edit_own_tasks: 'Upraviť vlastné úlohy', can_edit_other_tasks: 'Upraviť úlohy ostatných', can_delete_own_tasks: 'Zmazať vlastné úlohy', can_delete_other_tasks: 'Zmazať úlohy ostatných', can_view_comments: 'Zobraziť komentáre', can_add_comments: 'Pridávať komentáre', can_edit_own_comments: 'Upraviť vlastné komentáre', can_edit_other_comments: 'Upraviť komentáre ostatných', can_delete_own_comments: 'Zmazať vlastné komentáre', can_delete_other_comments: 'Zmazať komentáre ostatných' },
+        presetPermissions(preset) {
+            const values = Object.fromEntries(this.permissionFields.map((field) => [field, false]));
+            const sets = {
+                admin: this.permissionFields,
+                contributor: ['can_view_project', 'can_view_tasks', 'can_add_tasks', 'can_complete_tasks', 'can_edit_own_tasks', 'can_delete_own_tasks', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments', 'can_delete_own_comments'],
+                commenter: ['can_view_project', 'can_view_tasks', 'can_view_comments', 'can_add_comments'],
+                viewer: ['can_view_project', 'can_view_tasks', 'can_view_comments']
+            };
+            (sets[preset] || sets.viewer).forEach((field) => { values[field] = true; });
+            return values;
+        },
+        renderInvitationTools(root, project, groups) {
+            const section = document.createElement('section'); section.className = 'task-section project-invitations';
+            const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'Pozvať člena'; section.append(heading);
+            const form = document.createElement('form'); form.className = 'project-invitation-form'; form.dataset.projectId = String(project.id);
+            const emailLabel = document.createElement('label'); emailLabel.textContent = 'E-mail pozvaného'; emailLabel.htmlFor = 'project-invite-email';
+            const email = document.createElement('input'); email.id = 'project-invite-email'; email.name = 'email'; email.type = 'email'; email.autocomplete = 'email'; email.required = true; email.maxLength = 254;
+            const presetLabel = document.createElement('label'); presetLabel.textContent = 'Predvoľba oprávnení'; presetLabel.htmlFor = 'project-invite-preset';
+            const preset = document.createElement('select'); preset.id = 'project-invite-preset'; preset.innerHTML = '<option value="viewer">Náhľad</option><option value="commenter">Komentátor</option><option value="contributor">Prispievateľ</option><option value="admin">Správca</option>';
+            const fieldset = document.createElement('fieldset'); fieldset.className = 'project-invite-permissions'; const legend = document.createElement('legend'); legend.textContent = 'Oprávnenia'; fieldset.append(legend);
+            this.permissionFields.forEach((field) => {
+                const label = document.createElement('label'); label.className = 'project-permission';
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.name = field; checkbox.checked = this.presetPermissions('viewer')[field];
+                const text = document.createElement('span'); text.textContent = this.permissionLabels[field]; label.append(checkbox, text); fieldset.append(label);
+            });
+            preset.addEventListener('change', () => { const values = this.presetPermissions(preset.value); this.permissionFields.forEach((field) => { form.elements[field].checked = values[field]; }); });
+            const note = document.createElement('p'); note.className = 'helper-text'; note.textContent = 'Pozvánka platí 7 dní. Odkaz sa zobrazí po vytvorení; pošli ho pozvanému mimo aplikácie.';
+            const submit = document.createElement('button'); submit.type = 'submit'; submit.className = 'button button-primary'; submit.textContent = 'Vytvoriť pozvánku';
+            const status = document.createElement('div'); status.className = 'project-invitation-status'; status.setAttribute('aria-live', 'polite');
+            form.append(emailLabel, email, presetLabel, preset, fieldset, note, submit, status); section.append(form);
+            const list = document.createElement('div'); list.className = 'project-invitation-list'; list.setAttribute('aria-live', 'polite'); list.textContent = 'Načítavam pozvánky…'; section.append(list); root.append(section);
+            this.loadProjectInvitations(project.id, list);
+        },
+        async loadProjectInvitations(projectId, list) {
+            try {
+                const invitations = await api.request('GET', `/api/projects/${projectId}/invitations`); list.replaceChildren();
+                if (!invitations.length) { list.textContent = 'Projekt nemá žiadne pozvánky.'; return; }
+                invitations.forEach((invitation) => {
+                    const row = document.createElement('div'); row.className = 'project-invitation-row';
+                    const label = document.createElement('span'); label.textContent = `${invitation.email} · ${invitation.status} · platnosť do ${new Date(invitation.expires_at).toLocaleDateString('sk-SK')}`; row.append(label);
+                    if (invitation.status === 'pending') { const revoke = document.createElement('button'); revoke.type = 'button'; revoke.className = 'button button-quiet'; revoke.dataset.action = 'invitation-revoke'; revoke.dataset.invitationId = String(invitation.id); revoke.dataset.projectId = String(projectId); revoke.textContent = 'Odvolať'; row.append(revoke); }
+                    list.append(row);
+                });
+            } catch (error) { list.textContent = error.message || 'Pozvánky sa nepodarilo načítať.'; }
+        },
+        async saveMember(button) {
+            const item = button.closest('.project-member'); const projectId = router.current().id; const payload = { user_id: Number(button.dataset.userId) };
+            item.querySelectorAll('[data-permission]').forEach((input) => { payload[input.dataset.permission] = input.checked; }); button.disabled = true;
+            try { await api.request('PATCH', `/api/projects/${projectId}/members`, payload); ui.showToast('Oprávnenia člena boli uložené.'); await views.loadProjects(state.routeSequence, router.current()); }
+            catch (error) { ui.showToast(error.message || 'Oprávnenia sa nepodarilo uložiť.', 'error'); } finally { button.disabled = false; }
+        },
+        async removeMember(button) {
+            if (!await ui.confirm('Člen stratí prístup k projektu a jeho úlohám.', 'Odstrániť člena?', 'Odstrániť')) return;
+            button.disabled = true;
+            try { await api.request('DELETE', `/api/projects/${router.current().id}/members`, { user_id: Number(button.dataset.userId) }); ui.showToast('Člen bol odstránený.'); await views.loadProjects(state.routeSequence, router.current()); }
+            catch (error) { ui.showToast(error.message || 'Člena sa nepodarilo odstrániť.', 'error'); } finally { button.disabled = false; }
+        },
+        async createInvitation(form) {
+            const status = form.querySelector('.project-invitation-status');
+            const payload = { email: form.elements.email.value.trim().toLowerCase() };
+            this.permissionFields.forEach((field) => { payload[field] = form.elements[field].checked; });
+            const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
+            try {
+                const result = await api.request('POST', `/api/projects/${form.dataset.projectId}/invitations`, payload);
+                const link = `${window.location.origin}${window.location.pathname}#invite-${result.id}-${result.token}`;
+                const label = document.createElement('p'); label.textContent = `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
+                const url = document.createElement('input'); url.type = 'url'; url.readOnly = true; url.value = link; url.setAttribute('aria-label', 'Odkaz na pozvánku');
+                const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-quiet'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); copy.textContent = 'Skopírované'; } catch (_) { url.select(); document.execCommand('copy'); copy.textContent = 'Skopírované'; } });
+                status.replaceChildren(label, url, copy); form.reset(); this.loadProjectInvitations(form.dataset.projectId, form.closest('.project-invitations').querySelector('.project-invitation-list'));
+            } catch (error) { status.textContent = error.message || 'Pozvánku sa nepodarilo vytvoriť.'; } finally { submit.disabled = false; }
+        },
+        async respondInvitation(action) {
+            const route = router.current(); if (route.name !== 'invitation') return;
+            const buttons = document.querySelectorAll('[data-action="invitation-accept"], [data-action="invitation-decline"]'); buttons.forEach((button) => { button.disabled = true; });
+            try {
+                const result = await api.request('POST', `/api/invitations/${route.id}/${action}`, { token: route.token });
+                ui.showToast(action === 'accept' ? 'Pozvánka prijatá.' : 'Pozvánka odmietnutá.');
+                window.location.hash = action === 'accept' ? `project-${result.project_id}` : 'projects';
+            } catch (error) { document.getElementById('invitation-message').textContent = error.message || 'Pozvánku sa nepodarilo spracovať.'; buttons.forEach((button) => { button.disabled = false; }); }
+        },
         renderDetail(project, members = state.projectMembers) {
             const root = document.getElementById('project-detail-view'); if (!root) return;
             const counts = this.counts(project);
@@ -1370,26 +1459,28 @@
             const icon = document.createElement('span'); icon.className = 'project-card-icon'; icon.textContent = this.icons[project.icon] || '📁'; icon.setAttribute('aria-hidden', 'true');
             const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || 'Bez popisu'; text.append(title, desc);
             const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-primary'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
+            edit.hidden = project.is_owner === false;
             const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
             // Checkboxy sú zatiaľ iba náhľad serverových práv; ich editovanie patrí do kroku 2.
             const memberSection = document.createElement('section'); memberSection.className = 'task-section project-members';
             const memberHeading = document.createElement('h3'); memberHeading.className = 'project-task-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
             const permissionGroups = [
                 ['Projekt', [
-                    [['can_manage_project'], 'Spravovať projekt'],
-                    [['can_manage_members'], 'Spravovať členov']
+                    ['can_view_project', 'Zobraziť projekt'], ['can_manage_project', 'Spravovať projekt'], ['can_manage_members', 'Spravovať členov']
                 ]],
                 ['Úlohy', [
-                    [['can_add_tasks'], 'Pridávať úlohy'],
-                    [['can_complete_tasks'], 'Dokončiť úlohy ostatných'],
-                    [['can_edit_other_tasks'], 'Upraviť úlohy ostatných'],
-                    [['can_delete_other_tasks'], 'Zmazať úlohy ostatných']
+                    ['can_view_tasks', 'Zobraziť úlohy'], ['can_add_tasks', 'Pridávať úlohy'], ['can_complete_tasks', 'Dokončiť úlohy ostatných'],
+                    ['can_edit_own_tasks', 'Upraviť vlastné úlohy'], ['can_edit_other_tasks', 'Upraviť úlohy ostatných'],
+                    ['can_delete_own_tasks', 'Zmazať vlastné úlohy'], ['can_delete_other_tasks', 'Zmazať úlohy ostatných']
                 ]],
                 ['Komentáre', [
-                    [['can_add_comments'], 'Pridávať komentáre'],
-                    [['can_delete_other_comments'], 'Zmazať komentáre ostatných']
+                    ['can_view_comments', 'Zobraziť komentáre'], ['can_add_comments', 'Pridávať komentáre'],
+                    ['can_edit_own_comments', 'Upraviť vlastné komentáre'], ['can_edit_other_comments', 'Upraviť komentáre ostatných'],
+                    ['can_delete_own_comments', 'Zmazať vlastné komentáre'], ['can_delete_other_comments', 'Zmazať komentáre ostatných']
                 ]]
             ];
+            const currentMember = members.find((member) => Number(member.id) === Number(state.user?.id));
+            const canManageMembers = members.some((member) => member.is_owner && Number(member.id) === Number(state.user?.id)) || Boolean(currentMember?.permissions?.can_manage_members);
             const memberList = document.createElement('div'); memberList.className = 'project-member-list';
             if (!members.length) {
                 const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'V projekte zatiaľ nie sú žiadni členovia.'; memberList.append(empty);
@@ -1409,24 +1500,27 @@
                 permissionGroups.forEach(([groupName, permissions]) => {
                     const group = document.createElement('fieldset'); group.className = 'project-permission-group';
                     const legend = document.createElement('legend'); legend.textContent = groupName; group.append(legend);
-                    permissions.forEach(([keys, label]) => {
+                    permissions.forEach(([key, label]) => {
                         const permission = document.createElement('label'); permission.className = 'project-permission';
-                        const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.disabled = true;
-                        const enabledCount = keys.filter((key) => Boolean(member.permissions?.[key])).length;
-                        checkbox.checked = enabledCount === keys.length;
-                        checkbox.indeterminate = enabledCount > 0 && enabledCount < keys.length;
-                        if (keys.length > 1) {
-                            checkbox.title = checkbox.indeterminate ? `${label} – povolené iba pre vlastné alebo cudzie záznamy` : `${label} – vlastné aj cudzie záznamy`;
-                            checkbox.setAttribute('aria-label', checkbox.title);
-                        }
+                        const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.dataset.permission = key;
+                        checkbox.checked = Boolean(member.permissions?.[key]);
+                        checkbox.disabled = !canManageMembers || member.is_owner;
                         const text = document.createElement('span'); text.textContent = label;
                         permission.append(checkbox, text); group.append(permission);
                     });
                     permissionPanel.append(group);
                 });
+                if (canManageMembers && !member.is_owner) {
+                    const actions = document.createElement('div'); actions.className = 'panel-actions project-member-actions';
+                    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'button button-danger'; remove.dataset.action = 'member-remove'; remove.dataset.userId = String(member.id); remove.textContent = 'Odstrániť člena';
+                    const spacer = document.createElement('span'); spacer.className = 'action-spacer';
+                    const save = document.createElement('button'); save.type = 'button'; save.className = 'button button-primary'; save.dataset.action = 'member-save'; save.dataset.userId = String(member.id); save.textContent = 'Uložiť oprávnenia';
+                    actions.append(remove, spacer, save); permissionPanel.append(actions);
+                }
                 item.append(permissionPanel); memberList.append(item);
             });
             memberSection.append(memberList); root.append(memberSection);
+            if (canManageMembers) this.renderInvitationTools(root, project, permissionGroups);
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
             [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
@@ -1441,6 +1535,18 @@
     const views = {
         calendar: null,
         calendarSequence: 0,
+        async loadInvitation(routeSequence, route) {
+            const message = document.getElementById('invitation-message');
+            try {
+                const invitations = await api.request('GET', '/api/me/invitations');
+                if (routeSequence !== state.routeSequence) return;
+                const invitation = (Array.isArray(invitations) ? invitations : []).find((item) => Number(item.id) === Number(route.id));
+                if (!invitation) {
+                    message.textContent = 'Pozvánka už nie je platná alebo je určená inému účtu.';
+                    document.querySelectorAll('[data-action="invitation-accept"], [data-action="invitation-decline"]').forEach((button) => { button.disabled = true; });
+                } else message.textContent = `Projekt „${invitation.project_name}“ ťa pozýva. Prihlásený účet: ${state.user.email}.`;
+            } catch (error) { if (message) message.textContent = error.message || 'Pozvánku sa nepodarilo načítať.'; }
+        },
         async loadSidebarProjects(routeSequence) {
             try {
                 const projects = await api.request('GET', '/api/projects');
@@ -1676,14 +1782,14 @@
                     notifications.update();
                     const cached = state.projects.find((item) => String(item.id) === String(route.id));
                     if (!cached) { document.getElementById('project-detail-view').textContent = 'Projekt sa nenašiel.'; return; }
-                    const [detail, tasks, members] = await Promise.all([
+                    const [detail, tasksResult, members] = await Promise.all([
                         api.request('GET', `/api/projects/${encodeURIComponent(route.id)}`),
-                        api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`),
+                        api.request('GET', `/api/tasks?project_id=${encodeURIComponent(route.id)}`).then((value) => ({ value }), () => ({ value: [] })),
                         api.request('GET', `/api/projects/${encodeURIComponent(route.id)}/members`)
                     ]);
                     if (routeSequence === state.routeSequence) {
                         state.projectMembers = Array.isArray(members) ? members : [];
-                        state.tasks = Array.isArray(tasks) ? tasks : state.tasks;
+                        state.tasks = Array.isArray(tasksResult.value) ? tasksResult.value : state.tasks;
                         projectManager.renderDetail(detail || cached, state.projectMembers);
                     }
                 }
@@ -1756,7 +1862,9 @@
                     state.user = user;
                     state.authReady = true;
                     profile.render();
-                    window.location.hash = 'tasks';
+                    const pendingInvitation = window.sessionStorage.getItem('tasko-pending-invitation');
+                    if (pendingInvitation) { window.sessionStorage.removeItem('tasko-pending-invitation'); window.location.hash = pendingInvitation; }
+                    else window.location.hash = 'tasks';
                     router.navigate();
                 })
                 .catch((error) => {
@@ -1829,6 +1937,16 @@
         }
         if (action === 'project-delete') projectManager.remove(this);
         if (action === 'project-save') projectManager.save(this);
+        if (action === 'member-save') projectManager.saveMember(this);
+        if (action === 'member-remove') projectManager.removeMember(this);
+        if (action === 'invitation-revoke') {
+            const button = this; button.disabled = true;
+            api.request('DELETE', `/api/projects/${button.dataset.projectId}/invitations/${button.dataset.invitationId}`)
+                .then(() => projectManager.loadProjectInvitations(button.dataset.projectId, button.closest('.project-invitations').querySelector('.project-invitation-list')))
+                .catch((error) => ui.showToast(error.message || 'Pozvánku sa nepodarilo odvolať.', 'error')).finally(() => { button.disabled = false; });
+        }
+        if (action === 'invitation-accept') projectManager.respondInvitation('accept');
+        if (action === 'invitation-decline') projectManager.respondInvitation('decline');
         if (action === 'profile-open') { profile.render(); ui.openPanel('profile-panel'); }
         if (action === 'profile-save') profile.save(this);
         if (action === 'plan-toggle') profile.togglePlan(this);
@@ -1867,6 +1985,11 @@
     $(document).on('submit', '#project-form', function (event) {
         event.preventDefault();
         projectManager.save(document.querySelector('[type="submit"][form="project-form"]'));
+    });
+
+    $(document).on('submit', '.project-invitation-form', function (event) {
+        event.preventDefault();
+        projectManager.createInvitation(this);
     });
 
     $(document).on('submit', '.comment-form', function (event) {
