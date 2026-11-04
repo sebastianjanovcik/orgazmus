@@ -6,16 +6,51 @@ Tento dokument je jediným plánom práce na správe projektov, členstve, zdie�
 
 Vlastník projektu môže pozývať členov, nastavovať im roly a oprávnenia a previesť vlastníctvo. Úlohu možno zdieľať aj samostatne s konkrétnym používateľom bez sprístupnenia celého projektu. Pozvaný používateľ získa prístup až po prijatí pozvánky. Server vynucuje oprávnenia, zmeny sa zaznamenávajú do auditu a používateľ vidí svoje notifikácie v rozhraní.
 
-## Pravidlá funkcionality
+## Navrhovaná štruktúra rolí a oprávnení
 
-- **Vlastník projektu** má plnú správu projektu a jeho členov. Projekt má vždy práve jedného vlastníka. Prevod vlastníctva potvrdzuje súčasný vlastník; predchádzajúci vlastník dostane zvolenú rolu a oprávnenia.
-- **Náhľad** povoľuje čítať projekt a jeho úlohy. **Komentár** povoľuje čítať a pridávať komentáre a reakcie, ak má konajúci používateľ Premium. **Editor** povoľuje úpravy v rozsahu samostatného oprávnenia k úlohám.
-- Oprávnenie k úlohám je „Spravovať úlohy“ alebo „Iba náhľad úloh“. Nemôže rozšíriť projektovú rolu: Náhľad zostáva iba na čítanie a Komentár nedovoľuje upravovať úlohy. Vlastník má vždy plný prístup.
-- Pozvánka v stave `pending` sama osebe nevytvára členstvo ani prístup. Prijatie vytvorí členstvo pre správny účet; odmietnutie, odvolanie alebo expirácia prístup neudeľujú.
-- Samostatné zdieľanie udeľuje prístup iba ku konkrétnej úlohe a jej komentárom. **Divák** ich môže čítať; **Editor** môže upravovať úlohu a jej stav; **Vlastník** môže spravovať zdieľanie a má plnú kontrolu nad úlohou. Platný prístup člena projektu a samostatné zdieľanie sa vyhodnocujú spolu; odobratie jedného nezruší druhý.
-- Premium sa kontroluje na serveri podľa účtu konajúceho používateľa pri každom zápise komentára alebo reakcie. Používatelia bez Premium ich môžu čítať, nie pridávať ani meniť.
-- Používateľ vidí iba svoje notifikácie. Ako prečítané sa označia iba položky, ktoré panel skutočne načítal a zobrazil. Audit je append-only a nesmie obsahovať heslá, tokeny ani zbytočné citlivé údaje.
-- Rozhranie je po slovensky, prístupné klávesnicou a použiteľné na mobile. Načítavacie stavy majú zodpovedať obsahu, nie iba zobrazovať všeobecný spinner. Každé zmazanie vyžaduje kliknutie na tlačidlo a jedno potvrdzovacie okno.
+Každý člen má vlastnú sadu oprávnení, ktorú nastavuje pozývajúci alebo člen s právom spravovať členov. Vlastník má vždy všetky práva; prevod vlastníctva je samostatná potvrdená akcia.
+
+| Oblasť | Checkbox | Význam |
+| --- | --- | --- |
+| Projekt | Zobraziť projekt | Zobraziť projekt a jeho obsah. |
+| Projekt | Spravovať projekt | Upraviť údaje a nastavenia projektu, prípadne projekt zmazať. |
+| Projekt | Spravovať členov | Pozývať, meniť práva a odstraňovať členov. |
+| Úlohy | Zobraziť úlohy | Zobraziť úlohy projektu. |
+| Úlohy | Pridávať úlohy | Vytvárať úlohy v projekte. |
+| Úlohy | Dokončiť úlohy | Označiť úlohu za hotovú alebo ju obnoviť. |
+| Úlohy | Upraviť vlastné úlohy | Upraviť úlohy vytvorené daným členom. |
+| Úlohy | Upraviť úlohy ostatných | Upraviť ľubovoľnú úlohu v projekte. |
+| Úlohy | Zmazať vlastné úlohy | Zmazať úlohy vytvorené daným členom. |
+| Úlohy | Zmazať úlohy ostatných | Zmazať ľubovoľnú úlohu v projekte. |
+| Komentáre | Zobraziť komentáre | Čítať komentáre k dostupným úlohám. |
+| Komentáre | Pridávať komentáre | Pridať komentár, ak to povoľuje plán účtu. |
+| Komentáre | Upraviť vlastné komentáre | Upraviť komentáre vytvorené daným členom. |
+| Komentáre | Upraviť komentáre ostatných | Upraviť ľubovoľný komentár k dostupnej úlohe. |
+| Komentáre | Zmazať vlastné komentáre | Zmazať komentáre vytvorené daným členom. |
+| Komentáre | Zmazať komentáre ostatných | Zmazať ľubovoľný komentár k dostupnej úlohe. |
+
+Práva k vlastným záznamom sa kontrolujú podľa autora prihláseného používateľa. Pri úlohách treba evidovať tvorcu v poli `created_by`; komentáre už majú `author_id`. Tvorcu nastavuje server a klient ho nemôže zmeniť. Úprava a mazanie záznamov ostatných sú osobitné práva a samy sa nezapínajú spolu s právom pracovať s vlastnými záznamami. Zmazanie komentára odstráni aj jeho odpovede podľa existujúceho kaskádového pravidla.
+
+### Pozvanie a správa oprávnení členov
+
+Tabuľka checkboxov sa zobrazí ešte pred odoslaním pozvánky. Pozývajúci nastaví práva nového člena a až potom odošle pozvánku; pozvánka tieto práva uchová do prijatia. Rovnakú tabuľku možno otvoriť pri každom členovi na zmenu jeho oprávnení. Iba vlastník alebo člen s právom „Spravovať členov“ môže pozývať, meniť práva či odstraňovať členov. Vlastníctvo sa nemení cez checkboxy.
+
+Odporúčané predvoľby, ktoré iba predvyplnia checkboxy: **Správca** má všetky práva vrátane správy členov; **Prispievateľ** môže zobrazovať, pridávať a dokončovať úlohy, upravovať a mazať vlastné úlohy a komentáre a pridávať komentáre; **Komentátor** môže zobrazovať obsah a pridávať komentáre; **Náhľad** môže iba zobrazovať obsah. Každú predvoľbu možno pred pozvaním upraviť.
+
+### Sekcia Zdieľané a filtre
+
+V pravom bočnom paneli bude sekcia **Zdieľané** so zoznamom projektov a samostatne zdieľaných úloh, ku ktorým má používateľ prístup. Výber položky otvorí príslušný obsah. Zoznam rešpektuje oprávnenia a po odobratí prístupu položku zneprístupní.
+
+V každom príslušnom okne, najmä **Kalendár** a **Projekty**, bude filter **Všetky / Moje / Zdieľané**. „Moje“ znamená vlastné projekty alebo úlohy vytvorené používateľom; „Zdieľané“ znamená projekty a úlohy sprístupnené iným používateľom. „Všetky“ spojí dostupné vlastné a zdieľané položky bez duplicít. Filter nemení prístupové práva a nesmie zobraziť obsah bez oprávnenia.
+
+### Všeobecné pravidlá
+
+- Server kontroluje oprávnenia pri každom čítaní a zápise; skrytie ovládacieho prvku nestačí.
+- Nedostupný objekt vracia `404`; prihlásený používateľ bez potrebného práva dostane `403 forbidden`.
+- Pozvánka `pending` sama osebe prístup neudeľuje; vzniká až prijatím správnym účtom.
+- Premium sa kontroluje pri každom zápise komentára alebo reakcie.
+- Každé mazanie vyžaduje kliknutie na tlačidlo a jedno potvrdzovacie okno.
+- Rozhranie je po slovensky, prístupné klávesnicou a použiteľné na mobile.
 
 ## Pracovný postup
 
@@ -23,7 +58,7 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 1 – Základ členstva a zobrazenie členov
 
-**Backend spolu s frontendom:** Zistiť aktuálny stav projektu, používateľov, PHP API a databázy. V tomto súbore určiť polia a stavy potrebné pre členstvo a API odpovede pre zoznam členov. Zaviesť väzbu používateľa na projekt s rolou, oprávnením k úlohám a časom pridania; vlastník zostáva jednoznačný. Implementovať serverové čítanie členov s prístupovou kontrolou. V detaile projektu zobraziť zoznam členov, roly a oprávnenia, vrátane zrozumiteľného prázdneho a načítavacieho stavu.
+**Backend spolu s frontendom:** Zistiť aktuálny stav projektu, používateľov, PHP API a databázy. Zaviesť väzbu používateľa na projekt s individuálnou sadou oprávnení a časom pridania; vlastník zostáva jednoznačný. Evidovať tvorcu úlohy, aby bolo možné rozlíšiť vlastné úlohy od cudzích. Implementovať serverové čítanie členov s prístupovou kontrolou. V detaile projektu zobraziť zoznam členov a pri každom člena jeho oprávnenia v tabuľke checkboxov.
 
 **Viditeľný výsledok:** Otvorený projekt na stránke zobrazuje členov a ich oprávnenia získané zo servera.
 
@@ -31,7 +66,7 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 2 – Pozvánky a správa rolí
 
-**Backend spolu s frontendom:** Implementovať vytvorenie, zobrazenie a odvolanie pozvánky, jej platnosť a stavy `pending`, prijatá, odmietnutá, odvolaná a expirovaná. Pozvánku možno priradiť existujúcemu účtu alebo e-mailu podľa možností autentifikácie v projekte; bezpečný token ukladať iba ako hash. Pridať prijatie a odmietnutie prihláseným určeným používateľom. Prijatie vytvorí členstvo atomicky. Doplniť zmenu roly a oprávnenia a odobratie člena. V detaile projektu vytvoriť formulár pozvania a ovládanie členov s jasným zobrazením čakajúceho stavu.
+**Backend spolu s frontendom:** Implementovať vytvorenie, zobrazenie a odvolanie pozvánky, jej platnosť a stavy `pending`, prijatá, odmietnutá, odvolaná a expirovaná. Pred odoslaním pozvánky zobraziť tabuľku checkboxov a uložiť vybrané oprávnenia do pozvánky; pri jej prijatí vytvoriť členstvo s týmito právami. V detaile projektu sprístupniť tú istú tabuľku pri každom členovi na zmenu jeho oprávnení. Iba vlastník alebo člen s právom spravovať členov môže pozývať, meniť práva či odstraňovať členov. Pozvánku možno priradiť existujúcemu účtu alebo e-mailu; bezpečný token ukladať iba ako hash.
 
 **Viditeľný výsledok:** Vlastník pozve člena z detailu projektu, príjemca pozvánku vidí a môže ju prijať alebo odmietnuť; po prijatí sa zobrazí ako člen.
 
@@ -39,7 +74,7 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 3 – Oprávnenia v projekte a prevod vlastníctva
 
-**Backend spolu s frontendom:** Vytvoriť spoločnú serverovú kontrolu členstva a oprávnení a uplatniť ju na čítanie aj zápis projektov a úloh. Rolu a oprávnenie vždy načítať zo serverových dát, nikdy im nedôverovať z požiadavky prehliadača. Implementovať transakčný prevod vlastníctva, potvrdenie súčasným vlastníkom a nastavenie role predchádzajúceho vlastníka. V rozhraní skryť alebo zakázať nedostupné akcie a zrozumiteľne zobraziť zamietnutie prístupu.
+**Backend spolu s frontendom:** Vytvoriť spoločnú serverovú kontrolu jednotlivých oprávnení pre čítanie a zápis projektov, úloh a komentárov. Rozlišovať vytvorenie, dokončenie, úpravu a zmazanie vlastných či cudzích úloh a komentárov. Server určuje autora a kontroluje ho pri každej operácii; checkboxy v rozhraní zodpovedajú tým istým serverovým právam. Implementovať transakčný prevod vlastníctva, potvrdenie súčasným vlastníkom a nastavenie práv predchádzajúceho vlastníka.
 
 **Viditeľný výsledok:** Člen vidí a môže vykonať iba akcie povolené jeho rolou; vlastník môže previesť vlastníctvo cez detail projektu.
 
@@ -47,9 +82,9 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 4 – Samostatné zdieľanie úlohy a komentáre
 
-**Backend spolu s frontendom:** Zaviesť prístupové záznamy pre konkrétnu úlohu, príjemcu a rolu Divák/Editor/Vlastník. Implementovať udelenie, zmenu a odobratie prístupu; kontrolu uplatniť na všetky endpointy úlohy a komentárov. Samostatné zdieľanie nesmie sprístupniť projekt ani susedné úlohy. V detaile úlohy pridať správu príjemcov a prispôsobiť ovládacie prvky role. Serverovo vynucovať Premium pri pridávaní a zmene komentárov či reakcií.
+**Backend spolu s frontendom:** Zaviesť prístupové záznamy pre konkrétnu úlohu a príjemcu. Samostatné zdieľanie nesmie sprístupniť projekt ani susedné úlohy a uplatňuje rovnaké pravidlá vlastných/cudzích záznamov. V pravom bočnom paneli vytvoriť sekciu **Zdieľané** so zdieľanými projektmi a úlohami. V oknách **Kalendár** a **Projekty** pridať filtre **Všetky / Moje / Zdieľané** bez duplicít; filtre musia rešpektovať oprávnenia.
 
-**Viditeľný výsledok:** Vlastník zdieľa úlohu s konkrétnym používateľom a príjemca vidí alebo upravuje iba túto úlohu podľa roly.
+**Viditeľný výsledok:** Používateľ nájde zdieľané projekty a úlohy v bočnom paneli a filtruje položky v Kalendári a Projektoch. Príjemca vidí alebo upravuje iba zdieľaný obsah podľa pridelených práv.
 
 **Dokončené, keď:** Divák nemôže meniť úlohu, Editor ju môže meniť v povolenom rozsahu, odobratý príjemca stráca prístup a žiadna rola neobíde pravidlo Premium.
 
@@ -63,7 +98,7 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 6 – Integrované overenie a dokončenie
 
-**Backend spolu s frontendom:** Prejsť celý tok od pozvania po používanie zdieľaného projektu a úlohy. Overiť prístupové kombinácie vlastníka, Editora, Komentára, Náhľadu a samostatného Diváka/Editora; prijaté, odmietnuté, odvolané a expirované pozvánky; prevod vlastníctva; Premium a účet bez Premium; notifikácie, audit a odobratie prístupu. Opraviť zistené chyby v API aj stránke, skontrolovať chybové a prázdne stavy, mobilné rozloženie a ovládanie klávesnicou. Do tohto dokumentu zapísať dokončenie a prípadné zostávajúce obmedzenia.
+**Backend spolu s frontendom:** Prejsť celý tok od pozvania po používanie zdieľaného projektu a úlohy. Overiť kombinácie checkboxov vrátane vlastných a cudzích úloh/komentárov, správu členov, filtre **Všetky / Moje / Zdieľané**, sekciu **Zdieľané**, stavy pozvánok, prevod vlastníctva, Premium, notifikácie, audit a odobratie prístupu. Skontrolovať chybové a prázdne stavy, mobilné rozloženie a ovládanie klávesnicou; zapísať dokončenie a zostávajúce obmedzenia.
 
 **Viditeľný výsledok:** Celá správa projektov a zdieľanie sa dá prejsť cez stránku bez použitia priamych databázových zásahov na predvádzanie bežných tokov.
 
