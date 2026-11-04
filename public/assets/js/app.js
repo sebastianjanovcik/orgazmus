@@ -1383,7 +1383,8 @@
         },
         renderInvitationTools(root, project, groups) {
             const section = document.createElement('details'); section.className = 'task-section project-invitations';
-            const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading'; heading.textContent = 'Pozvať člena'; section.append(heading);
+            const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading';
+            const headingText = document.createElement('span'); headingText.textContent = 'Pozvať člena'; heading.append(headingText); section.append(heading);
             const form = document.createElement('form'); form.className = 'project-invitation-form'; form.dataset.projectId = String(project.id);
             const emailLabel = document.createElement('label'); emailLabel.textContent = 'E-mail pozvaného'; emailLabel.htmlFor = 'project-invite-email';
             const email = document.createElement('input'); email.id = 'project-invite-email'; email.name = 'email'; email.type = 'email'; email.autocomplete = 'email'; email.required = true; email.maxLength = 254;
@@ -1403,7 +1404,7 @@
             // Predvoľba používa rovnaký prístupný vlastný select ako ostatné výbery v aplikácii.
             dropdowns.init(form);
             const dropdown = document.createElement('details'); dropdown.className = 'project-invitation-dropdown';
-            const dropdownHeading = document.createElement('summary'); dropdownHeading.textContent = 'Pozvánky a ich stav';
+            const dropdownHeading = document.createElement('summary'); const dropdownHeadingText = document.createElement('span'); dropdownHeadingText.textContent = 'Pozvánky a ich stav'; dropdownHeading.append(dropdownHeadingText);
             const list = document.createElement('div'); list.className = 'project-invitation-list'; list.setAttribute('aria-live', 'polite'); list.textContent = 'Načítavam pozvánky…';
             dropdown.append(dropdownHeading, list); section.append(dropdown); root.append(section);
             this.loadProjectInvitations(project.id, list);
@@ -1412,7 +1413,8 @@
             try {
                 const invitations = await api.request('GET', `/api/projects/${projectId}/invitations`); list.replaceChildren();
                 const heading = list.closest('.project-invitation-dropdown')?.querySelector('summary');
-                if (heading) heading.textContent = `Pozvánky a ich stav (${invitations.length})`;
+                const headingText = heading?.querySelector('span');
+                if (headingText) headingText.textContent = `Pozvánky a ich stav (${invitations.length})`;
                 if (!invitations.length) { list.textContent = 'Projekt nemá žiadne pozvánky.'; return; }
                 invitations.forEach((invitation) => {
                     const row = document.createElement('div'); row.className = 'project-invitation-row';
