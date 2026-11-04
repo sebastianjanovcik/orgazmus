@@ -394,16 +394,15 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .field-error:not(:empty) { margin: 5px 2px 0; }
 /* Formulár pozvánky a úpravy členov drží rozsiahle oprávnenia čitateľné aj na mobile. */
 .project-invitations, .project-invitation-form { display: grid; gap: 12px; }
-.project-invitation-form > input, .project-invitation-form > select, .project-invitation-status input, .project-invitation-status textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
-.project-invitation-status textarea { min-height: 68px; resize: vertical; color: #151923; background: #f4f6fb; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; word-break: break-all; }
-.project-invitation-link { display: block; max-width: 100%; padding: 10px 12px; border-radius: 10px; color: #8fb4ff; background: color-mix(in srgb, var(--surface-solid) 82%, #4866e8); overflow-wrap: anywhere; word-break: break-all; }
+.project-invitation-form > input, .project-invitation-form > select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface-solid); }
+.project-invitation-link { display: block; max-width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: transparent; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; word-break: break-all; }
 .invitation-copy-button { min-height: 48px; color: #fff; background: #4866e8; }
 .invitation-copy-button:hover { background: #3853cf; }
 .invitation-copy-button:focus-visible { outline: 3px solid color-mix(in srgb, #4866e8 60%, white); outline-offset: 3px; }
 .project-invite-permissions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 4px 12px; margin: 6px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
 .project-invite-permissions legend { padding: 0 6px; font-weight: 700; }
 .project-member-actions { margin-top: 12px; }
-.project-invitation-list { display: grid; gap: 8px; }
+.project-invitation-list { display: grid; max-height: 260px; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding-right: 5px; }
 .project-invitation-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
 .project-invitation-row > span { min-width: 0; flex: 1 1 auto; }
 .project-invitation-row > button { width: auto; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
