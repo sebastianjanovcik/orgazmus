@@ -1382,8 +1382,8 @@
             return values;
         },
         renderInvitationTools(root, project, groups) {
-            const section = document.createElement('section'); section.className = 'task-section project-invitations';
-            const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'Pozvať člena'; section.append(heading);
+            const section = document.createElement('details'); section.className = 'task-section project-invitations';
+            const heading = document.createElement('summary'); heading.className = 'project-task-heading project-collapsible-heading'; heading.textContent = 'Pozvať člena'; section.append(heading);
             const form = document.createElement('form'); form.className = 'project-invitation-form'; form.dataset.projectId = String(project.id);
             const emailLabel = document.createElement('label'); emailLabel.textContent = 'E-mail pozvaného'; emailLabel.htmlFor = 'project-invite-email';
             const email = document.createElement('input'); email.id = 'project-invite-email'; email.name = 'email'; email.type = 'email'; email.autocomplete = 'email'; email.required = true; email.maxLength = 254;
@@ -1484,8 +1484,8 @@
             edit.hidden = project.is_owner === false;
             const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
             // Checkboxy sú zatiaľ iba náhľad serverových práv; ich editovanie patrí do kroku 2.
-            const memberSection = document.createElement('section'); memberSection.className = 'task-section project-members';
-            const memberHeading = document.createElement('h3'); memberHeading.className = 'project-task-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
+            const memberSection = document.createElement('details'); memberSection.className = 'task-section project-members';
+            const memberHeading = document.createElement('summary'); memberHeading.className = 'project-task-heading project-collapsible-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
             const permissionGroups = [
                 ['Projekt', [
                     ['can_view_project', 'Zobraziť projekt'], ['can_manage_project', 'Spravovať projekt'], ['can_manage_members', 'Spravovať členov']
