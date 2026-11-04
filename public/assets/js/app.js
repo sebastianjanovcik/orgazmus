@@ -1400,12 +1400,17 @@
             const submit = document.createElement('button'); submit.type = 'submit'; submit.className = 'button button-primary'; submit.textContent = 'Vytvoriť pozvánku';
             const status = document.createElement('div'); status.className = 'project-invitation-status'; status.setAttribute('aria-live', 'polite');
             form.append(emailLabel, email, presetLabel, preset, fieldset, note, submit, status); section.append(form);
-            const list = document.createElement('div'); list.className = 'project-invitation-list'; list.setAttribute('aria-live', 'polite'); list.textContent = 'Načítavam pozvánky…'; section.append(list); root.append(section);
+            const dropdown = document.createElement('details'); dropdown.className = 'project-invitation-dropdown';
+            const dropdownHeading = document.createElement('summary'); dropdownHeading.textContent = 'Pozvánky a ich stav';
+            const list = document.createElement('div'); list.className = 'project-invitation-list'; list.setAttribute('aria-live', 'polite'); list.textContent = 'Načítavam pozvánky…';
+            dropdown.append(dropdownHeading, list); section.append(dropdown); root.append(section);
             this.loadProjectInvitations(project.id, list);
         },
         async loadProjectInvitations(projectId, list) {
             try {
                 const invitations = await api.request('GET', `/api/projects/${projectId}/invitations`); list.replaceChildren();
+                const heading = list.closest('.project-invitation-dropdown')?.querySelector('summary');
+                if (heading) heading.textContent = `Pozvánky a ich stav (${invitations.length})`;
                 if (!invitations.length) { list.textContent = 'Projekt nemá žiadne pozvánky.'; return; }
                 invitations.forEach((invitation) => {
                     const row = document.createElement('div'); row.className = 'project-invitation-row';

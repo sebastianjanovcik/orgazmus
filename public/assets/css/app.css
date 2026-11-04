@@ -402,7 +402,12 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .project-invite-permissions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 4px 12px; margin: 6px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; }
 .project-invite-permissions legend { padding: 0 6px; font-weight: 700; }
 .project-member-actions { margin-top: 12px; }
+.project-invitation-dropdown { border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-solid) 75%, transparent); }
+.project-invitation-dropdown > summary { min-height: 48px; padding: 13px 16px; cursor: pointer; font-weight: 700; }
+.project-invitation-dropdown > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, white); outline-offset: 2px; border-radius: 12px; }
+.project-invitation-dropdown[open] > summary { border-bottom: 1px solid var(--line); }
 .project-invitation-list { display: grid; max-height: 260px; gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding-right: 5px; }
+.project-invitation-dropdown .project-invitation-list { margin: 10px; }
 .project-invitation-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
 .project-invitation-row > span { min-width: 0; flex: 1 1 auto; }
 .project-invitation-row > button { width: auto; max-width: 100%; flex: 0 0 auto; white-space: nowrap; }
