@@ -926,6 +926,13 @@
                 dot.setAttribute('aria-hidden', 'true');
                 projectLabel.append(dot, document.createTextNode(project.name));
                 meta.append(projectLabel);
+                // V zdieľanom projekte je autor dôležitý na rozlíšenie vlastných a cudzích úloh.
+                if (!project.is_owner && task.creator_name) {
+                    const creator = document.createElement('span');
+                    creator.className = 'task-creator';
+                    creator.textContent = `Pridal – ${task.creator_name}`;
+                    meta.append(creator);
+                }
             }
             main.append(meta);
             const due = document.createElement('time');
@@ -1642,10 +1649,11 @@
                 root.append(section);
             });
             // Obsah projektu je prehľadnejší pred správou členov a pozvánok.
+            // História zmien patrí medzi obsah projektu a zoznam jeho členov.
+            this.renderAudit(root, project.id);
             root.append(memberSection);
             if (transferSection) root.append(transferSection);
             if (canManageMembers) this.renderInvitationTools(root, project, permissionGroups);
-            this.renderAudit(root, project.id);
         },
         async renderAudit(root, projectId) {
             const section = document.createElement('section'); section.className = 'task-section project-audit';

@@ -16,6 +16,7 @@ function tasko_task_data(array $task): array
         'id' => (int) $task['id'],
         'project_id' => (int) $task['project_id'],
         'created_by' => (int) $task['created_by'],
+        'creator_name' => (string) $task['creator_name'],
         'title' => (string) $task['title'],
         'description' => $task['description'] === null ? null : (string) $task['description'],
         'priority' => (int) $task['priority'],
@@ -102,7 +103,7 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
     }
 
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at,
                 (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
                 (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
@@ -111,6 +112,7 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
                 (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
+         INNER JOIN users creator ON creator.id = t.created_by
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
          WHERE ' . implode(' AND ', $conditions) . '
          ORDER BY t.is_done ASC, t.due_date ASC, t.priority DESC, t.id ASC'
@@ -124,7 +126,7 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
 {
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.created_by, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at,
                 (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
                 (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
@@ -133,6 +135,7 @@ function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
                 (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
+         INNER JOIN users creator ON creator.id = t.created_by
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
          WHERE (p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1)) AND t.id = :task_id'
     );
