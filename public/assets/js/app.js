@@ -1436,8 +1436,9 @@
                 const result = await api.request('POST', `/api/projects/${form.dataset.projectId}/invitations`, payload);
                 const link = `${window.location.origin}${window.location.pathname}#invite-${result.id}-${result.token}`;
                 const label = document.createElement('p'); label.textContent = `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
-                const url = document.createElement('input'); url.type = 'url'; url.readOnly = true; url.value = link; url.setAttribute('aria-label', 'Odkaz na pozvánku');
-                const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-quiet'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); copy.textContent = 'Skopírované'; } catch (_) { url.select(); document.execCommand('copy'); copy.textContent = 'Skopírované'; } });
+                // Textové pole zobrazuje celý tokenizovaný odkaz; type=url niektoré prehliadače pri hash route vizuálne skracujú.
+                const url = document.createElement('textarea'); url.readOnly = true; url.rows = 2; url.value = link; url.setAttribute('aria-label', 'Odkaz na pozvánku'); url.spellcheck = false;
+                const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-primary invitation-copy-button'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(link); copy.textContent = 'Skopírované'; } catch (_) { url.focus(); url.select(); document.execCommand('copy'); copy.textContent = 'Skopírované'; } });
                 status.replaceChildren(label, url, copy); form.reset(); this.loadProjectInvitations(form.dataset.projectId, form.closest('.project-invitations').querySelector('.project-invitation-list'));
             } catch (error) { status.textContent = error.message || 'Pozvánku sa nepodarilo vytvoriť.'; } finally { submit.disabled = false; }
         },
