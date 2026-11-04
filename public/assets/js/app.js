@@ -1379,31 +1379,37 @@
                 ['Úlohy', [['can_view_tasks', 'Zobraziť úlohy'], ['can_add_tasks', 'Pridávať úlohy'], ['can_complete_tasks', 'Dokončiť úlohy'], ['can_edit_own_tasks', 'Upraviť vlastné úlohy'], ['can_edit_other_tasks', 'Upraviť úlohy ostatných'], ['can_delete_own_tasks', 'Zmazať vlastné úlohy'], ['can_delete_other_tasks', 'Zmazať úlohy ostatných']]],
                 ['Komentáre', [['can_view_comments', 'Zobraziť komentáre'], ['can_add_comments', 'Pridávať komentáre'], ['can_edit_own_comments', 'Upraviť vlastné komentáre'], ['can_edit_other_comments', 'Upraviť komentáre ostatných'], ['can_delete_own_comments', 'Zmazať vlastné komentáre'], ['can_delete_other_comments', 'Zmazať komentáre ostatných']]]
             ];
-            const tableWrap = document.createElement('div'); tableWrap.className = 'project-members-scroll'; tableWrap.tabIndex = 0; tableWrap.setAttribute('role', 'region'); tableWrap.setAttribute('aria-label', 'Oprávnenia členov projektu; posúvaj tabuľku vodorovne');
-            const table = document.createElement('table'); table.className = 'project-members-table';
-            const thead = document.createElement('thead'); const header = document.createElement('tr');
-            const memberColumn = document.createElement('th'); memberColumn.scope = 'col'; memberColumn.textContent = 'Člen'; header.append(memberColumn);
-            permissionGroups.forEach(([group, permissions]) => permissions.forEach(([key, label], index) => {
-                const th = document.createElement('th'); th.scope = 'col'; th.textContent = `${group}: ${label}`; th.title = th.textContent;
-                const hidden = document.createElement('span'); hidden.className = 'visually-hidden'; hidden.textContent = `${group} – ${label}`; th.replaceChildren(hidden); header.append(th);
-            }));
-            thead.append(header); table.append(thead);
-            const tbody = document.createElement('tbody');
+            const memberList = document.createElement('div'); memberList.className = 'project-member-list';
+            if (!members.length) {
+                const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'V projekte zatiaľ nie sú žiadni členovia.'; memberList.append(empty);
+            }
             members.forEach((member) => {
-                const row = document.createElement('tr'); const identity = document.createElement('th'); identity.scope = 'row';
-                const name = document.createElement('span'); name.textContent = member.name;
-                const email = document.createElement('small'); email.textContent = member.email;
-                const added = document.createElement('small'); added.textContent = `Pridaný ${member.added_at ? new Date(member.added_at).toLocaleDateString('sk-SK') : '—'}`;
+                const item = document.createElement('details'); item.className = 'project-member';
+                const summaryRow = document.createElement('summary'); summaryRow.className = 'project-member-summary';
+                const identity = document.createElement('span'); identity.className = 'project-member-identity';
+                const name = document.createElement('strong'); name.textContent = member.name;
+                const email = document.createElement('span'); email.className = 'project-member-email'; email.textContent = member.email;
+                identity.append(name, email);
+                const meta = document.createElement('span'); meta.className = 'project-member-meta';
                 const role = document.createElement('span'); role.className = 'project-member-role'; role.textContent = member.is_owner ? 'Vlastník' : 'Člen';
-                identity.append(name, email, role, added); row.append(identity);
-                permissionGroups.forEach(([, permissions]) => permissions.forEach(([key, label]) => {
-                    const cell = document.createElement('td'); const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox'; checkbox.disabled = true; checkbox.checked = Boolean(member.permissions?.[key]);
-                    checkbox.setAttribute('aria-label', `${member.name}: ${label}`); cell.append(checkbox); row.append(cell);
-                }));
-                tbody.append(row);
+                const added = document.createElement('span'); added.className = 'project-member-added'; added.textContent = `Pridaný ${member.added_at ? new Date(member.added_at).toLocaleDateString('sk-SK') : '—'}`;
+                meta.append(role, added); summaryRow.append(identity, meta); item.append(summaryRow);
+                const permissionPanel = document.createElement('div'); permissionPanel.className = 'project-member-permissions';
+                permissionGroups.forEach(([groupName, permissions]) => {
+                    const group = document.createElement('fieldset'); group.className = 'project-permission-group';
+                    const legend = document.createElement('legend'); legend.textContent = groupName; group.append(legend);
+                    permissions.forEach(([key, label]) => {
+                        const permission = document.createElement('label'); permission.className = 'project-permission';
+                        const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.disabled = true;
+                        checkbox.checked = Boolean(member.permissions?.[key]);
+                        const text = document.createElement('span'); text.textContent = label;
+                        permission.append(checkbox, text); group.append(permission);
+                    });
+                    permissionPanel.append(group);
+                });
+                item.append(permissionPanel); memberList.append(item);
             });
-            table.append(tbody); tableWrap.append(table); memberSection.append(tableWrap); root.append(memberSection);
+            memberSection.append(memberList); root.append(memberSection);
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
             [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {

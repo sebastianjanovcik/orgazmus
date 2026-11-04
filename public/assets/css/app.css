@@ -323,16 +323,33 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .project-detail-heading h2 { margin: 0; font-size: 23px; overflow-wrap: anywhere; }
 .project-detail-heading p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .project-detail-summary { margin: 16px 0 24px; color: var(--muted); font-size: 13px; }
-.project-members-scroll { overflow-x: auto; overscroll-behavior-inline: contain; border: 1px solid var(--glass-border); border-radius: 14px; }
-.project-members-table { width: 100%; min-width: 1040px; border-collapse: collapse; font-size: 12px; }
-.project-members-table th, .project-members-table td { padding: 10px 8px; border-bottom: 1px solid var(--glass-border); text-align: center; }
-.project-members-table thead th { position: sticky; top: 0; max-width: 92px; color: var(--muted); background: var(--surface); }
-.project-members-table th:first-child, .project-members-table tbody th { position: sticky; left: 0; z-index: 1; min-width: 190px; text-align: left; background: var(--surface); }
-.project-members-table tbody th > * { display: block; }
-.project-members-table tbody th small { color: var(--muted); font-weight: 400; }
-.project-members-table .project-member-role { color: var(--accent); font-size: 11px; }
-.project-members-table input { width: 18px; height: 18px; accent-color: var(--accent); }
-.project-members-table input:disabled { opacity: 1; }
+/* Oprávnenia sú v samostatnom rozbaľovacom paneli, aby mal každý checkbox čitateľný názov aj na mobile. */
+.project-member-list { display: grid; gap: 10px; }
+.project-member { overflow: hidden; border: 1px solid var(--glass-border); border-radius: 14px; background: var(--surface); }
+.project-member-summary { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; padding: 13px 44px 13px 16px; cursor: pointer; list-style: none; }
+.project-member-summary::-webkit-details-marker { display: none; }
+.project-member-summary::after { position: absolute; right: 18px; content: '⌄'; color: var(--muted); font-size: 20px; transition: transform .18s ease; }
+.project-member[open] > .project-member-summary { border-bottom: 1px solid var(--glass-border); }
+.project-member[open] > .project-member-summary::after { transform: rotate(180deg); }
+.project-member-summary:focus-visible { z-index: 1; outline: 3px solid color-mix(in srgb, var(--accent) 70%, white); outline-offset: -3px; }
+.project-member-identity, .project-member-meta { display: grid; gap: 3px; min-width: 0; }
+.project-member-identity { flex: 1; }
+.project-member-identity strong { overflow-wrap: anywhere; }
+.project-member-email, .project-member-added { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.project-member-meta { justify-items: end; flex: none; }
+.project-member-role { color: var(--accent); font-size: 12px; font-weight: 700; }
+.project-member-permissions { display: grid; gap: 14px; padding: 16px; }
+.project-permission-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px 18px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.project-permission-group legend { width: 100%; margin-bottom: 8px; padding: 0 0 6px; border-bottom: 1px solid var(--glass-border); font-size: 13px; font-weight: 750; }
+.project-permission { display: flex; align-items: center; gap: 9px; min-height: 32px; color: var(--ink); font-size: 13px; }
+.project-permission input { width: 17px; height: 17px; flex: none; margin: 0; accent-color: var(--accent); }
+.project-permission input:disabled { opacity: 1; }
+@media (max-width: 480px) {
+    .project-member-summary { align-items: flex-start; gap: 9px; padding-left: 12px; }
+    .project-member-meta { text-align: right; }
+    .project-member-permissions { padding: 13px 12px; }
+    .project-permission-group { grid-template-columns: 1fr; }
+}
 .project-task-heading { margin: 0 0 12px; font-size: 16px; }
 .project-link-icon { width: 18px; flex: none; text-align: center; }
 .project-link-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
