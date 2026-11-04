@@ -17,7 +17,7 @@ Každý člen má vlastnú sadu oprávnení, ktorú nastavuje pozývajúci alebo
 | Projekt | Spravovať členov | Pozývať, meniť práva a odstraňovať členov. |
 | Úlohy | Zobraziť úlohy | Zobraziť úlohy projektu. |
 | Úlohy | Pridávať úlohy | Vytvárať úlohy v projekte. |
-| Úlohy | Dokončiť úlohy | Označiť úlohu za hotovú alebo ju obnoviť. |
+| Úlohy | Dokončiť úlohy ostatných | Označiť cudziu úlohu za hotovú alebo ju obnoviť. |
 | Úlohy | Upraviť vlastné úlohy | Upraviť úlohy vytvorené daným členom. |
 | Úlohy | Upraviť úlohy ostatných | Upraviť ľubovoľnú úlohu v projekte. |
 | Úlohy | Zmazať vlastné úlohy | Zmazať úlohy vytvorené daným členom. |
@@ -29,7 +29,9 @@ Každý člen má vlastnú sadu oprávnení, ktorú nastavuje pozývajúci alebo
 | Komentáre | Zmazať vlastné komentáre | Zmazať komentáre vytvorené daným členom. |
 | Komentáre | Zmazať komentáre ostatných | Zmazať ľubovoľný komentár k dostupnej úlohe. |
 
-Práva k vlastným záznamom sa kontrolujú podľa autora prihláseného používateľa. Pri úlohách treba evidovať tvorcu v poli `created_by`; komentáre už majú `author_id`. Tvorcu nastavuje server a klient ho nemôže zmeniť. Úprava a mazanie záznamov ostatných sú osobitné práva a samy sa nezapínajú spolu s právom pracovať s vlastnými záznamami. Zmazanie komentára odstráni aj jeho odpovede podľa existujúceho kaskádového pravidla.
+Práva k vlastným záznamom sa kontrolujú podľa autora prihláseného používateľa. Úloha eviduje tvorcu v `created_by`, vykonávajúceho člena v `assignee_id` a kontrolného člena v `reviewer_id`. Tvorcu nastavuje server a klient ho nemôže zmeniť; vykonávajúceho a kontrolného člena možno priradiť iba z používateľov, ktorí majú k úlohe prístup. Komentáre majú `author_id`. Úprava a mazanie vlastných a cudzích záznamov sú samostatné práva. Zmazanie komentára odstráni aj jeho odpovede podľa existujúceho kaskádového pravidla.
+
+Úlohu možno označiť za hotovú alebo ju obnoviť jej tvorcom, priradeným vykonávajúcim členom alebo členom s oprávnením dokončiť úlohy ostatných (`can_complete_tasks`). Kontrolný člen týmto priradením automaticky právo dokončovať úlohu nezíska; môže ju dokončiť iba vtedy, ak je zároveň tvorcom, vykonávajúcim členom alebo má uvedené oprávnenie.
 
 ### Pozvanie a správa oprávnení členov
 
@@ -82,9 +84,9 @@ Každý krok spája backend a frontend. Najprv sa v tomto dokumente spresní pot
 
 ## Krok 4 – Samostatné zdieľanie úlohy a komentáre
 
-**Backend spolu s frontendom:** Zaviesť prístupové záznamy pre konkrétnu úlohu a príjemcu. Samostatné zdieľanie nesmie sprístupniť projekt ani susedné úlohy a uplatňuje rovnaké pravidlá vlastných/cudzích záznamov. V pravom bočnom paneli vytvoriť sekciu **Zdieľané** so zdieľanými projektmi a úlohami. V oknách **Kalendár** a **Projekty** pridať filtre **Všetky / Moje / Zdieľané** bez duplicít; filtre musia rešpektovať oprávnenia.
+**Backend spolu s frontendom:** Zaviesť prístupové záznamy pre konkrétnu úlohu a príjemcu. Samostatné zdieľanie nesmie sprístupniť projekt ani susedné úlohy a uplatňuje rovnaké pravidlá vlastných/cudzích záznamov. Pri úlohe umožniť nastaviť vykonávajúceho člena (`assignee_id`) a kontrolného člena (`reviewer_id`) spomedzi používateľov s prístupom k úlohe; prístup kontrolného člena sa riadi pridelenými právami zdieľania. V pravom bočnom paneli vytvoriť sekciu **Zdieľané** so zdieľanými projektmi a úlohami. V oknách **Kalendár** a **Projekty** pridať filtre **Všetky / Moje / Zdieľané** bez duplicít; filtre musia rešpektovať oprávnenia.
 
-**Viditeľný výsledok:** Používateľ nájde zdieľané projekty a úlohy v bočnom paneli a filtruje položky v Kalendári a Projektoch. Príjemca vidí alebo upravuje iba zdieľaný obsah podľa pridelených práv.
+**Viditeľný výsledok:** Používateľ nájde zdieľané projekty a úlohy v bočnom paneli, filtruje položky v Kalendári a Projektoch a pri úlohe vidí priradeného vykonávajúceho aj kontrolného člena. Príjemca vidí alebo upravuje iba zdieľaný obsah podľa pridelených práv.
 
 **Dokončené, keď:** Divák nemôže meniť úlohu, Editor ju môže meniť v povolenom rozsahu, odobratý príjemca stráca prístup a žiadna rola neobíde pravidlo Premium.
 
