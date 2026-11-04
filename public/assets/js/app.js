@@ -1375,9 +1375,22 @@
             const memberSection = document.createElement('section'); memberSection.className = 'task-section project-members';
             const memberHeading = document.createElement('h3'); memberHeading.className = 'project-task-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
             const permissionGroups = [
-                ['Projekt', [['can_view_project', 'Zobraziť projekt'], ['can_manage_project', 'Spravovať projekt'], ['can_manage_members', 'Spravovať členov']]],
-                ['Úlohy', [['can_view_tasks', 'Zobraziť úlohy'], ['can_add_tasks', 'Pridávať úlohy'], ['can_complete_tasks', 'Dokončiť úlohy'], ['can_edit_own_tasks', 'Upraviť vlastné úlohy'], ['can_edit_other_tasks', 'Upraviť úlohy ostatných'], ['can_delete_own_tasks', 'Zmazať vlastné úlohy'], ['can_delete_other_tasks', 'Zmazať úlohy ostatných']]],
-                ['Komentáre', [['can_view_comments', 'Zobraziť komentáre'], ['can_add_comments', 'Pridávať komentáre'], ['can_edit_own_comments', 'Upraviť vlastné komentáre'], ['can_edit_other_comments', 'Upraviť komentáre ostatných'], ['can_delete_own_comments', 'Zmazať vlastné komentáre'], ['can_delete_other_comments', 'Zmazať komentáre ostatných']]]
+                ['Projekt', [
+                    [['can_manage_project'], 'Spravovať projekt'],
+                    [['can_manage_members'], 'Spravovať členov']
+                ]],
+                ['Úlohy', [
+                    [['can_add_tasks'], 'Pridávať úlohy'],
+                    [['can_complete_tasks'], 'Dokončiť úlohy'],
+                    [['can_edit_own_tasks', 'can_edit_other_tasks'], 'Upraviť úlohy'],
+                    [['can_delete_own_tasks', 'can_delete_other_tasks'], 'Zmazať úlohy']
+                ]],
+                ['Komentáre', [
+                    [['can_view_comments'], 'Zobraziť komentáre'],
+                    [['can_add_comments'], 'Pridávať komentáre'],
+                    [['can_edit_own_comments', 'can_edit_other_comments'], 'Upraviť komentáre'],
+                    [['can_delete_own_comments', 'can_delete_other_comments'], 'Zmazať komentáre']
+                ]]
             ];
             const memberList = document.createElement('div'); memberList.className = 'project-member-list';
             if (!members.length) {
@@ -1398,10 +1411,16 @@
                 permissionGroups.forEach(([groupName, permissions]) => {
                     const group = document.createElement('fieldset'); group.className = 'project-permission-group';
                     const legend = document.createElement('legend'); legend.textContent = groupName; group.append(legend);
-                    permissions.forEach(([key, label]) => {
+                    permissions.forEach(([keys, label]) => {
                         const permission = document.createElement('label'); permission.className = 'project-permission';
                         const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.disabled = true;
-                        checkbox.checked = Boolean(member.permissions?.[key]);
+                        const enabledCount = keys.filter((key) => Boolean(member.permissions?.[key])).length;
+                        checkbox.checked = enabledCount === keys.length;
+                        checkbox.indeterminate = enabledCount > 0 && enabledCount < keys.length;
+                        if (keys.length > 1) {
+                            checkbox.title = checkbox.indeterminate ? `${label} – povolené iba pre vlastné alebo cudzie záznamy` : `${label} – vlastné aj cudzie záznamy`;
+                            checkbox.setAttribute('aria-label', checkbox.title);
+                        }
                         const text = document.createElement('span'); text.textContent = label;
                         permission.append(checkbox, text); group.append(permission);
                     });
