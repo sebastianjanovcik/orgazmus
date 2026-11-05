@@ -8,6 +8,39 @@
             sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
             cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
+        /* Základné popisky mimo dátových šablón sa menia spolu s jazykovým nastavením. */
+        labels: {
+            'Otvorenie profilu': ['Otvoriť profil', 'Otevřít profil'],
+            'Zavrieť': ['Zavrieť', 'Zavřít'], 'Zavrieť menu': ['Zavrieť menu', 'Zavřít menu'],
+            'Horná lišta': ['Horná lišta', 'Horní lišta'], 'Hlavná navigácia': ['Hlavná navigácia', 'Hlavní navigace'],
+            'Súhrn úloh': ['Súhrn úloh', 'Souhrn úkolů'], 'Pridať úlohu': ['Pridať úlohu', 'Přidat úkol'],
+            'Detail úlohy': ['Detail úlohy', 'Detail úkolu'], 'Nová úloha': ['Nová úloha', 'Nový úkol'],
+            'Upraviť úlohu': ['Upraviť úlohu', 'Upravit úkol'], 'Názov úlohy': ['Názov úlohy', 'Název úkolu'],
+            'Čo treba urobiť?': ['Čo treba urobiť?', 'Co je potřeba udělat?'], 'Priorita': ['Priorita', 'Priorita'],
+            'Nízka': ['Nízka', 'Nízká'], 'Stredná': ['Stredná', 'Střední'], 'Vysoká': ['Vysoká', 'Vysoká'], 'Kritická': ['Kritická', 'Kritická'],
+            'Termín': ['Termín', 'Termín'], 'Popis': ['Popis', 'Popis'], 'Doplň podrobnosti': ['Doplň podrobnosti', 'Doplň podrobnosti'],
+            'Odstrániť': ['Odstrániť', 'Odstranit'], 'Zrušiť': ['Zrušiť', 'Zrušit'], 'Uložiť': ['Uložiť', 'Uložit'],
+            'Nový projekt': ['Nový projekt', 'Nový projekt'], 'Upraviť projekt': ['Upraviť projekt', 'Upravit projekt'],
+            'Názov projektu': ['Názov projektu', 'Název projektu'], 'Napríklad Práca': ['Napríklad Práca', 'Například Práce'],
+            'Krátky popis projektu': ['Krátky popis projektu', 'Krátký popis projektu'], 'Ikona': ['Ikona', 'Ikona'],
+            'Práca': ['Práca', 'Práce'], 'Domov': ['Domov', 'Domov'], 'Škola': ['Škola', 'Škola'], 'Nápad': ['Nápad', 'Nápad'],
+            'Cieľ': ['Cieľ', 'Cíl'], 'Poznámka': ['Poznámka', 'Poznámka'], 'Profil': ['Profil', 'Profil'], 'Meno': ['Meno', 'Jméno'],
+            'Zmena hesla': ['Zmena hesla', 'Změna hesla'], 'Aktuálne heslo': ['Aktuálne heslo', 'Aktuální heslo'],
+            'Nové heslo': ['Nové heslo', 'Nové heslo'], 'Odhlásiť sa': ['Odhlásiť sa', 'Odhlásit se'],
+            'Potvrdenie': ['Potvrdenie', 'Potvrzení'], 'Potvrdiť': ['Potvrdiť', 'Potvrdit'],
+            'Všetky projekty': ['Všetky projekty', 'Všechny projekty'], 'Otvorené': ['Otvorené', 'Otevřené'], 'Hotové': ['Hotové', 'Hotové'],
+            'Načítavam…': ['Načítavam…', 'Načítám…'], 'Skúsiť znova': ['Skúsiť znova', 'Zkusit znovu'],
+            'Zatiaľ nemáš hotové úlohy.': ['Zatiaľ nemáš hotové úlohy.', 'Zatím nemáš hotové úkoly.'],
+            'Nemáš otvorené úlohy.': ['Nemáš otvorené úlohy.', 'Nemáš otevřené úkoly.'],
+            'Vitaj späť. Prihlás sa do svojho účtu.': ['Vitaj späť. Prihlás sa do svojho účtu.', 'Vítej zpět. Přihlas se ke svému účtu.'],
+            'Vytvor si účet a usporiadaj si svoje úlohy.': ['Vytvor si účet a usporiadaj si svoje úlohy.', 'Vytvoř si účet a uspořádej si své úkoly.'],
+            'Prihlásenie a registrácia': ['Prihlásenie a registrácia', 'Přihlášení a registrace'],
+            'E-mail': ['E-mail', 'E-mail'], 'Heslo': ['Heslo', 'Heslo'], 'Prihlásiť sa': ['Prihlásiť sa', 'Přihlásit se'],
+            'Vytvoriť účet': ['Vytvoriť účet', 'Vytvořit účet'], 'Registrácia': ['Registrácia', 'Registrace'],
+            'Zadaj heslo': ['Zadaj heslo', 'Zadej heslo'], 'Aspoň 8 znakov': ['Aspoň 8 znakov', 'Alespoň 8 znaků'],
+            'Meno a priezvisko': ['Meno a priezvisko', 'Jméno a příjmení'],
+            'Už máš účet? Prihlás sa': ['Už máš účet? Prihlás sa', 'Už máš účet? Přihlas se']
+        },
         language: 'sk',
         key: 'tasko.language',
         init() {
@@ -26,12 +59,34 @@
             notifications.update();
         },
         apply(root) {
-            (root || document).querySelectorAll('[data-i18n]').forEach((node) => {
+            const scope = root || document;
+            scope.querySelectorAll('[data-i18n]').forEach((node) => {
                 const value = this.t(node.dataset.i18n);
                 if (value === node.dataset.i18n) return;
                 const textNodes = Array.from(node.childNodes).filter((child) => child.nodeType === Node.TEXT_NODE);
                 if (textNodes.length) textNodes[textNodes.length - 1].nodeValue = node.childNodes.length > 1 ? ` ${value}` : value;
                 else node.textContent = value;
+            });
+            const labels = this.labels;
+            const translate = (value) => {
+                for (const [slovak, variants] of Object.entries(labels)) {
+                    if (value === variants[0] || value === variants[1]) return variants[this.language === 'cs' ? 1 : 0];
+                }
+                return null;
+            };
+            const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                const original = node.nodeValue.trim();
+                const translated = translate(original);
+                if (translated) node.nodeValue = node.nodeValue.replace(original, translated);
+            }
+            scope.querySelectorAll('input[placeholder], textarea[placeholder], [aria-label], [title]').forEach((node) => {
+                ['placeholder', 'aria-label', 'title'].forEach((attribute) => {
+                    const original = node.getAttribute(attribute);
+                    const translated = original && translate(original);
+                    if (translated) node.setAttribute(attribute, translated);
+                });
             });
         }
     };
@@ -147,6 +202,7 @@
             /* Nadpis aktualizujeme až po obnove obsahu, aby sa do šablóny úloh neuložil názov inej trasy. */
             const heading = document.getElementById('page-title');
             if (heading) heading.textContent = title;
+            if (view) i18n.apply(view);
             if (view) dropdowns.init(view);
             document.querySelectorAll('.auth-card').forEach((card) => {
                 card.hidden = card.id === 'login-form' ? route.name !== 'login' : route.name !== 'register';
