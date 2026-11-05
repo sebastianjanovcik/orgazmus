@@ -237,7 +237,7 @@
         }
     };
 
-    const state = { routeSequence: 0, user: null, projects: [], tasks: [], projectMembers: [], authReady: false };
+    const state = { routeSequence: 0, user: null, projects: [], tasks: [], projectMembers: [], taskFilter: 'all', authReady: false };
 
     /* Používateľská voľba témy sa uloží lokálne; režim systém preberie nastavenie zariadenia. */
     const theme = {
@@ -324,6 +324,10 @@
             const heading = document.getElementById('page-title');
             if (heading) heading.textContent = title;
             if (view) i18n.apply(view);
+            if (view && ['tasks', 'projects', 'calendar', 'done'].includes(route.name)) {
+                const headingNode = view.querySelector('.page-heading');
+                if (headingNode) headingNode.append(taskList.filterControl(route.name === 'projects' ? 'projects' : 'tasks'));
+            }
             if (view) dropdowns.init(view);
             if (view) datePicker.init(view);
             document.querySelectorAll('.auth-card').forEach((card) => {
@@ -1061,6 +1065,35 @@
     const taskList = {
         requestSequence: 0,
         pendingCompletions: new Set(),
+        /** Prepínač sa opakuje v každom zozname úloh a zachováva voľbu medzi sekciami. */
+        filtered(tasks) {
+            if (state.taskFilter === 'all') return tasks;
+            return tasks.filter((task) => {
+                const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
+                const mine = Number(task.created_by) === Number(state.user?.id) && project?.is_owner !== false;
+                return mine === (state.taskFilter === 'mine');
+            });
+        },
+        filterControl(kind = 'tasks') {
+            const wrap = document.createElement('label'); wrap.className = 'task-origin-filter';
+            const caption = document.createElement('span'); caption.textContent = i18n.language === 'cs' ? 'Zobrazit' : 'Zobraziť';
+            const select = document.createElement('select'); select.setAttribute('aria-label', caption.textContent);
+            const options = kind === 'projects'
+                ? [['all', 'Všetko', 'Vše'], ['mine', 'Moje', 'Moje'], ['shared', 'Zdieľané', 'Sdílené']]
+                : [['all', 'Všetky úlohy', 'Všechny úkoly'], ['mine', 'Moje úlohy', 'Moje úkoly'], ['shared', 'Zdieľané úlohy', 'Sdílené úkoly']];
+            options.forEach(([value, sk, cs]) => { const option = document.createElement('option'); option.value = value; option.textContent = i18n.language === 'cs' ? cs : sk; select.append(option); });
+            select.value = state.taskFilter;
+            select.addEventListener('change', () => {
+                state.taskFilter = select.value;
+                const route = router.current();
+                if (route.name === 'tasks') this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                else if (route.name === 'done') views.renderCompleted();
+                else if (route.name === 'calendar' && views.calendar) views.loadCalendarRange({ startStr: components.localDateStr(views.calendar.view.activeStart), endStr: components.localDateStr(views.calendar.view.activeEnd) }, state.routeSequence);
+                else if (route.name === 'projects') projectManager.renderList();
+                else if (route.name === 'project') { const project = state.projects.find((item) => Number(item.id) === Number(route.id)); if (project) projectManager.renderDetail(project, state.projectMembers); }
+            });
+            wrap.append(caption, select); return wrap;
+        },
         priorities: { 1: 'Nízka', 2: 'Stredná', 3: 'Vysoká', 4: 'Kritická' },
         plainText(value) {
             /* Popis API môže obsahovať povolené formátovanie; detail zoznamu ukáže iba jeho text. */
@@ -1140,6 +1173,7 @@
             return card;
         },
         render(tasks, projects) {
+            tasks = this.filtered(tasks);
             const open = tasks.filter((task) => !task.is_done);
             const done = tasks.filter((task) => task.is_done);
             const openList = document.getElementById('task-open-list');
@@ -1547,10 +1581,11 @@
                 notice.textContent = standard ? `Plán Standard umožňuje najviac 3 projekty. Používaš ${state.projects.length} z 3.` : 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.';
                 notice.classList.toggle('is-limit-reached', standard && state.projects.length >= 3);
             }
-            if (!state.projects.length) {
+            const projects = state.taskFilter === 'all' ? state.projects : state.projects.filter((project) => Boolean(project.is_owner) === (state.taskFilter === 'mine'));
+            if (!projects.length) {
                 const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.'; list.append(empty); i18n.apply(list); return;
             }
-            state.projects.forEach((project) => {
+            projects.forEach((project) => {
                 const counts = this.counts(project);
                 const card = document.createElement('article'); card.className = 'project-card'; card.style.setProperty('--project-color', project.color || this.colors[0]);
                 const open = document.createElement('a'); open.className = 'project-card-main'; open.href = `#project-${encodeURIComponent(project.id)}`; open.dataset.action = 'navigate';
@@ -1770,6 +1805,7 @@
             const icon = document.createElement('span'); icon.className = 'project-card-icon'; icon.textContent = this.icons[project.icon] || '📁'; icon.setAttribute('aria-hidden', 'true');
             const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || i18n.text('Bez popisu'); text.append(title, desc);
             const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-primary'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
+            root.append(taskList.filterControl());
             edit.hidden = !project.can_manage_project;
             const summary = document.createElement('p'); summary.className = 'project-detail-summary';
             summary.textContent = i18n.language === 'cs'
@@ -1856,8 +1892,9 @@
                 content.append(label, select, nameLabel, name, rights, help, button);
                 transferSection.append(heading, content);
             }
-            const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
-            const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
+            const visibleTasks = taskList.filtered(state.tasks).filter((task) => Number(task.project_id) === Number(project.id));
+            const openTasks = visibleTasks.filter((task) => !task.is_done);
+            const doneTasks = visibleTasks.filter((task) => task.is_done);
             [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
                 const section = document.createElement('section'); section.className = 'task-section'; const h = document.createElement('h3'); h.className = 'project-task-heading'; h.textContent = `${i18n.text(label)} (${tasks.length})`; section.append(h);
                 if (tasks.length) tasks.forEach((task) => section.append(taskList.makeCard(task, new Map(state.projects.map((item) => [Number(item.id), item])))));
@@ -2032,7 +2069,7 @@
                     const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
                     const priority = Math.min(4, Math.max(1, Number(task.priority) || 2));
                     const colors = { 1: '#777b8b', 2: '#4285d4', 3: '#d8902e', 4: '#d95359' };
-                    this.calendar.addEvent({ id: String(task.id), title: task.title, start: task.due_date, allDay: true, backgroundColor: colors[priority], borderColor: project?.color || colors[priority], textColor: '#fff' });
+                    if (taskList.filtered([task]).length) this.calendar.addEvent({ id: String(task.id), title: task.title, start: task.due_date, allDay: true, backgroundColor: colors[priority], borderColor: project?.color || colors[priority], textColor: '#fff' });
                 });
                 this.calendar.render();
                 this.selectCalendarDay(document.getElementById('calendar-day-heading')?.dataset.date || components.today());
@@ -2048,7 +2085,7 @@
             if (!heading || !list) return;
             heading.dataset.date = date;
             heading.textContent = new Intl.DateTimeFormat(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
-            const tasks = state.tasks.filter((task) => task.due_date === date);
+            const tasks = taskList.filtered(state.tasks).filter((task) => task.due_date === date);
             document.getElementById('calendar-day-count').textContent = i18n.taskCount(tasks.length);
             list.replaceChildren();
             if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = i18n.t('no_tasks_this_day'); list.append(empty); return; }
@@ -2076,7 +2113,7 @@
         renderCompleted() {
             const list = document.getElementById('completed-task-list');
             if (!list) return;
-            const tasks = state.tasks.filter((task) => task.is_done);
+            const tasks = taskList.filtered(state.tasks).filter((task) => task.is_done);
             list.replaceChildren();
             if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Zatiaľ nemáš hotové úlohy.'; list.append(empty); }
             else { const projects = new Map(state.projects.map((project) => [Number(project.id), project])); tasks.forEach((task) => list.append(taskList.makeCard(task, projects))); }
