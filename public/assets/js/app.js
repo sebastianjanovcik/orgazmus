@@ -2514,6 +2514,7 @@
         }
         if (action === 'shared-task') {
             event.preventDefault();
+            ui.closePanels();
             const taskId = this.dataset.taskId;
             api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}`).then((task) => {
                 const index = state.tasks.findIndex((item) => Number(item.id) === Number(task.id));
