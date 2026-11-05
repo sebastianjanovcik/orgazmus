@@ -974,7 +974,7 @@
                 projectLabel.append(dot, document.createTextNode(project.name));
                 meta.append(projectLabel);
                 // Autor zdieľanej úlohy je súčasťou riadka metadát a oddeľuje ho zvislá čiara.
-                if (!project.is_owner && task.creator_name) {
+                if (task.creator_name) {
                     const creator = document.createElement('span');
                     creator.className = 'task-creator';
                     creator.textContent = `| Pridal – ${task.creator_name}`;
