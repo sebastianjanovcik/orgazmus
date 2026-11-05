@@ -7,6 +7,7 @@ Repozitár obsahuje prototyp jednoduchej to-do aplikácie. `To-do wireframe.html
 ## Jazyk a komunikácia
 
 - Používateľské rozhranie a texty určené používateľom píš po slovensky, ak zadanie neurčí inak.
+- Každý nový používateľský text alebo obsah pridaj aj v českej jazykovej verzii.
 - Vysvetlenia zmien a dokumentáciu píš po slovensky.
 - V kóde používaj zrozumiteľné názvy; existujúcu konvenciu v upravovanom súbore zachovaj.
 
