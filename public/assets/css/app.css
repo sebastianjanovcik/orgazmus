@@ -104,7 +104,7 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .audit-card { display: grid; gap: 16px; }
 .audit-filters { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(130px, 1fr) repeat(2, minmax(140px, 1fr)); gap: 24px; }
 .audit-filters label { display: grid; gap: 16px; color: var(--muted); font-size: 13px; }
-.audit-filters .audit-search-filter { grid-template-columns: max-content minmax(0, 1fr); align-items: center; column-gap: 24px; }
+.audit-filters .audit-search-filter { grid-template-columns: minmax(0, 1fr); row-gap: 12px; align-items: stretch; }
 .audit-filters input, .audit-filters select { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); }
 .global-audit-list > li:not(.project-empty) { overflow-wrap: anywhere; }
 @media (max-width: 1200px) { .audit-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .audit-filters .audit-search-filter { grid-column: 1 / -1; } }
