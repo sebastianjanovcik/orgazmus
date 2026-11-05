@@ -1099,8 +1099,8 @@
                 dot.setAttribute('aria-hidden', 'true');
                 projectLabel.append(dot, document.createTextNode(project.name));
                 meta.append(projectLabel);
-                // Autor zdieľanej úlohy je súčasťou riadka metadát a oddeľuje ho zvislá čiara.
-                if (!project.is_owner && task.creator_name) {
+                // Autor úlohy zostáva viditeľný aj vlastníkovi projektu, aby tvorca vedel overiť, kto ju pridal.
+                if (task.creator_name) {
                     const creator = document.createElement('span');
                     creator.className = 'task-creator';
                     creator.textContent = `| ${i18n.language === 'cs' ? 'Přidal' : 'Pridal'} – ${task.creator_name}`;
