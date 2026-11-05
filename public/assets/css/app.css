@@ -513,6 +513,9 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 
 /* Filter ostáva pri nadpise a má rovnakú veľkosť ako ostatné ovládacie prvky formulára. */
 .task-origin-filter { display: inline-flex; align-items: center; gap: 9px; margin: 0 0 0 auto; color: var(--muted); font-size: 13px; }
+.project-detail-view > .task-origin-filter { margin: 16px 0 0; }
+.project-create-row { display: flex; justify-content: flex-end; margin-top: 16px; }
+.project-create-button { min-height: 38px; flex: 0 0 auto; padding: 7px 12px; font-size: 13px; }
 .task-origin-options { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .task-origin-button { min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; cursor: pointer; white-space: nowrap; }
 .task-origin-button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 700; }

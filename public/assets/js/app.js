@@ -307,7 +307,7 @@
                 datePicker.dispose(view);
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
-                else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
+                else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div><div class="project-create-row"><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div>`;
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 // Globálny audit používa rovnaké skeletony ako projektová história a ponúka filtre nad celým účtom.
                 else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label class="audit-search-filter"><span>Hľadať</span><input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite"><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li></ol><button class="button button-quiet project-audit-more" id="audit-more" type="button" hidden>Načítať staršie</button></section>`;
@@ -324,7 +324,7 @@
             const heading = document.getElementById('page-title');
             if (heading) heading.textContent = title;
             if (view) i18n.apply(view);
-            if (view && ['tasks', 'projects', 'calendar', 'done'].includes(route.name)) {
+            if (view && ['tasks', 'projects', 'calendar', 'done', 'stats'].includes(route.name)) {
                 const headingNode = view.querySelector('.page-heading');
                 if (headingNode) headingNode.append(taskList.filterControl(route.name === 'projects' ? 'projects' : 'tasks'));
             }
@@ -1092,6 +1092,7 @@
                     else if (route.name === 'calendar' && views.calendar) views.loadCalendarRange({ startStr: components.localDateStr(views.calendar.view.activeStart), endStr: components.localDateStr(views.calendar.view.activeEnd) }, state.routeSequence);
                     else if (route.name === 'projects') projectManager.renderList();
                     else if (route.name === 'project') { const project = state.projects.find((item) => Number(item.id) === Number(route.id)); if (project) projectManager.renderDetail(project, state.projectMembers); }
+                    else if (route.name === 'stats') views.renderStatistics();
                 });
                 group.append(button);
             });
@@ -2213,8 +2214,10 @@
             i18n.apply(document.getElementById('view'));
         },
         renderStatistics() {
-            const total = state.tasks.length;
-            const done = state.tasks.filter((task) => task.is_done).length;
+            // Súhrny aj priebeh projektov používajú rovnaký filter ako zoznamy úloh, aby čísla zodpovedali práve zvolenému rozsahu.
+            const visibleTasks = taskList.filtered(state.tasks);
+            const total = visibleTasks.length;
+            const done = visibleTasks.filter((task) => task.is_done).length;
             const open = total - done;
             const cards = document.getElementById('task-statistics');
             if (!cards) return;
@@ -2228,8 +2231,9 @@
             });
             const list = document.getElementById('project-statistics');
             list.replaceChildren();
-            state.projects.forEach((project) => {
-                const tasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id));
+            const visibleProjects = state.taskFilter === 'all' ? state.projects : state.projects.filter((project) => Boolean(project.is_owner) === (state.taskFilter === 'mine'));
+            visibleProjects.forEach((project) => {
+                const tasks = visibleTasks.filter((task) => Number(task.project_id) === Number(project.id));
                 const completed = tasks.filter((task) => task.is_done).length;
                 const row = document.createElement('div'); row.className = 'statistics-project-row';
                 const name = document.createElement('span'); name.textContent = project.name;
@@ -2237,7 +2241,7 @@
                 const progress = document.createElement('progress'); progress.max = tasks.length || 1; progress.value = completed; progress.setAttribute('aria-label', i18n.t('project_progress_for').replace('{name}', project.name));
                 row.append(name, count, progress); list.append(row);
             });
-            if (!state.projects.length) list.textContent = i18n.t('no_projects');
+            if (!visibleProjects.length) list.textContent = i18n.t('no_projects');
             i18n.apply(document.getElementById('view'));
         },
         async clearCompleted(button) {
