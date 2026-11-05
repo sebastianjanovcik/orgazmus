@@ -100,7 +100,7 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .project-audit-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .project-audit-list > li:not(.project-empty) { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--surface); }
 .project-audit-more { margin-top: 12px; }
-.pagination-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 18px 0; }
+.pagination-controls { display: flex; width: fit-content; max-width: 100%; align-items: center; justify-content: center; gap: 12px; margin: 18px auto; }
 .pagination-controls[hidden] { display: none; }
 .pagination-controls span { min-width: 110px; text-align: center; color: var(--text-muted); }
 /* Aktívne stránky majú plnú akcentovú farbu; zosvetlené ostávajú iba skutočne nedostupné smery. */
