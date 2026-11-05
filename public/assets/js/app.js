@@ -304,12 +304,13 @@
             const view = document.getElementById('view');
             if (view) {
                 dropdowns.dispose(view);
+                datePicker.dispose(view);
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
                 else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 // Globálny audit používa rovnaké skeletony ako projektová história a ponúka filtre nad celým účtom.
-                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label>Hľadať<input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label>Typ<select name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label>Od<input type="date" name="from"></label><label>Do<input type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite"><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li></ol><button class="button button-quiet project-audit-more" id="audit-more" type="button" hidden>Načítať staršie</button></section>`;
+                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label>Hľadať<input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite"><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li></ol><button class="button button-quiet project-audit-more" id="audit-more" type="button" hidden>Načítať staršie</button></section>`;
                 else if (route.name === 'invitation') view.innerHTML = `<section class="invitation-accept-card" aria-labelledby="invitation-title"><p class="eyebrow">TASKO</p><h1 id="invitation-title">Pozvánka do projektu</h1><p id="invitation-message">Skontroluj účet a potvrď pozvánku.</p><div class="panel-actions"><button class="button button-quiet" type="button" data-action="invitation-decline">Odmietnuť</button><span class="action-spacer"></span><button class="button button-primary" type="button" data-action="invitation-accept">Prijať pozvánku</button></div></section>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
@@ -324,6 +325,7 @@
             if (heading) heading.textContent = title;
             if (view) i18n.apply(view);
             if (view) dropdowns.init(view);
+            if (view) datePicker.init(view);
             document.querySelectorAll('.auth-card').forEach((card) => {
                 card.hidden = card.id === 'login-form' ? route.name !== 'login' : route.name !== 'register';
             });
@@ -597,6 +599,12 @@
     /* Kalendár termínu používa lokálne dátumy, aby sa pri ukladaní neposunul deň cez UTC. */
     const datePicker = {
         active: null,
+        /* Mená kalendárov sa pripájajú do body, preto ich pri výmene obrazovky odstráň spolu so starými poľami. */
+        dispose(root) {
+            root.querySelectorAll('input[data-date-picker-ready]').forEach((input) => {
+                document.getElementById(`${input.id}-calendar`)?.remove();
+            });
+        },
         init(root) {
             (root || document).querySelectorAll('input[type="date"]').forEach((input) => {
                 if (input.dataset.datePickerReady) { this.sync(input); return; }
