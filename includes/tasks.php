@@ -42,11 +42,11 @@ function tasko_task_data(array $task): array
 function tasko_task_filters(array $query): array
 {
     $filters = [];
-    $unknown = array_diff(array_keys($query), ['project_id', 'date', 'from', 'to', 'done', 'visibility']);
+    $unknown = array_diff(array_keys($query), ['project_id', 'date', 'from', 'to', 'done', 'visibility', 'before_id', 'limit']);
     if ($unknown !== []) {
         throw new TaskoHttpException(400, 'bad_request', 'Požiadavka obsahuje neznámy filter úloh.');
     }
-    foreach (['project_id', 'date', 'from', 'to', 'done', 'visibility'] as $key) {
+    foreach (['project_id', 'date', 'from', 'to', 'done', 'visibility', 'before_id', 'limit'] as $key) {
         if (!array_key_exists($key, $query)) {
             continue;
         }
@@ -58,6 +58,12 @@ function tasko_task_filters(array $query): array
 
     if (isset($filters['project_id']) && !tasko_validate_id($filters['project_id'])) {
         throw new TaskoHttpException(400, 'bad_request', 'Filter project_id musí byť kladné celé číslo.');
+    }
+    if (isset($filters['before_id']) && !tasko_validate_id($filters['before_id'])) {
+        throw new TaskoHttpException(400, 'bad_request', 'Pointer úloh musí byť kladné celé číslo.');
+    }
+    if (isset($filters['limit']) && (!ctype_digit($filters['limit']) || (int) $filters['limit'] < 1 || (int) $filters['limit'] > 100)) {
+        throw new TaskoHttpException(400, 'bad_request', 'Veľkosť dávky úloh musí byť od 1 do 100.');
     }
     foreach (['date', 'from', 'to'] as $key) {
         if (isset($filters[$key]) && !tasko_validate_date($filters[$key])) {
@@ -89,6 +95,10 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
     if (isset($filters['project_id'])) {
         $conditions[] = 't.project_id = :project_id';
         $parameters['project_id'] = (int) $filters['project_id'];
+    }
+    if (isset($filters['before_id'])) {
+        $conditions[] = 't.id < :before_id';
+        $parameters['before_id'] = (int) $filters['before_id'];
     }
     if (isset($filters['date'])) {
         // Presný deň má prednosť pred rozsahom, no obe hranice už boli validované.
@@ -133,9 +143,10 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
          LEFT JOIN users assignee ON assignee.id = t.assignee_id
          LEFT JOIN users reviewer ON reviewer.id = t.reviewer_id
          WHERE ' . implode(' AND ', $conditions) . '
-         ORDER BY t.is_done ASC, t.due_date ASC, t.priority DESC, t.id ASC'
+         ORDER BY ' . (isset($filters['limit']) ? 't.id DESC LIMIT ' . ((int) $filters['limit'] + 1) : 't.is_done ASC, t.due_date ASC, t.priority DESC, t.id ASC')
     );
     $parameters['share_user_id'] = $userId;
+    // ID zostáva stabilným kurzorom aj keď sa úloha dokončí alebo zmení termín; limit je pred vložením do SQL ohraničený validáciou.
     $statement->execute($parameters);
 
     return array_map('tasko_task_data', $statement->fetchAll());

@@ -307,10 +307,10 @@
                 datePicker.dispose(view);
                 if (!this.tasksMarkup) this.tasksMarkup = view.innerHTML;
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
-                else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div><div class="project-create-row"><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div>`;
+                else if (route.name === 'projects') { projectManager.page = 1; projectManager.pageItems = null; view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite">${Array.from({ length: 12 }, () => '<div class="project-skeleton" aria-hidden="true"></div>').join('')}</div><nav class="pagination-controls" id="project-pagination" aria-label="Stránkovanie projektov"><button class="button button-quiet" id="project-previous" type="button">Predchádzajúca</button><span id="project-page-label" aria-live="polite"></span><button class="button button-quiet" id="project-next" type="button">Ďalšia</button></nav><div class="project-create-row"><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div>`; }
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 // Globálny audit používa rovnaké skeletony ako projektová história a ponúka filtre nad celým účtom.
-                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label class="audit-search-filter"><span>Hľadať</span><input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite"><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li></ol><button class="button button-quiet project-audit-more" id="audit-more" type="button" hidden>Načítať staršie</button></section>`;
+                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label class="audit-search-filter"><span>Hľadať</span><input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite">${Array.from({ length: 25 }, () => '<li class="project-audit-skeleton" aria-hidden="true"></li>').join('')}</ol><nav class="pagination-controls" id="audit-pagination" aria-label="Stránkovanie auditu"><button class="button button-quiet" id="audit-previous" type="button">Predchádzajúca</button><span id="audit-page-label" aria-live="polite"></span><button class="button button-quiet" id="audit-next" type="button">Ďalšia</button></nav></section>`;
                 else if (route.name === 'invitation') view.innerHTML = `<section class="invitation-accept-card" aria-labelledby="invitation-title"><p class="eyebrow">TASKO</p><h1 id="invitation-title">Pozvánka do projektu</h1><p id="invitation-message">Skontroluj účet a potvrď pozvánku.</p><div class="panel-actions"><button class="button button-quiet" type="button" data-action="invitation-decline">Odmietnuť</button><span class="action-spacer"></span><button class="button button-primary" type="button" data-action="invitation-accept">Prijať pozvánku</button></div></section>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
@@ -1064,6 +1064,11 @@
     /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
     const taskList = {
         requestSequence: 0,
+        pageSequence: 0,
+        nextBeforeId: null,
+        hasMore: false,
+        loadingMore: false,
+        scrollObserver: null,
         pendingCompletions: new Set(),
         /** Prepínač sa opakuje v každom zozname úloh a zachováva voľbu medzi sekciami. */
         filtered(tasks) {
@@ -1087,10 +1092,10 @@
                     state.taskFilter = value;
                     document.querySelectorAll('.task-origin-button').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.filter === value)));
                     const route = router.current();
-                    if (route.name === 'tasks') this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                    if (route.name === 'tasks') views.loadTasks(state.routeSequence);
                     else if (route.name === 'done') views.renderCompleted();
                     else if (route.name === 'calendar' && views.calendar) views.loadCalendarRange({ startStr: components.localDateStr(views.calendar.view.activeStart), endStr: components.localDateStr(views.calendar.view.activeEnd) }, state.routeSequence);
-                    else if (route.name === 'projects') projectManager.renderList();
+                    else if (route.name === 'projects') { projectManager.page = 1; projectManager.pageItems = null; views.loadProjects(state.routeSequence, route); }
                     else if (route.name === 'project') { const project = state.projects.find((item) => Number(item.id) === Number(route.id)); if (project) projectManager.renderDetail(project, state.projectMembers); }
                     else if (route.name === 'stats') views.renderStatistics();
                 });
@@ -1196,6 +1201,13 @@
             done.forEach((task) => doneList.append(this.makeCard(task, projects)));
             this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
             this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
+            // Sentinel pod hotovými úlohami spustí ďalšiu dávku bez zmeny kurzora pri úpravách úlohy.
+            const section = doneList.closest('.task-section');
+            if (section) {
+                let sentinel = section.querySelector('.task-scroll-sentinel');
+                if (!sentinel) { sentinel = document.createElement('div'); sentinel.className = 'task-scroll-sentinel'; sentinel.setAttribute('aria-hidden', 'true'); section.append(sentinel); }
+                if (this.scrollObserver) { this.scrollObserver.disconnect(); this.scrollObserver.observe(sentinel); }
+            }
             this.updateCounts(tasks);
             i18n.apply(document.getElementById('view'));
         },
@@ -1583,7 +1595,12 @@
     };
 
     /* Projekty používajú spoločný stav s úlohami, aby sa počty a limit nemenili medzi obrazovkami. */
+    /* Stránka projektov zobrazuje len serverovú dávku; úplný zoznam sa ponechá pre bočný panel a ostatné pohľady. */
     const projectManager = {
+        requestSequence: 0,
+        page: 1,
+        pageItems: null,
+        pageInfo: null,
         icons: { briefcase: '💼', house: '🏠', book: '🎓', idea: '💡', target: '🎯', pin: '📌' },
         colors: ['#6558d3', '#e28a42', '#4188c7', '#45a875', '#c45678', '#8a71d8', '#4e9b9b', '#bd9a36'],
         editingId: null,
@@ -1660,7 +1677,7 @@
             const done = Number(project.done_count) || (tasks.length ? tasks.filter((task) => task.is_done).length : 0);
             return { total, done, open: Math.max(0, total - done) };
         },
-        renderList() {
+        renderList(pageItems = null, pageInfo = null) {
             const list = document.getElementById('project-list');
             const notice = document.getElementById('project-limit-notice');
             this.updateCreateButtons();
@@ -1673,11 +1690,14 @@
                 notice.textContent = standard ? `Plán Standard umožňuje najviac 3 projekty. Používaš ${ownedCount} z 3.` : 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.';
                 notice.classList.toggle('is-limit-reached', standard && ownedCount >= 3);
             }
-            const projects = state.taskFilter === 'all' ? state.projects : state.projects.filter((project) => Boolean(project.is_owner) === (state.taskFilter === 'mine'));
+            const projects = pageItems || (state.taskFilter === 'all' ? state.projects : state.projects.filter((project) => Boolean(project.is_owner) === (state.taskFilter === 'mine')));
             if (!projects.length) {
                 const empty = document.createElement('p'); empty.className = 'project-empty';
                 empty.textContent = state.taskFilter === 'shared' ? 'Nemáš prístup k žiadnym zdieľaným projektom.' : state.taskFilter === 'mine' ? 'Zatiaľ nemáš vlastný projekt.' : 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.';
-                list.append(empty); i18n.apply(list); return;
+                list.append(empty);
+                const pagination = document.getElementById('project-pagination');
+                if (pagination) pagination.hidden = true;
+                i18n.apply(list); return;
             }
             projects.forEach((project) => {
                 const counts = this.counts(project);
@@ -1693,6 +1713,23 @@
                 edit.hidden = !project.can_manage_project;
                 card.append(open, stats, progress, edit); list.append(card);
             });
+            const pagination = document.getElementById('project-pagination');
+            const previous = document.getElementById('project-previous');
+            const next = document.getElementById('project-next');
+            const pageLabel = document.getElementById('project-page-label');
+            if (pagination && previous && next && pageLabel && pageInfo) {
+                pagination.setAttribute('aria-label', i18n.language === 'cs' ? 'Stránkování projektů' : 'Stránkovanie projektov');
+                const page = Number(pageInfo.page) || 1;
+                const totalPages = Number(pageInfo.total_pages) || 1;
+                previous.disabled = page <= 1;
+                next.disabled = page >= totalPages;
+                pageLabel.textContent = `Strana ${page} / ${totalPages}`;
+                previous.textContent = i18n.language === 'cs' ? 'Předchozí' : 'Predchádzajúca';
+                next.textContent = i18n.language === 'cs' ? 'Další' : 'Ďalšia';
+                previous.onclick = () => { this.page = Math.max(1, page - 1); views.loadProjects(state.routeSequence, router.current()); };
+                next.onclick = () => { this.page = Math.min(totalPages, page + 1); views.loadProjects(state.routeSequence, router.current()); };
+                pagination.hidden = totalPages <= 1;
+            } else if (pagination) pagination.hidden = true;
             i18n.apply(list);
         },
         open(project) {
@@ -1735,7 +1772,9 @@
                 const returnedColorIsUsed = saved?.color && state.projects.some((item) => item.color === saved.color && Number(item.id) !== this.editingId);
                 const project = { ...(existingIndex >= 0 ? state.projects[existingIndex] : {}), ...(saved || {}), ...payload, id: idUsed || !saved?.id ? fallbackId : saved.id, color: saved?.color && !returnedColorIsUsed ? saved.color : state.projects[existingIndex]?.color || this.colors[state.projects.length % this.colors.length], task_count: saved?.task_count ?? state.projects[existingIndex]?.task_count ?? 0, done_count: saved?.done_count ?? state.projects[existingIndex]?.done_count ?? 0 };
                 if (existingIndex >= 0) state.projects[existingIndex] = project; else state.projects.push(project);
-                this.renderSidebar(); ui.closePanels(); this.renderList();
+                this.renderSidebar(); ui.closePanels();
+                if (router.current().name === 'projects') { this.page = 1; views.loadProjects(state.routeSequence, router.current()); }
+                else this.renderList();
                 if (router.current().name === 'project' && Number(router.current().id) === Number(project.id)) this.renderDetail(project);
                 ui.showToast(this.editingId ? 'Projekt bol upravený.' : 'Projekt bol vytvorený.');
             } catch (error) {
@@ -1758,7 +1797,9 @@
                 state.projects = state.projects.filter((item) => Number(item.id) !== Number(project.id));
                 state.tasks = state.tasks.filter((task) => Number(task.project_id) !== Number(project.id));
                 this.renderSidebar(); ui.closePanels();
-                if (router.current().name === 'project') window.location.hash = 'projects'; else this.renderList();
+                if (router.current().name === 'project') window.location.hash = 'projects';
+                else if (router.current().name === 'projects') views.loadProjects(state.routeSequence, router.current());
+                else this.renderList();
                 ui.showToast('Projekt a jeho úlohy boli odstránené.');
             } catch (error) { ui.showToast(error.code === 'last_project' ? 'Posledný projekt nemožno odstrániť.' : error.message || 'Projekt sa nepodarilo odstrániť.', 'error'); }
             finally { button.disabled = false; }
@@ -2007,17 +2048,23 @@
             const section = document.createElement('section'); section.className = 'task-section project-audit';
             const heading = document.createElement('h3'); heading.className = 'project-task-heading'; heading.textContent = 'História zmien';
             const list = document.createElement('ol'); list.className = 'project-audit-list'; list.setAttribute('aria-live', 'polite');
-            const skeleton = () => { list.replaceChildren(); for (let index = 0; index < 3; index += 1) { const row = document.createElement('li'); row.className = 'project-audit-skeleton'; row.setAttribute('aria-hidden', 'true'); list.append(row); } };
-            section.append(heading, list); root.append(section); skeleton();
+            const skeleton = () => { list.replaceChildren(); for (let index = 0; index < 25; index += 1) { const row = document.createElement('li'); row.className = 'project-audit-skeleton'; row.setAttribute('aria-hidden', 'true'); list.append(row); } };
+            const pagination = document.createElement('nav'); pagination.className = 'pagination-controls'; pagination.setAttribute('aria-label', i18n.language === 'cs' ? 'Stránkování auditu' : 'Stránkovanie auditu');
+            const previous = document.createElement('button'); previous.type = 'button'; previous.className = 'button button-quiet';
+            const pageLabel = document.createElement('span'); pageLabel.setAttribute('aria-live', 'polite');
+            const next = document.createElement('button'); next.type = 'button'; next.className = 'button button-quiet';
+            pagination.append(previous, pageLabel, next);
+            section.append(heading, list, pagination); root.append(section); skeleton();
             const labels = { invitation_created: 'Vytvorená pozvánka', invitation_accepted: 'Prijatá pozvánka', member_removed: 'Odstránený člen', permissions_changed: 'Zmenené oprávnenia člena', ownership_transferred: 'Prevedené vlastníctvo' };
-            let before = null;
-            const load = async (append = false) => {
-                if (!append) skeleton();
+            let currentPage = 1;
+            let totalPages = 1;
+            const load = async (requestedPage = 1) => {
+                skeleton();
                 try {
-                    const page = await api.request('GET', `/api/projects/${encodeURIComponent(projectId)}/audit${before ? `?before=${before}` : ''}`);
-                    if (!append) list.replaceChildren();
+                    const page = await api.request('GET', `/api/projects/${encodeURIComponent(projectId)}/audit?page=${requestedPage}`);
+                    list.replaceChildren();
                     const items = Array.isArray(page?.items) ? page.items : [];
-                    if (!items.length && !append) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = 'V projekte zatiaľ nie sú zaznamenané zmeny.'; list.append(empty); }
+                    if (!items.length) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'V projektu zatím nejsou zaznamenány žádné změny.' : 'V projekte zatiaľ nie sú zaznamenané žiadne zmeny.'; list.append(empty); }
                     items.forEach((item) => {
                         const row = document.createElement('li');
                         const title = document.createElement('strong'); title.textContent = labels[item.event_type] || 'Zmena v projekte';
@@ -2028,14 +2075,21 @@
                         const ip = document.createElement('span'); ip.textContent = `(${item.ip_address || (i18n.language === 'cs' ? 'IP nezaznamenána' : 'IP nezaznamenaná')})`;
                         row.append(time, by, ip, title); list.append(row);
                     });
-                    before = page?.next_before ?? null;
-                    const oldButton = section.querySelector('.project-audit-more'); if (oldButton) oldButton.remove();
-                    if (before) { const more = document.createElement('button'); more.type = 'button'; more.className = 'button button-quiet project-audit-more'; more.textContent = 'Načítať staršie zmeny'; more.addEventListener('click', () => load(true)); section.append(more); }
+                    currentPage = Number(page?.page) || requestedPage;
+                    totalPages = Number(page?.total_pages) || 1;
+                    previous.textContent = i18n.language === 'cs' ? 'Předchozí' : 'Predchádzajúca';
+                    next.textContent = i18n.language === 'cs' ? 'Další' : 'Ďalšia';
+                    previous.disabled = currentPage <= 1;
+                    next.disabled = currentPage >= totalPages;
+                    pageLabel.textContent = `Strana ${currentPage} / ${totalPages}`;
+                    pagination.hidden = totalPages <= 1;
                     i18n.apply(section);
                 } catch (error) {
                     list.replaceChildren(); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message || 'Históriu zmien sa nepodarilo načítať.'; list.append(failure);
                 }
             };
+            previous.addEventListener('click', () => load(Math.max(1, currentPage - 1)));
+            next.addEventListener('click', () => load(Math.min(totalPages, currentPage + 1)));
             await load();
         }
     };
@@ -2264,12 +2318,19 @@
             finally { button.disabled = false; }
         },
         /** Serverové filtre a ID kurzor udržiavajú hľadanie rýchle a prístupové pravidlá mimo klienta. */
+        // Filtre auditu vždy začínajú na prvej strane a menia dáta na serveri pred výpočtom offsetu.
         async loadAudit(routeSequence) {
             const form = document.getElementById('audit-filters');
             const list = document.getElementById('audit-list');
-            const more = document.getElementById('audit-more');
-            if (!form || !list || !more) return;
-            let before = null;
+            const previous = document.getElementById('audit-previous');
+            const next = document.getElementById('audit-next');
+            const pageLabel = document.getElementById('audit-page-label');
+            if (!form || !list || !previous || !next || !pageLabel) return;
+            document.getElementById('audit-pagination')?.setAttribute('aria-label', i18n.language === 'cs' ? 'Stránkování auditu' : 'Stránkovanie auditu');
+            previous.textContent = i18n.language === 'cs' ? 'Předchozí' : 'Predchádzajúca';
+            next.textContent = i18n.language === 'cs' ? 'Další' : 'Ďalšia';
+            let currentPage = 1;
+            let totalPages = 1;
             let debounce = null;
             let requestSequence = 0;
             const activityLabels = {
@@ -2302,22 +2363,18 @@
                 const variants = fieldLabels[field];
                 return variants ? variants[i18n.language === 'cs' ? 1 : 0] : field;
             };
-            const read = async (append = false) => {
+            const read = async (requestedPage = 1) => {
                 const currentRequest = ++requestSequence;
                 const params = new URLSearchParams(new FormData(form));
-                if (append && before) params.set('before', before);
-                else { before = null; params.delete('before'); }
-                if (!append) {
-                    list.replaceChildren();
-                    for (let index = 0; index < 3; index += 1) { const skeleton = document.createElement('li'); skeleton.className = 'project-audit-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
-                    more.hidden = true;
-                }
+                params.set('page', String(requestedPage));
+                list.replaceChildren();
+                for (let index = 0; index < 25; index += 1) { const skeleton = document.createElement('li'); skeleton.className = 'project-audit-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
                 try {
                     const page = await api.request('GET', `/api/audit?${params}`);
                     if (currentRequest !== requestSequence || routeSequence !== state.routeSequence) return;
-                    if (!append) list.replaceChildren();
+                    list.replaceChildren();
                     const items = Array.isArray(page?.items) ? page.items : [];
-                    if (!items.length && !append) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'Pro vybraný filtr nebyly nalezeny žádné záznamy.' : 'Pre vybraný filter sa nenašli žiadne záznamy.'; list.append(empty); }
+                    if (!items.length) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'Pro vybraný filtr nebyly nalezeny žádné záznamy.' : 'Pre vybraný filter sa nenašli žiadne záznamy.'; list.append(empty); }
                     items.forEach((item) => {
                         const row = document.createElement('li');
                         const stamp = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
@@ -2332,23 +2389,31 @@
                         else if (item.details?.snapshot) { const summary = document.createElement('span'); summary.textContent = Object.entries(item.details.snapshot).filter(([field]) => field !== 'reason').map(([field, value]) => `${translatedField(field, item.entity_type)}: ${formatValue(value)}`).join(' · '); if (summary.textContent) row.append(summary); }
                         list.append(row);
                     });
-                    before = page?.next_before ?? null;
-                    more.hidden = !before;
+                    currentPage = Number(page?.page) || requestedPage;
+                    totalPages = Number(page?.total_pages) || 1;
+                    pageLabel.textContent = `Strana ${currentPage} / ${totalPages}`;
+                    previous.disabled = currentPage <= 1;
+                    next.disabled = currentPage >= totalPages;
                 } catch (error) {
                     if (currentRequest !== requestSequence) return;
                     list.replaceChildren(); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message ? i18n.text(error.message) : (i18n.language === 'cs' ? 'Audit se nepodařilo načíst.' : 'Audit sa nepodarilo načítať.'); list.append(failure);
                 }
             };
-            form.addEventListener('input', () => { window.clearTimeout(debounce); debounce = window.setTimeout(() => read(), 250); });
-            form.addEventListener('change', () => read());
-            more.addEventListener('click', () => read(true));
+            form.addEventListener('input', () => { window.clearTimeout(debounce); debounce = window.setTimeout(() => read(1), 250); });
+            form.addEventListener('change', () => read(1));
+            previous.addEventListener('click', () => read(Math.max(1, currentPage - 1)));
+            next.addEventListener('click', () => read(Math.min(totalPages, currentPage + 1)));
             await read();
         },
         async loadTasks(routeSequence) {
             const requestSequence = ++taskList.requestSequence;
+            taskList.pageSequence += 1;
+            taskList.loadingMore = false;
+            taskList.nextBeforeId = null;
+            taskList.hasMore = false;
             taskList.loading();
             const [tasksResult, projectsResult] = await Promise.allSettled([
-                api.request('GET', '/api/tasks'),
+                api.request('GET', `/api/tasks?limit=30&visibility=${encodeURIComponent(state.taskFilter)}`),
                 api.request('GET', '/api/projects')
             ]);
             if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
@@ -2360,17 +2425,82 @@
                 taskList.error(tasksResult.reason);
                 return;
             }
-            state.tasks = Array.isArray(tasksResult.value) ? tasksResult.value : [];
+            state.tasks = Array.isArray(tasksResult.value?.items) ? tasksResult.value.items : [];
+            taskList.nextBeforeId = tasksResult.value?.next_before_id ?? null;
+            taskList.hasMore = taskList.nextBeforeId !== null;
             notifications.update();
             taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+            if (!taskList.scrollObserver && 'IntersectionObserver' in window) {
+                taskList.scrollObserver = new IntersectionObserver((entries) => {
+                    if (entries.some((entry) => entry.isIntersecting)) views.loadMoreTasks(routeSequence);
+                }, { rootMargin: '240px' });
+                const sentinel = document.querySelector('.task-scroll-sentinel');
+                if (sentinel) taskList.scrollObserver.observe(sentinel);
+            }
+        },
+        async loadMoreTasks(routeSequence) {
+            if (!taskList.hasMore || taskList.loadingMore || !taskList.nextBeforeId || routeSequence !== state.routeSequence) return;
+            const pageSequence = taskList.pageSequence;
+            taskList.loadingMore = true;
+            let failed = false;
+            const sentinel = document.querySelector('.task-scroll-sentinel');
+            if (sentinel) {
+                sentinel.replaceChildren();
+                for (let index = 0; index < 3; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); sentinel.append(skeleton); }
+            }
+            try {
+                const page = await api.request('GET', `/api/tasks?limit=30&before_id=${encodeURIComponent(taskList.nextBeforeId)}&visibility=${encodeURIComponent(state.taskFilter)}`);
+                if (routeSequence !== state.routeSequence || pageSequence !== taskList.pageSequence) return;
+                const currentIds = new Set(state.tasks.map((task) => Number(task.id)));
+                const incoming = Array.isArray(page?.items) ? page.items : [];
+                state.tasks = state.tasks.concat(incoming.filter((task) => !currentIds.has(Number(task.id))));
+                taskList.nextBeforeId = page?.next_before_id ?? null;
+                taskList.hasMore = taskList.nextBeforeId !== null;
+                taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+            } catch (error) {
+                failed = true;
+                if (pageSequence === taskList.pageSequence) {
+                    const sentinel = document.querySelector('.task-scroll-sentinel');
+                    if (sentinel) {
+                        taskList.scrollObserver?.unobserve(sentinel);
+                        sentinel.replaceChildren();
+                        const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'button button-quiet';
+                        retry.textContent = i18n.language === 'cs' ? 'Načíst další úkoly' : 'Načítať ďalšie úlohy';
+                        retry.addEventListener('click', () => this.loadMoreTasks(routeSequence));
+                        sentinel.append(retry);
+                    }
+                }
+                ui.showToast(error.message || (i18n.language === 'cs' ? 'Úkoly se nepodařilo načíst.' : 'Úlohy sa nepodarilo načítať.'), 'error');
+            } finally {
+                if (pageSequence === taskList.pageSequence) {
+                    taskList.loadingMore = false;
+                    if (!failed) document.querySelector('.task-scroll-sentinel')?.replaceChildren();
+                }
+            }
         },
         async loadProjects(routeSequence, route) {
+            const requestSequence = ++projectManager.requestSequence;
+            if (route.name === 'projects') {
+                const list = document.getElementById('project-list');
+                if (list) { list.replaceChildren(); for (let index = 0; index < 12; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'project-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); } }
+            }
             try {
-                const projects = await api.request('GET', '/api/projects');
-                if (routeSequence !== state.routeSequence) return;
+                const request = route.name === 'projects'
+                    ? Promise.all([api.request('GET', '/api/projects'), api.request('GET', `/api/projects?page=${projectManager.page}&visibility=${encodeURIComponent(state.taskFilter)}`)])
+                    : Promise.all([api.request('GET', '/api/projects'), Promise.resolve(null)]);
+                const [projects, page] = await request;
+                if (routeSequence !== state.routeSequence || requestSequence !== projectManager.requestSequence) return;
                 state.projects = Array.isArray(projects) ? projects : [];
+                if (route.name === 'projects' && page) {
+                    if (projectManager.page > Number(page.total_pages || 1)) {
+                        projectManager.page = Number(page.total_pages) || 1;
+                        return this.loadProjects(routeSequence, route);
+                    }
+                    projectManager.pageItems = Array.isArray(page.items) ? page.items : [];
+                    projectManager.pageInfo = page;
+                }
                 projectManager.renderSidebar();
-                if (route.name === 'projects') projectManager.renderList();
+                if (route.name === 'projects') projectManager.renderList(projectManager.pageItems, projectManager.pageInfo);
                 else {
                     state.projectMembers = [];
                     // Úlohy detailu projektu načítajú samostatne; zoznam projektov funguje už vo fáze B5.

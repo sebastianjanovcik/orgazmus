@@ -353,14 +353,15 @@ try {
     if ($route === '/api/audit' && $method === 'GET') {
         $user = tasko_authenticated_user();
         $userId = (int) $user['id'];
-        $before = $_GET['before'] ?? '0';
+        $pageInput = $_GET['page'] ?? '1';
         $searchInput = $_GET['q'] ?? '';
         if (!is_string($searchInput)) tasko_validation_error(['q' => 'Vyhľadávanie musí byť text.']);
         $search = trim($searchInput);
         $type = $_GET['type'] ?? '';
         $from = $_GET['from'] ?? '';
         $to = $_GET['to'] ?? '';
-        if (!is_string($before) || !preg_match('/^(0|[1-9][0-9]{0,18})$/D', $before)) tasko_validation_error(['before' => 'Kurzor auditu nie je platný.']);
+        if (!is_string($pageInput) || !preg_match('/^[1-9][0-9]{0,5}$/D', $pageInput)) tasko_validation_error(['page' => 'Strana auditu nie je platná.']);
+        $pageNumber = (int) $pageInput;
         if (tasko_text_length($search) > 100) tasko_validation_error(['q' => 'Vyhľadávanie môže mať najviac 100 znakov.']);
         if (!is_string($type) || !in_array($type, ['', 'account', 'project', 'task', 'comment', 'invitation', 'membership'], true)) tasko_validation_error(['type' => 'Vyber platný typ záznamu.']);
         foreach (['from' => $from, 'to' => $to] as $field => $date) {
@@ -375,7 +376,6 @@ try {
             WHERE p.id = a.project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)
         )))'];
         $params = ['actor_id' => $userId, 'member_id' => $userId, 'owner_id' => $userId];
-        if ((int) $before > 0) { $where[] = 'a.id < :before_id'; $params['before_id'] = (int) $before; }
         if ($type !== '') { $where[] = 'a.entity_type = :entity_type'; $params['entity_type'] = $type; }
         if ($from !== '') { $where[] = 'a.created_at >= :date_from'; $params['date_from'] = $from . ' 00:00:00'; }
         if ($to !== '') { $where[] = 'a.created_at < :date_to'; $params['date_to'] = (new DateTimeImmutable($to, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d 00:00:00'); }
@@ -383,11 +383,18 @@ try {
             $where[] = '(u.name LIKE :search_name OR a.event_type LIKE :search_event OR a.entity_type LIKE :search_entity OR a.ip_address LIKE :search_ip OR CAST(a.details AS CHAR) LIKE :search_details)';
             foreach (['search_name', 'search_event', 'search_entity', 'search_ip', 'search_details'] as $key) $params[$key] = '%' . $search . '%';
         }
-        $query = tasko_db()->prepare('SELECT a.id, a.project_id, a.entity_type, a.entity_id, a.actor_id, u.name AS actor_name, a.ip_address, a.event_type, a.details, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE ' . implode(' AND ', $where) . ' ORDER BY a.id DESC LIMIT 26');
-        $query->execute($params);
+        $pdo = tasko_db();
+        $whereSql = implode(' AND ', $where);
+        $count = $pdo->prepare('SELECT COUNT(*) FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE ' . $whereSql);
+        $count->execute($params);
+        $total = (int) $count->fetchColumn();
+        $pageSize = 25;
+        $query = $pdo->prepare('SELECT a.id, a.project_id, a.entity_type, a.entity_id, a.actor_id, u.name AS actor_name, a.ip_address, a.event_type, a.details, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE ' . $whereSql . ' ORDER BY a.id DESC LIMIT :page_size OFFSET :page_offset');
+        foreach ($params as $key => $value) $query->bindValue(':' . $key, $value);
+        $query->bindValue(':page_size', $pageSize, PDO::PARAM_INT);
+        $query->bindValue(':page_offset', ($pageNumber - 1) * $pageSize, PDO::PARAM_INT);
+        $query->execute();
         $rows = $query->fetchAll();
-        $hasMore = count($rows) > 25;
-        if ($hasMore) array_pop($rows);
         $items = array_map(static fn (array $row): array => [
             'id' => (int) $row['id'], 'project_id' => $row['project_id'] === null ? null : (int) $row['project_id'],
             'entity_type' => (string) $row['entity_type'], 'entity_id' => $row['entity_id'] === null ? null : (int) $row['entity_id'],
@@ -396,7 +403,7 @@ try {
             'event_type' => (string) $row['event_type'], 'details' => json_decode((string) $row['details'], true) ?: [],
             'created_at' => (new DateTimeImmutable((string) $row['created_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z'),
         ], $rows);
-        tasko_json_response(200, ['items' => $items, 'next_before' => $hasMore && $items !== [] ? end($items)['id'] : null]);
+        tasko_json_response(200, ['items' => $items, 'page' => $pageNumber, 'page_size' => $pageSize, 'total' => $total, 'total_pages' => max(1, (int) ceil($total / $pageSize))]);
     }
 
     // Projektová história číta spoločný denník a stále vyžaduje právo zobraziť príslušný projekt.
@@ -407,15 +414,20 @@ try {
         $access = $pdo->prepare('SELECT 1 FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id WHERE p.id = :project_id AND (p.user_id = :owner_id OR pm.can_view_project = 1)');
         $access->execute(['user_id' => (int) $user['id'], 'project_id' => $projectId, 'owner_id' => (int) $user['id']]);
         if (!$access->fetchColumn()) throw new TaskoHttpException(404, 'not_found', 'Projekt sa nenašiel.');
-        $before = $_GET['before'] ?? '0';
-        if (!is_string($before) || !preg_match('/^(0|[1-9][0-9]{0,18})$/D', $before)) tasko_validation_error(['before' => 'Kurzor auditu nie je platný.']);
-        $cursor = (int) $before > 0 ? ' AND a.id < :before_id' : '';
-        $query = $pdo->prepare('SELECT a.id, a.actor_id, u.name AS actor_name, a.ip_address, a.entity_type, a.entity_id, a.event_type, a.details, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE a.project_id = :project_id' . $cursor . ' ORDER BY a.id DESC LIMIT 25');
+        $pageInput = $_GET['page'] ?? '1';
+        if (!is_string($pageInput) || !preg_match('/^[1-9][0-9]{0,5}$/D', $pageInput)) tasko_validation_error(['page' => 'Strana auditu nie je platná.']);
+        $pageNumber = (int) $pageInput;
+        $pageSize = 25;
+        $count = $pdo->prepare('SELECT COUNT(*) FROM audit_log WHERE project_id = :project_id');
+        $count->execute(['project_id' => $projectId]);
+        $total = (int) $count->fetchColumn();
+        $query = $pdo->prepare('SELECT a.id, a.actor_id, u.name AS actor_name, a.ip_address, a.entity_type, a.entity_id, a.event_type, a.details, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE a.project_id = :project_id ORDER BY a.id DESC LIMIT :page_size OFFSET :page_offset');
         $query->bindValue(':project_id', $projectId, PDO::PARAM_INT);
-        if ((int) $before > 0) $query->bindValue(':before_id', (int) $before, PDO::PARAM_INT);
+        $query->bindValue(':page_size', $pageSize, PDO::PARAM_INT);
+        $query->bindValue(':page_offset', ($pageNumber - 1) * $pageSize, PDO::PARAM_INT);
         $query->execute();
         $rows = array_map(static fn (array $row): array => ['id' => (int) $row['id'], 'actor_name' => $row['actor_name'], 'ip_address' => $row['ip_address'], 'entity_type' => $row['entity_type'], 'entity_id' => $row['entity_id'] === null ? null : (int) $row['entity_id'], 'event_type' => (string) $row['event_type'], 'details' => json_decode((string) $row['details'], true) ?: [], 'created_at' => (new DateTimeImmutable((string) $row['created_at'], new DateTimeZone('UTC')))->format('Y-m-d\\TH:i:s\\Z')], $query->fetchAll());
-        tasko_json_response(200, ['items' => $rows, 'next_before' => count($rows) === 25 ? end($rows)['id'] : null]);
+        tasko_json_response(200, ['items' => $rows, 'page' => $pageNumber, 'page_size' => $pageSize, 'total' => $total, 'total_pages' => max(1, (int) ceil($total / $pageSize))]);
     }
 
     if ($route === '/api/auth/register' && $method === 'POST') {
@@ -585,6 +597,14 @@ try {
         $pdo = tasko_db();
 
         if ($method === 'GET') {
+            // Číselné stránky projektov obmedzia odpoveď, pričom samostatný počet rešpektuje ten istý filter viditeľnosti.
+            $pageInput = $_GET['page'] ?? null;
+            if ($pageInput !== null && (!is_string($pageInput) || !preg_match('/^[1-9][0-9]{0,5}$/D', $pageInput))) {
+                tasko_validation_error(['page' => 'Strana projektov nie je platná.']);
+            }
+            $pageNumber = $pageInput === null ? null : (int) $pageInput;
+            $pageSize = 12;
+            $pageSql = $pageNumber === null ? '' : ' LIMIT :page_size OFFSET :page_offset';
             $visibility = $_GET['visibility'] ?? 'all';
             if (!is_string($visibility) || !in_array($visibility, ['all', 'mine', 'shared'], true)) {
                 throw new TaskoHttpException(400, 'bad_request', 'Filter visibility musí byť all, mine alebo shared.');
@@ -603,9 +623,15 @@ try {
                  LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
                  WHERE ' . $visibilitySql . '
                  GROUP BY p.id, p.name, p.description, p.icon, p.color, pm.can_manage_project
-                 ORDER BY p.id'
+                 ORDER BY p.id' . $pageSql
             );
-            $statement->execute(['member_id' => $userId, 'owner_id' => $userId]);
+            $statement->bindValue(':member_id', $userId, PDO::PARAM_INT);
+            $statement->bindValue(':owner_id', $userId, PDO::PARAM_INT);
+            if ($pageNumber !== null) {
+                $statement->bindValue(':page_size', $pageSize, PDO::PARAM_INT);
+                $statement->bindValue(':page_offset', ($pageNumber - 1) * $pageSize, PDO::PARAM_INT);
+            }
+            $statement->execute();
             $projects = array_map(static fn (array $project): array => [
                 'id' => (int) $project['id'],
                 'is_owner' => (int) $project['user_id'] === $userId,
@@ -617,6 +643,12 @@ try {
                 'task_count' => (int) $project['task_count'],
                 'done_count' => (int) $project['done_count'],
             ], $statement->fetchAll());
+            if ($pageNumber !== null) {
+                $count = $pdo->prepare('SELECT COUNT(*) FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id WHERE ' . $visibilitySql);
+                $count->execute(['member_id' => $userId, 'owner_id' => $userId]);
+                $total = (int) $count->fetchColumn();
+                tasko_json_response(200, ['items' => $projects, 'page' => $pageNumber, 'page_size' => $pageSize, 'total' => $total, 'total_pages' => max(1, (int) ceil($total / $pageSize))]);
+            }
             tasko_json_response(200, $projects);
         }
 
@@ -1147,7 +1179,14 @@ try {
         }
 
         $filters = tasko_task_filters($_GET);
-        tasko_json_response(200, tasko_tasks_find(tasko_db(), (int) $user['id'], $filters));
+        $tasks = tasko_tasks_find(tasko_db(), (int) $user['id'], $filters);
+        if (isset($filters['limit'])) {
+            $limit = (int) $filters['limit'];
+            $hasMore = count($tasks) > $limit;
+            if ($hasMore) array_pop($tasks);
+            tasko_json_response(200, ['items' => $tasks, 'next_before_id' => $hasMore && $tasks !== [] ? end($tasks)['id'] : null]);
+        }
+        tasko_json_response(200, $tasks);
     }
 
     if ($route === '/api/tasks/completed' && $method === 'DELETE') {
