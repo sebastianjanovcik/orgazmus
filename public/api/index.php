@@ -1143,6 +1143,11 @@ try {
             $projectId = $input['project_id'] ?? null;
             $priority = $input['priority'] ?? 2;
             $dueDate = $input['due_date'] ?? null;
+            // Prístup príjemcu sa overí pred zápisom a uloží v jednej transakcii s novou úlohou.
+            $shareInput = $input['share'] ?? null;
+            $shareEmail = null;
+            $shareRole = 'viewer';
+            $shareComments = false;
             $fields = [];
             if ($title === null) $fields['title'] = 'Názov musí mať 1 až 150 znakov.';
             if ($descriptionInput !== null) {
@@ -1154,27 +1159,73 @@ try {
             if (!tasko_validate_id($projectId)) $fields['project_id'] = 'Vyber platný projekt.';
             if (!tasko_validate_priority($priority)) $fields['priority'] = 'Vyber prioritu od 1 do 4.';
             if (!tasko_validate_date($dueDate)) $fields['due_date'] = 'Zadaj platný dátum YYYY-MM-DD.';
+            if ($shareInput !== null) {
+                if (!is_array($shareInput)) {
+                    $fields['share_email'] = 'Zadaj platný e-mail existujúceho účtu.';
+                } else {
+                    $shareEmail = tasko_validate_email($shareInput['email'] ?? null);
+                    $shareRole = $shareInput['role'] ?? null;
+                    $shareComments = $shareInput['comments'] ?? null;
+                    if ($shareEmail === null) $fields['share_email'] = 'Zadaj platný e-mail existujúceho účtu.';
+                    if (!is_string($shareRole) || !in_array($shareRole, ['viewer', 'editor'], true)) $fields['share_role'] = 'Vyber platné oprávnenie pre zdieľanú úlohu.';
+                    if (!is_bool($shareComments)) $fields['share_comments'] = 'Voľba komentárov musí byť zapnutá alebo vypnutá.';
+                    if (array_diff(array_keys($shareInput), ['email', 'role', 'comments']) !== []) $fields['share_email'] = 'Požiadavka zdieľania obsahuje nepovolené polia.';
+                }
+            }
             if ($fields !== []) tasko_validation_error($fields);
 
             $pdo = tasko_db();
             tasko_require_project_permission($pdo, (int) $projectId, (int) $user['id'], 'can_add_tasks');
+            $shareRecipientId = null;
+            if ($shareEmail !== null) {
+                $recipient = $pdo->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(:email)');
+                $recipient->execute(['email' => $shareEmail]);
+                $shareRecipientId = (int) ($recipient->fetchColumn() ?: 0);
+                if ($shareRecipientId === 0 || $shareRecipientId === (int) $user['id']) {
+                    tasko_validation_error(['share_email' => 'Vyber iný e-mail existujúceho účtu.']);
+                }
+            }
 
             $insert = $pdo->prepare(
                 'INSERT INTO tasks (project_id, created_by, title, description, priority, due_date)
                  VALUES (:project_id, :created_by, :title, :description, :priority, :due_date)'
             );
             $pdo->beginTransaction();
-            $insert->execute([
-                'project_id' => (int) $projectId,
-                'created_by' => (int) $user['id'],
-                'title' => $title,
-                'description' => $description,
-                'priority' => (int) $priority,
-                'due_date' => $dueDate,
-            ]);
-            $taskId = (int) $pdo->lastInsertId();
-            tasko_record_audit_event($pdo, (int) $projectId, 'task', $taskId, (int) $user['id'], 'task_created', ['snapshot' => ['title' => $title, 'description' => $description, 'priority' => (int) $priority, 'due_date' => $dueDate]]);
-            $pdo->commit();
+            try {
+                $insert->execute([
+                    'project_id' => (int) $projectId,
+                    'created_by' => (int) $user['id'],
+                    'title' => $title,
+                    'description' => $description,
+                    'priority' => (int) $priority,
+                    'due_date' => $dueDate,
+                ]);
+                $taskId = (int) $pdo->lastInsertId();
+                tasko_record_audit_event($pdo, (int) $projectId, 'task', $taskId, (int) $user['id'], 'task_created', ['snapshot' => ['title' => $title, 'description' => $description, 'priority' => (int) $priority, 'due_date' => $dueDate]]);
+                if ($shareRecipientId !== null) {
+                    $canEdit = $shareRole === 'editor';
+                    $permissions = [
+                        'can_view' => true, 'can_edit' => $canEdit, 'can_delete' => false, 'can_complete' => $canEdit,
+                        'can_view_comments' => $shareComments, 'can_add_comments' => $shareComments,
+                        'can_edit_own_comments' => $shareComments, 'can_edit_other_comments' => false,
+                        'can_delete_own_comments' => $shareComments, 'can_delete_other_comments' => false,
+                    ];
+                    $share = $pdo->prepare(
+                        'INSERT INTO task_shares (task_id, user_id, shared_by, can_view, can_edit, can_delete, can_complete,
+                            can_view_comments, can_add_comments, can_edit_own_comments, can_edit_other_comments,
+                            can_delete_own_comments, can_delete_other_comments)
+                         VALUES (:task_id, :user_id, :shared_by, :can_view, :can_edit, :can_delete, :can_complete,
+                            :can_view_comments, :can_add_comments, :can_edit_own_comments, :can_edit_other_comments,
+                            :can_delete_own_comments, :can_delete_other_comments)'
+                    );
+                    $share->execute($permissions + ['task_id' => $taskId, 'user_id' => $shareRecipientId, 'shared_by' => (int) $user['id']]);
+                    tasko_record_audit_event($pdo, (int) $projectId, 'task_share', $taskId, (int) $user['id'], 'task_shared', ['recipient_id' => $shareRecipientId, 'permissions' => $permissions]);
+                }
+                $pdo->commit();
+            } catch (Throwable $error) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $error;
+            }
             tasko_json_response(201, tasko_task_find($pdo, (int) $user['id'], $taskId));
         }
 

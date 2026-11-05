@@ -1361,16 +1361,6 @@
                 actions.append(edit);
             }
             content.append(actions);
-            const canManageShares = Number(task.created_by) === Number(state.user?.id) || Boolean(project?.is_owner || project?.can_manage_project);
-            if (canManageShares) {
-                const section = document.createElement('section'); section.className = 'task-share-section'; section.setAttribute('aria-labelledby', 'task-share-heading');
-                const heading = document.createElement('h3'); heading.id = 'task-share-heading'; heading.textContent = 'Zdieľať úlohu'; section.append(heading);
-                const form = document.createElement('form'); form.className = 'task-share-form'; form.dataset.taskId = String(task.id);
-                form.innerHTML = '<label>E-mail používateľa<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Prístup<select name="role"><option value="viewer">Divák</option><option value="editor">Editor</option></select></label><label class="inline-check"><input name="comments" type="checkbox"> Povoliť komentáre</label><button class="button button-primary" type="submit">Zdieľať úlohu</button>';
-                const list = document.createElement('div'); list.className = 'task-share-list'; list.id = `task-share-list-${task.id}`; list.setAttribute('aria-live', 'polite');
-                for (let index = 0; index < 2; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-share-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
-                section.append(form, list); content.append(section); this.loadShares(task.id, list);
-            }
             if (router.current().name === 'calendar') {
                 // Kalendárový detail zachová vybraný deň aj pri rýchlom vytvorení ďalšej úlohy.
                 const addAnother = document.createElement('button');
@@ -1387,21 +1377,6 @@
             commentThreads.canAdd = Boolean(task.can_add_comments);
             commentThreads.load(task.id);
         },
-        async loadShares(taskId, list) {
-            try {
-                const shares = await api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}/shares`);
-                if (!list.isConnected) return;
-                list.replaceChildren();
-                if (!shares.length) { list.textContent = 'Úloha zatiaľ nie je zdieľaná.'; return; }
-                shares.forEach((share) => {
-                    const row = document.createElement('div'); row.className = 'task-share-row';
-                    const identity = document.createElement('span'); identity.textContent = `${share.name} · ${share.email}`;
-                    const role = document.createElement('span'); role.textContent = share.can_edit ? 'Editor' : 'Divák';
-                    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.dataset.action = 'task-share-remove'; remove.dataset.taskId = String(taskId); remove.dataset.userId = String(share.user_id); remove.textContent = 'Odobrať';
-                    row.append(identity, role, remove); list.append(row);
-                });
-            } catch (error) { if (list.isConnected) list.textContent = error.message || 'Zdieľanie sa nepodarilo načítať.'; }
-        }
     };
 
     /* Jeden formulár obsluhuje obe operácie; popis sa pred API odoslaním zúži na povolené značky. */
@@ -1473,7 +1448,7 @@
         showErrors(fields) {
             const form = document.getElementById('task-form');
             Object.entries(fields || {}).forEach(([name, message]) => {
-                const id = { title: 'task-name', priority: 'task-priority-label', project_id: 'task-project', due_date: 'task-due-date', description: 'task-description' }[name];
+                const id = { title: 'task-name', priority: 'task-priority-label', project_id: 'task-project', due_date: 'task-due-date', description: 'task-description', share_email: 'task-share-email', share_role: 'task-share-role', share_comments: 'task-share-comments' }[name];
                 const input = name === 'priority' ? form.querySelector('[name="priority"]') : name === 'description' ? form.querySelector('.note-editable') : id && document.getElementById(id);
                 const error = document.getElementById(`task-${name.replace('_', '-')}-error`);
                 if (input) input.setAttribute('aria-invalid', 'true');
@@ -1486,11 +1461,42 @@
             else if (firstInvalid?.classList.contains('native-date-source')) firstInvalid.closest('.date-picker')?.querySelector('.date-picker-trigger').focus();
             else if (firstInvalid) firstInvalid.focus();
         },
+        ensureShareFields(form) {
+            let fields = form.querySelector('#task-create-share-fields');
+            if (!fields) {
+                // Zdieľanie sa posiela spolu s novou úlohou, preto príjemca nikdy nezostane bez vytvoreného záznamu.
+                fields = document.createElement('fieldset'); fields.id = 'task-create-share-fields'; fields.className = 'task-create-share';
+                const legend = document.createElement('legend'); legend.id = 'task-create-share-heading'; fields.append(legend);
+                const emailLabel = document.createElement('label'); emailLabel.htmlFor = 'task-share-email';
+                const emailCaption = document.createElement('span'); emailLabel.append(emailCaption);
+                const email = document.createElement('input'); email.id = 'task-share-email'; email.name = 'share_email'; email.type = 'email'; email.autocomplete = 'email'; email.maxLength = 254; email.setAttribute('aria-describedby', 'task-share-email-error'); emailLabel.append(email);
+                const emailError = document.createElement('span'); emailError.id = 'task-share-email-error'; emailError.className = 'field-error';
+                const roleLabel = document.createElement('label'); roleLabel.htmlFor = 'task-share-role';
+                const roleCaption = document.createElement('span'); roleLabel.append(roleCaption);
+                const role = document.createElement('select'); role.id = 'task-share-role'; role.name = 'share_role'; role.setAttribute('aria-describedby', 'task-share-role-error');
+                role.add(new Option('Divák', 'viewer')); role.add(new Option('Editor', 'editor')); roleLabel.append(role);
+                const roleError = document.createElement('span'); roleError.id = 'task-share-role-error'; roleError.className = 'field-error';
+                const commentsLabel = document.createElement('label'); commentsLabel.className = 'inline-check';
+                const comments = document.createElement('input'); comments.type = 'checkbox'; comments.id = 'task-share-comments'; comments.name = 'share_comments'; comments.setAttribute('aria-describedby', 'task-share-comments-error'); commentsLabel.append(comments, document.createElement('span'));
+                const commentsError = document.createElement('span'); commentsError.id = 'task-share-comments-error'; commentsError.className = 'field-error';
+                fields.append(emailLabel, emailError, roleLabel, roleError, commentsLabel, commentsError);
+                form.insertBefore(fields, form.querySelector('.task-form-actions'));
+            }
+            fields.querySelector('#task-create-share-heading').textContent = i18n.language === 'cs' ? 'Sdílet úkol po vytvoření' : 'Zdieľať úlohu po vytvorení';
+            fields.querySelector('label[for="task-share-email"] span').textContent = i18n.language === 'cs' ? 'E-mail uživatele' : 'E-mail používateľa';
+            fields.querySelector('label[for="task-share-role"] span').textContent = i18n.language === 'cs' ? 'Přístup' : 'Prístup';
+            fields.querySelector('#task-share-role').options[0].textContent = i18n.language === 'cs' ? 'Divák' : 'Divák';
+            fields.querySelector('#task-share-role').options[1].textContent = 'Editor';
+            fields.querySelector('.inline-check span').textContent = i18n.language === 'cs' ? 'Povolit komentáře' : 'Povoliť komentáre';
+            return fields;
+        },
         open(task, dueDate) {
             const form = document.getElementById('task-form');
             this.editingId = task ? task.id : null;
+            const shareFields = this.ensureShareFields(form);
             this.clearErrors();
             form.reset();
+            shareFields.hidden = Boolean(task);
             form.elements.title.value = task ? task.title || '' : '';
             form.elements.priority.value = String(task ? task.priority || 2 : 2);
             form.elements.due_date.value = task ? task.due_date || '' : dueDate || components.today();
@@ -1539,6 +1545,8 @@
                 priority: Number(form.elements.priority.value), due_date: form.elements.due_date.value,
                 description: description || null
             };
+            const shareEmail = form.elements.share_email.value.trim();
+            if (!this.editingId && shareEmail) data.share = { email: shareEmail, role: form.elements.share_role.value, comments: form.elements.share_comments.checked };
             if (this.editingId && !document.getElementById('task-assignment-fields').hidden) {
                 data.assignee_id = form.elements.assignee_id.value ? Number(form.elements.assignee_id.value) : null;
                 data.reviewer_id = form.elements.reviewer_id.value ? Number(form.elements.reviewer_id.value) : null;
@@ -1558,6 +1566,7 @@
                     if (savedIndex === -1) state.tasks.push(savedTask);
                     else state.tasks[savedIndex] = savedTask;
                 }
+                if (data.share) projectManager.renderSidebar();
                 ui.closePanels();
                 const route = router.current();
                 if (route.name === 'tasks') await views.loadTasks(state.routeSequence);
@@ -2662,18 +2671,6 @@
                 taskList.showDetail(task);
             }).catch((error) => ui.showToast(error.message || 'Zdieľaná úloha už nie je dostupná.', 'error'));
         }
-        if (action === 'task-share-remove') {
-            const button = this;
-            if (!ui.confirm) return;
-            ui.confirm('Naozaj chceš odobrať prístup k tejto úlohe?', 'Odobrať zdieľanie?', 'Odobrať').then((confirmed) => {
-                if (!confirmed) return;
-                button.disabled = true;
-                api.request('DELETE', `/api/tasks/${encodeURIComponent(button.dataset.taskId)}/shares/${encodeURIComponent(button.dataset.userId)}`)
-                    .then(() => taskList.loadShares(button.dataset.taskId, button.closest('.task-share-list')))
-                    .catch((error) => ui.showToast(error.message || 'Zdieľanie sa nepodarilo odobrať.', 'error'))
-                    .finally(() => { button.disabled = false; });
-            });
-        }
         if (action === 'task-edit') {
             const task = state.tasks.find((item) => String(item.id) === this.dataset.taskId);
             if (task && !task.is_done) { ui.closePanels(); taskForm.open(task); }
@@ -2739,21 +2736,6 @@
         event.preventDefault();
         taskForm.save(this.querySelector('[type="submit"]'));
     });
-    $(document).on('submit', '.task-share-form', function (event) {
-        event.preventDefault();
-        const form = this;
-        const editor = form.elements.role.value === 'editor';
-        const comments = form.elements.comments.checked;
-        const permissions = { can_view: true, can_edit: editor, can_delete: false, can_complete: editor,
-            can_view_comments: comments, can_add_comments: comments, can_edit_own_comments: comments,
-            can_edit_other_comments: false, can_delete_own_comments: comments, can_delete_other_comments: false };
-        const button = form.querySelector('button[type="submit"]'); button.disabled = true;
-        api.request('POST', `/api/tasks/${encodeURIComponent(form.dataset.taskId)}/shares`, { email: form.elements.email.value.trim(), ...permissions })
-            .then(() => { form.reset(); ui.showToast('Úloha bola zdieľaná.'); taskList.loadShares(form.dataset.taskId, form.parentElement.querySelector('.task-share-list')); projectManager.renderSidebar(); })
-            .catch((error) => ui.showToast(error.message || 'Úlohu sa nepodarilo zdieľať.', 'error'))
-            .finally(() => { button.disabled = false; });
-    });
-
     $(document).on('submit', '#project-form', function (event) {
         event.preventDefault();
         projectManager.save(document.querySelector('[type="submit"][form="project-form"]'));

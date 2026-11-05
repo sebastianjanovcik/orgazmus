@@ -131,15 +131,13 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .nav-link.is-active { color: var(--accent); background: var(--accent-soft); font-weight: 700; }
 .nav-icon { display: grid; width: 26px; place-items: center; font-size: 19px; }
 .sidebar-projects { display: grid; gap: 5px; margin-top: 34px; }
-/* Formulár zdieľania používa farby motívu a rozloženie, ktoré sa zmestí aj na mobil. */
-.task-share-section { display: grid; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--glass-border); }
-.task-share-section h3 { margin: 0; font-size: 1rem; }
-.task-share-form { display: grid; gap: 10px; }
-.task-share-form label { display: grid; gap: 5px; color: var(--muted); font-size: .88rem; }
-.task-share-form input[type="email"], .task-share-form select { min-width: 0; padding: 9px 11px; border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text); background: var(--surface); }
-.task-share-form .inline-check { display: flex; align-items: center; gap: 8px; }
-.task-share-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 0; border-top: 1px solid var(--glass-border); font-size: .86rem; }
-.task-share-skeleton { height: 36px; margin: 5px 0; border-radius: 10px; background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 60%, var(--text) 8%), var(--surface)); }
+/* Príjemca a jeho práva patria k vytvoreniu; detail existujúcej úlohy zostáva bez správy zdieľania. */
+.task-create-share { display: grid; min-width: 0; gap: 0; margin: 20px 0 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 14px; }
+.task-create-share[hidden] { display: none; }
+.task-create-share legend { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 700; }
+.task-create-share label:not(.inline-check) { display: grid; gap: 5px; margin: 10px 0 4px; }
+.task-create-share .inline-check { display: flex; align-items: center; gap: 9px; margin: 12px 2px 4px; color: var(--muted); font-size: 13px; }
+.task-create-share .inline-check input { width: 18px; min-height: 18px; flex: 0 0 18px; margin: 0; padding: 0; }
 .sidebar-link-skeleton { height: 34px; margin: 4px 0; border-radius: 10px; background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 60%, var(--text) 8%), var(--surface)); }
 .project-link { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 12px; border-radius: 12px; font-size: 14px; }
 .project-link:hover { background: var(--surface); }
@@ -556,7 +554,6 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
     #main-content { padding: 23px 16px calc(96px + env(safe-area-inset-bottom)); }
     .page-heading { align-items: center; margin-top: 2px; }
     .page-subtitle { max-width: 255px; font-size: 13px; }
-    .task-share-row { align-items: flex-start; flex-wrap: wrap; overflow-wrap: anywhere; }
     .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 27px; }
     .statistics-grid { grid-template-columns: 1fr; gap: 9px; }
     .statistic-card { min-height: 78px; grid-template-columns: auto 1fr; align-items: center; }
