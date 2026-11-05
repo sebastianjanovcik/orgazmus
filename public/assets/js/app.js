@@ -2072,8 +2072,10 @@
         async loadInsights(routeSequence, name) {
             const target = document.getElementById('view');
             if (!target) return;
+            // Tieto šablóny nahrádzajú obsah vytvorený routerom, preto filter pridávame až po zostavení finálnej obrazovky.
             if (name === 'calendar') {
                 target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${i18n.t('calendar')}</h1><p class="page-subtitle">${i18n.t('calendar_subtitle')}</p></div></div><section class="calendar-card" aria-label="${i18n.t('calendar_tasks')}"><div id="task-calendar" aria-label="${i18n.t('calendar')}"></div></section><section class="task-section calendar-day-section" aria-labelledby="calendar-day-heading"><div class="section-heading"><h2 id="calendar-day-heading">${i18n.t('selected_day')}</h2><span id="calendar-day-count" class="section-count"></span></div><div id="calendar-day-tasks" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
+                target.querySelector('.page-heading').append(taskList.filterControl());
                 const calendarRoot = document.getElementById('task-calendar');
                 if (!window.FullCalendar || !calendarRoot) {
                     calendarRoot.textContent = i18n.t('calendar_load_error');
@@ -2119,6 +2121,7 @@
             } else {
                 target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${i18n.t('stats')}</h1><p class="page-subtitle">${i18n.t('stats_subtitle')}</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">${i18n.t('project_progress')}</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
             }
+            target.querySelector('.page-heading').append(taskList.filterControl());
             try {
                 // Projekty sú dostupné už vo fáze B5, aj keď API úloh ešte nie je hotové.
                 const [tasksResult, projectsResult] = await Promise.allSettled([
