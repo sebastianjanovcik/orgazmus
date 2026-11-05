@@ -5,8 +5,8 @@
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
         dictionaries: {
-            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.' },
-            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.' }
+            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
+            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
         language: 'sk',
         key: 'tasko.language',
@@ -1719,17 +1719,17 @@
             const target = document.getElementById('view');
             if (!target) return;
             if (name === 'calendar') {
-                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Kalendár</h1><p class="page-subtitle">Termíny a úlohy podľa dní.</p></div></div><section class="calendar-card" aria-label="Kalendár úloh"><div id="task-calendar" aria-label="Kalendár"></div></section><section class="task-section calendar-day-section" aria-labelledby="calendar-day-heading"><div class="section-heading"><h2 id="calendar-day-heading">Vybraný deň</h2><span id="calendar-day-count" class="section-count"></span></div><div id="calendar-day-tasks" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${i18n.t('calendar')}</h1><p class="page-subtitle">${i18n.t('calendar_subtitle')}</p></div></div><section class="calendar-card" aria-label="${i18n.t('calendar_tasks')}"><div id="task-calendar" aria-label="${i18n.t('calendar')}"></div></section><section class="task-section calendar-day-section" aria-labelledby="calendar-day-heading"><div class="section-heading"><h2 id="calendar-day-heading">${i18n.t('selected_day')}</h2><span id="calendar-day-count" class="section-count"></span></div><div id="calendar-day-tasks" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
                 const calendarRoot = document.getElementById('task-calendar');
                 if (!window.FullCalendar || !calendarRoot) {
-                    calendarRoot.textContent = 'Kalendár sa nepodarilo načítať.';
+                    calendarRoot.textContent = i18n.t('calendar_load_error');
                     return;
                 }
                 const locale = {
-                    code: 'sk', week: { dow: 1, doy: 4 },
-                    buttonText: { prev: 'Predchádzajúci mesiac', next: 'Nasledujúci mesiac', today: 'Dnes', month: 'Mesiac', week: 'Týždeň', day: 'Deň', list: 'Zoznam' },
+                    code: i18n.language === 'cs' ? 'cs' : 'sk', week: { dow: 1, doy: 4 },
+                    buttonText: { prev: i18n.t('fc_prev'), next: i18n.t('fc_next'), today: i18n.t('fc_today'), month: i18n.t('fc_month'), week: i18n.t('fc_week'), day: i18n.t('fc_day'), list: i18n.t('fc_list') },
                     // FullCalendar 6 formátuje názvy dní a mesiacov podľa locale kódu cez Intl.
-                    allDayText: 'Celý deň', moreLinkText: 'ďalšie', noEventsText: 'Žiadne úlohy'
+                    allDayText: i18n.t('fc_all_day'), moreLinkText: i18n.t('fc_more'), noEventsText: i18n.t('fc_no_events')
                 };
                 this.calendar = new FullCalendar.Calendar(calendarRoot, {
                     initialView: 'dayGridMonth', locale, firstDay: 1, height: 'auto', dayMaxEvents: 3,
@@ -1762,7 +1762,7 @@
             if (name === 'done') {
                 target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Hotové úlohy</h1><p class="page-subtitle">Dokončené úlohy na jednom mieste.</p></div><button class="button button-danger" type="button" data-action="completed-clear">Zmazať všetky hotové</button></div><section class="task-section"><div id="completed-task-list" aria-live="polite"><div class="task-skeleton" aria-hidden="true"></div><div class="task-skeleton" aria-hidden="true"></div></div></section>`;
             } else {
-                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Štatistiky</h1><p class="page-subtitle">Prehľad dokončených úloh a priebehu projektov.</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">Priebeh projektov</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
+                target.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${i18n.t('stats')}</h1><p class="page-subtitle">${i18n.t('stats_subtitle')}</p></div></div><div id="task-statistics" class="statistics-grid" aria-live="polite"><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div><div class="statistic-skeleton"></div></div><section class="task-section"><h2 class="statistics-project-heading">${i18n.t('project_progress')}</h2><div id="project-statistics" class="statistics-project-list"></div></section>`;
             }
             try {
                 // Projekty sú dostupné už vo fáze B5, aj keď API úloh ešte nie je hotové.
@@ -1815,7 +1815,7 @@
             } catch (error) {
                 if (sequence !== this.calendarSequence) return;
                 const list = document.getElementById('calendar-day-tasks');
-                if (list) list.textContent = error.message || 'Úlohy kalendára sa nepodarilo načítať.';
+                if (list) list.textContent = error.message || i18n.t('no_tasks_loaded');
             }
         },
         selectCalendarDay(date) {
@@ -1823,11 +1823,11 @@
             const list = document.getElementById('calendar-day-tasks');
             if (!heading || !list) return;
             heading.dataset.date = date;
-            heading.textContent = new Intl.DateTimeFormat('sk', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+            heading.textContent = new Intl.DateTimeFormat(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
             const tasks = state.tasks.filter((task) => task.due_date === date);
-            document.getElementById('calendar-day-count').textContent = `${tasks.length} ${tasks.length === 1 ? 'úloha' : 'úloh'}`;
+            document.getElementById('calendar-day-count').textContent = `${tasks.length} ${i18n.t(tasks.length === 1 ? 'day_task_count_one' : 'day_task_count_other')}`;
             list.replaceChildren();
-            if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = 'Na tento deň nie sú naplánované žiadne úlohy.'; list.append(empty); return; }
+            if (!tasks.length) { const empty = document.createElement('p'); empty.className = 'task-empty'; empty.textContent = i18n.t('no_tasks_this_day'); list.append(empty); return; }
             const projects = new Map(state.projects.map((project) => [Number(project.id), project]));
             tasks.forEach((task) => list.append(taskList.makeCard(task, projects)));
         },
@@ -1864,7 +1864,7 @@
             const cards = document.getElementById('task-statistics');
             if (!cards) return;
             cards.replaceChildren();
-            [['Všetky úlohy', total], ['Otvorené úlohy', open], ['Dokončené úlohy', done]].forEach(([label, value]) => {
+            [[i18n.t('all_tasks_count'), total], [i18n.t('open_tasks_count'), open], [i18n.t('done_tasks_count'), done]].forEach(([label, value]) => {
                 const card = document.createElement('article'); card.className = 'summary-card statistic-card';
                 const number = document.createElement('strong'); number.textContent = String(value);
                 const caption = document.createElement('span'); caption.textContent = label;
@@ -1878,11 +1878,11 @@
                 const completed = tasks.filter((task) => task.is_done).length;
                 const row = document.createElement('div'); row.className = 'statistics-project-row';
                 const name = document.createElement('span'); name.textContent = project.name;
-                const count = document.createElement('span'); count.textContent = `${completed} z ${tasks.length} hotových`;
-                const progress = document.createElement('progress'); progress.max = tasks.length || 1; progress.value = completed; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
+                const count = document.createElement('span'); count.textContent = i18n.t('completed_of').replace('{completed}', completed).replace('{total}', tasks.length);
+                const progress = document.createElement('progress'); progress.max = tasks.length || 1; progress.value = completed; progress.setAttribute('aria-label', i18n.t('project_progress_for').replace('{name}', project.name));
                 row.append(name, count, progress); list.append(row);
             });
-            if (!state.projects.length) list.textContent = 'Zatiaľ nemáš projekty.';
+            if (!state.projects.length) list.textContent = i18n.t('no_projects');
         },
         async clearCompleted(button) {
             const count = state.tasks.filter((task) => task.is_done).length;
