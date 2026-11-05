@@ -4,12 +4,30 @@
 
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
+        /* Presné texty rozhrania pokrývajú aj staršie šablóny; používateľský obsah sa nemení. */
+        skText: {
+            'Horná lišta': 'Horní lišta', 'Hlavná navigácia': 'Hlavní navigace', 'Otvoriť menu': 'Otevřít menu', 'Otvoriť profil': 'Otevřít profil', 'Notifikácie': 'Oznámení', 'Upozornenia': 'Upozornění', 'Zavrieť': 'Zavřít', 'Zavrieť menu': 'Zavřít menu', 'Zavrieť detail úlohy': 'Zavřít detail úkolu', 'Zavrieť menu alebo okno': 'Zavřít nabídku nebo okno', 'Späť': 'Zpět', 'Súhrn úloh': 'Souhrn úkolů', 'Lokálny demo účet:': 'Lokální demo účet:', '. Po obnovení stránky sa budeš musieť prihlásiť znova.': '. Po obnovení stránky se budeš muset znovu přihlásit.', 'Najviac 3 projekty': 'Nejvýše 3 projekty', 'Na dokončenie tejto úlohy nemáš oprávnenie.': 'K dokončení tohoto úkolu nemáš oprávnění.',
+            'Máš pred sebou skvelý deň. Tu je tvoj plán.': 'Čeká tě skvělý den. Tady je tvůj plán.', 'Otvorené úlohy': 'Otevřené úkoly', 'Hotové úlohy': 'Dokončené úkoly', 'Otvorené': 'Otevřené', 'Hotové': 'Dokončené', 'Po termíne': 'Po termínu', 'Načítavam…': 'Načítám…', 'Načítavam': 'Načítám', 'Chyba': 'Chyba', 'Pridať úlohu': 'Přidat úkol', 'Pridať ďalšiu úlohu na tento deň': 'Přidat další úkol na tento den', 'Detail úlohy': 'Detail úkolu', 'Nová úloha': 'Nový úkol', 'Názov úlohy': 'Název úkolu', 'Čo treba urobiť?': 'Co je potřeba udělat?', 'Priorita': 'Priorita', 'Nízka': 'Nízká', 'Stredná': 'Střední', 'Vysoká': 'Vysoká', 'Kritická': 'Kritická', 'Termín': 'Termín', 'Popis': 'Popis', 'Doplň podrobnosti': 'Doplň podrobnosti', 'Odstrániť': 'Odstranit', 'Zrušiť': 'Zrušit', 'Uložiť': 'Uložit', 'Upraviť úlohu': 'Upravit úkol', 'Odstrániť úlohu': 'Odstranit úkol', 'Označiť ako hotovú úlohu': 'Označit úkol jako dokončený', 'Znovu otvoriť úlohu': 'Znovu otevřít úkol', 'Bez popisu.': 'Bez popisu.', 'Bez popisu': 'Bez popisu', 'Pridal': 'Přidal', 'Zatiaľ nemáš hotové úlohy.': 'Zatím nemáš žádné dokončené úkoly.', 'Nemáš žiadne hotové úlohy.': 'Nemáš žádné dokončené úkoly.', 'Nemáš otvorené úlohy.': 'Nemáš žádné otevřené úkoly.', 'Skúsiť znova': 'Zkusit znovu', 'Úlohy sa nepodarilo načítať.': 'Úkoly se nepodařilo načíst.',
+            'Nový projekt': 'Nový projekt', 'Názov projektu': 'Název projektu', 'Napríklad Práca': 'Například Práce', 'Krátky popis projektu': 'Krátký popis projektu', 'Ikona': 'Ikona', 'Vyber ikonu projektu': 'Vyberte ikonu projektu', 'Práca': 'Práce', 'Domov': 'Domov', 'Škola': 'Škola', 'Nápad': 'Nápad', 'Cieľ': 'Cíl', 'Poznámka': 'Poznámka', 'Upraviť projekt': 'Upravit projekt', 'Všetky tvoje projekty a ich priebeh na jednom mieste.': 'Všechny tvoje projekty a jejich průběh na jednom místě.', 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.': 'Zatím nemáš žádný projekt. Vytvoř si první a začni si organizovat úkoly.', 'Plán Standard povoľuje 3 projekty. Ďalší projekt je dostupný v Premium.': 'Plán Standard umožňuje 3 projekty. Další projekt je dostupný v Premium.', 'Plán Standard umožňuje najviac 3 projekty. Používaš': 'Plán Standard umožňuje nejvýše 3 projekty. Používáš', 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.': 'Plán Premium umožňuje vytvářet neomezený počet projektů.', 'Bez popisu': 'Bez popisu',
+            'Profil': 'Profil', 'Meno': 'Jméno', 'Zmena hesla': 'Změna hesla', 'Ak heslo meniť nechceš, nechaj polia prázdne.': 'Pokud heslo nechceš měnit, nech pole prázdná.', 'Aktuálne heslo': 'Současné heslo', 'Nové heslo': 'Nové heslo', 'Standard:': 'Standard:', 'Premium:': 'Premium:', 'Odhlásiť sa': 'Odhlásit se', 'Premium': 'Premium', 'Prihlásenie a registrácia': 'Přihlášení a registrace', 'Vitaj späť. Prihlás sa do svojho účtu.': 'Vítej zpět. Přihlas se ke svému účtu.', 'Vytvor si účet a usporiadaj si svoje úlohy.': 'Vytvoř si účet a uspořádej si své úkoly.', 'Heslo': 'Heslo', 'Aspoň 8 znakov': 'Alespoň 8 znaků', 'Zopakuj heslo': 'Zopakuj heslo', 'Upozornenie: Heslo sa nedá obnoviť.': 'Upozornění: Heslo nelze obnovit.', 'Vytvoriť účet': 'Vytvořit účet', 'Už máš účet? Prihlás sa': 'Už máš účet? Přihlas se', 'Potvrdiť': 'Potvrdit', 'Potvrdenie': 'Potvrzení',
+            'Zatiaľ nemáš žiadne upozornenia.': 'Zatím nemáš žádná oznámení.', 'Upozornenia sa nepodarilo načítať.': 'Oznámení se nepodařilo načíst.', 'Načítať staršie': 'Načíst starší', 'Načítanie zlyhalo': 'Načítání selhalo', 'Výber': 'Výběr', 'Vyber…': 'Vyber…', 'Vyberte termín': 'Vyberte termín', 'Predchádzajúci mesiac': 'Předchozí měsíc', 'Nasledujúci mesiac': 'Následující měsíc', 'Termín dnes': 'Termín dnes',
+            'Komentáre sú funkcia Premium': 'Komentáře jsou funkcí Premium', 'Vo vlákne môžeš viesť diskusiu k úlohe. Pre pridávanie komentárov a odpovedí je potrebný plán Premium.': 'Ve vlákně můžeš diskutovat o úkolu. Pro přidávání komentářů a odpovědí je potřeba plán Premium.', 'Komentáre sa nepodarilo načítať.': 'Komentáře se nepodařilo načíst.', 'Nový komentár': 'Nový komentář', 'Tvoja odpoveď': 'Tvoje odpověď', 'Pridať': 'Přidat', 'Komentáre': 'Komentáře', 'Používateľ': 'Uživatel', 'Odpovedať': 'Odpovědět', 'Upraviť': 'Upravit', 'Vlákno komentárov sa nepodarilo zostaviť.': 'Vlákno komentářů se nepodařilo sestavit.', 'Odpoveď už prekročila maximálnu hĺbku 4.': 'Odpověď již překročila maximální hloubku 4.', 'Komentár sa nepodarilo pridať.': 'Komentář se nepodařilo přidat.',
+            'Pozvánka do projektu': 'Pozvánka do projektu', 'Skontroluj účet a potvrď pozvánku.': 'Zkontroluj účet a potvrď pozvánku.', 'Odmietnuť': 'Odmítnout', 'Prijať pozvánku': 'Přijmout pozvánku', 'Pozvať člena': 'Pozvat člena', 'E-mail pozvaného': 'E-mail pozvaného', 'Predvoľba oprávnení': 'Předvolba oprávnění', 'Náhľad': 'Náhled', 'Komentátor': 'Komentující', 'Prispievateľ': 'Přispěvatel', 'Správca': 'Správce', 'Oprávnenia': 'Oprávnění', 'Pozvánka platí 7 dní. Odkaz sa zobrazí po vytvorení; pošli ho pozvanému mimo aplikácie.': 'Pozvánka platí 7 dní. Odkaz se zobrazí po vytvoření; pošli ho pozvanému mimo aplikaci.', 'Vytvoriť pozvánku': 'Vytvořit pozvánku', 'Pozvánky a ich stav': 'Pozvánky a jejich stav', 'Načítavam pozvánky…': 'Načítám pozvánky…', 'Projekt nemá žiadne pozvánky.': 'Projekt nemá žádné pozvánky.', 'Odvolať': 'Odvolat', 'Kopírovať odkaz': 'Kopírovat odkaz', 'Skopírované': 'Zkopírováno', 'Kopírovanie zablokoval prehliadač': 'Kopírování zablokoval prohlížeč', 'Všetky projekty': 'Všechny projekty', 'Členovia projektu': 'Členové projektu', 'V projekte zatiaľ nie sú žiadni členovia.': 'V projektu zatím nejsou žádní členové.', 'Vlastník': 'Vlastník', 'Člen': 'Člen', 'Pridaný': 'Přidán', 'Odstrániť člena': 'Odstranit člena', 'Uložiť oprávnenia': 'Uložit oprávnění', 'Previesť vlastníctvo': 'Převést vlastnictví', 'Nový vlastník': 'Nový vlastník', 'Názov projektu po prevode': 'Název projektu po převodu', 'Oprávnenia, ktoré zostanú pôvodnému vlastníkovi': 'Oprávnění, která zůstanou původnímu vlastníkovi', 'Prevod je trvalý. Ak má nový vlastník projekt s rovnakým názvom, zadaj pre tento projekt iný názov.': 'Převod je trvalý. Pokud má nový vlastník projekt se stejným názvem, zadej pro tento projekt jiný název.', 'História zmien': 'Historie změn', 'Zmena v projekte': 'Změna v projektu', 'Používateľský účet už nie je dostupný': 'Uživatelský účet již není dostupný', 'Načítať staršie zmeny': 'Načíst starší změny', 'V projekte zatiaľ nie sú zaznamenané zmeny.': 'V projektu zatím nejsou zaznamenány žádné změny.', 'V tomto projekte nie sú otvorené úlohy.': 'V tomto projektu nejsou otevřené úkoly.', 'Zatiaľ tu nie sú hotové úlohy.': 'Zatím tu nejsou dokončené úkoly.', 'Projekt sa nenašiel.': 'Projekt nebyl nalezen.', 'Údaje sa nepodarilo načítať.': 'Údaje se nepodařilo načíst.', 'Obsah tejto obrazovky sa pripravuje.': 'Obsah této obrazovky se připravuje.', 'Dokončené úlohy na jednom mieste.': 'Dokončené úkoly na jednom místě.', 'Zmazať všetky hotové': 'Smazat všechny dokončené', 'Zmazať hotové úlohy?': 'Smazat dokončené úkoly?', 'Zmazať všetky': 'Smazat všechny', 'Zmazať': 'Smazat', 'Naozaj chceš zmazať': 'Opravdu chceš smazat', 'Hotové úlohy boli zmazané.': 'Dokončené úkoly byly smazány.', 'Požiadavku sa nepodarilo dokončiť.': 'Požadavek se nepodařilo dokončit.', 'Nepodarilo sa overiť prihlásenie. Skús to znova.': 'Nepodařilo se ověřit přihlášení. Zkus to znovu.', 'Nesprávny e-mail alebo heslo.': 'Nesprávný e-mail nebo heslo.', 'Účet s týmto e-mailom už existuje.': 'Účet s tímto e-mailem již existuje.', 'Heslá sa nezhodujú.': 'Hesla se neshodují.', 'Táto akcia bude dokončená v ďalšom kroku.': 'Tato akce bude dokončena v dalším kroku.', 'Zobraziť projekt': 'Zobrazit projekt', 'Spravovať projekt': 'Spravovat projekt', 'Spravovať členov': 'Spravovat členy', 'Zobraziť úlohy': 'Zobrazit úkoly', 'Pridávať úlohy': 'Přidávat úkoly', 'Dokončiť úlohy ostatných': 'Dokončovat úkoly ostatních', 'Upraviť vlastné úlohy': 'Upravit vlastní úkoly', 'Upraviť úlohy ostatných': 'Upravit úkoly ostatních', 'Zmazať vlastné úlohy': 'Mazat vlastní úkoly', 'Zmazať úlohy ostatných': 'Mazat úkoly ostatních', 'Zobraziť komentáre': 'Zobrazit komentáře', 'Pridávať komentáre': 'Přidávat komentáře', 'Upraviť vlastné komentáre': 'Upravit vlastní komentáře', 'Upraviť komentáre ostatných': 'Upravit komentáře ostatních', 'Zmazať vlastné komentáre': 'Mazat vlastní komentáře', 'Zmazať komentáre ostatných': 'Mazat komentáře ostatních', 'Úlohy': 'Úkoly', 'Komentáre': 'Komentáře', 'Vytvorená pozvánka': 'Vytvořená pozvánka', 'Prijatá pozvánka': 'Přijatá pozvánka', 'Odstránený člen': 'Odebraný člen', 'Zmenené oprávnenia člena': 'Změněná oprávnění člena', 'Prevedené vlastníctvo': 'Převedené vlastnictví', 'Prihlás sa': 'Přihlas se', 'Zadaj heslo': 'Zadej heslo', 'Meno a priezvisko': 'Jméno a příjmení', 'Potvrdenie hesla': 'Potvrzení hesla', 'Prihlásiť sa': 'Přihlásit se', 'Zmeniť jazyk': 'Změnit jazyk', 'Slovenčina': 'Slovenština', 'Nastavenia': 'Nastavení', 'Štatistiky': 'Statistiky', 'Hotové úlohy': 'Dokončené úkoly', 'Nízka': 'Nízká', 'Nové upozornenie': 'Nové oznámení', 'Bez projektu': 'Bez projektu', 'Bez termínu': 'Bez termínu', 'Posledný projekt nemožno odstrániť.': 'Poslední projekt nelze odstranit.', 'Stav úlohy sa nepodarilo uložiť.': 'Stav úkolu se nepodařilo uložit.', 'Projekt bol upravený.': 'Projekt byl upraven.', 'Projekt bol vytvorený.': 'Projekt byl vytvořen.', 'Projekt sa nepodarilo uložiť.': 'Projekt se nepodařilo uložit.', 'Posledný projekt nemožno odstrániť.': 'Poslední projekt nelze odstranit.', 'Projekt a jeho úlohy boli odstránené.': 'Projekt a jeho úkoly byly odstraněny.'
+        },
+        /* Ďalšie správy pokrývajú najmä potvrdenia, validáciu a odpovede API. */
+        skExtraText: {
+            'Upraviť komentár': 'Upravit komentář', 'Napíš komentár…': 'Napiš komentář…', 'Komentár sa nepodarilo odstrániť.': 'Komentář se nepodařilo odstranit.', 'Komentár sa nepodarilo pridať.': 'Komentář se nepodařilo přidat.', 'Projekt sa nenašiel.': 'Projekt nebyl nalezen.', 'Člena sa nepodarilo odstrániť.': 'Člena se nepodařilo odebrat.',
+            'Odhlásenie zo servera sa nepodarilo.': 'Odhlášení ze serveru se nepodařilo.', 'Stav úlohy sa nepodarilo uložiť.': 'Stav úkolu se nepodařilo uložit.', 'Projekt bol upravený.': 'Projekt byl upraven.', 'Projekt bol vytvorený.': 'Projekt byl vytvořen.', 'Projekt sa nepodarilo uložiť.': 'Projekt se nepodařilo uložit.', 'Projekt a jeho úlohy boli odstránené.': 'Projekt a jeho úkoly byly odstraněny.', 'Posledný projekt nemožno odstrániť.': 'Poslední projekt nelze odstranit.', 'Projekt sa nepodarilo odstrániť.': 'Projekt se nepodařilo odstranit.', 'Člen bol odstránený.': 'Člen byl odebrán.', 'Člena sa nepodarilo odstrániť.': 'Člena se nepodařilo odebrat.', 'Oprávnenia člena boli uložené.': 'Oprávnění člena byla uložena.', 'Oprávnenia sa nepodarilo uložiť.': 'Oprávnění se nepodařilo uložit.', 'Vlastníctvo projektu bolo prevedené.': 'Vlastnictví projektu bylo převedeno.', 'Vlastníctvo sa nepodarilo previesť.': 'Vlastnictví se nepodařilo převést.', 'Názov projektu musí mať 1 až 40 znakov.': 'Název projektu musí mít 1 až 40 znaků.', 'Projekt sa nepodarilo načítať.': 'Projekt se nepodařilo načíst.', 'Projekty sa nepodarilo načítať.': 'Projekty se nepodařilo načíst.', 'Pozvánky sa nepodarilo načítať.': 'Pozvánky se nepodařilo načíst.', 'Oprávnenia člena boli uložené.': 'Oprávnění člena byla uložena.', 'Pozvánku sa nepodarilo vytvoriť.': 'Pozvánku se nepodařilo vytvořit.', 'Pozvánku sa nepodarilo spracovať.': 'Pozvánku se nepodařilo zpracovat.', 'Pozvánku sa nepodarilo načítať.': 'Pozvánku se nepodařilo načíst.', 'Pozvánka prijatá.': 'Pozvánka přijata.', 'Pozvánka odmietnutá.': 'Pozvánka odmítnuta.', 'Pozvánku sa nepodarilo odvolať.': 'Pozvánku se nepodařilo odvolat.', 'Pozvánka už nie je platná alebo je určená inému účtu.': 'Pozvánka již není platná nebo je určena jinému účtu.', 'Históriu zmien sa nepodarilo načítať.': 'Historii změn se nepodařilo načíst.', 'Komentár sa nepodarilo upraviť.': 'Komentář se nepodařilo upravit.', 'Odpoveď už prekročila maximálnu hĺbku 4.': 'Odpověď již překročila maximální hloubku 4.', 'Názov musí mať 1 až 40 znakov.': 'Název musí mít 1 až 40 znaků.', 'Popis môže mať najviac 200 znakov.': 'Popis může mít nejvýše 200 znaků.', 'Odstrániť projekt?': 'Odstranit projekt?', 'Pokračovať': 'Pokračovat', 'Projekt a jeho úlohy boli odstránené.': 'Projekt a jeho úkoly byly odstraněny.', 'Na tento deň nie sú naplánované žiadne úlohy.': 'Na tento den nejsou naplánovány žádné úkoly.', 'Úlohy kalendára sa nepodarilo načítať.': 'Úkoly kalendáře se nepodařilo načíst.', 'Nepodarilo sa vytvoriť pozvánku.': 'Pozvánku se nepodařilo vytvořit.', 'Projekt nemá žiadne pozvánky.': 'Projekt nemá žádné pozvánky.', 'Načítavam pozvánky…': 'Načítám pozvánky…'
+        },
+        originalText: new WeakMap(),
+        originalAttributes: new WeakMap(),
         dictionaries: {
             sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
             cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
         language: 'sk',
         key: 'tasko.language',
+        locale() { return this.language === 'cs' ? 'cs-CZ' : 'sk-SK'; },
         init() {
             try { if (['sk', 'cs'].includes(window.localStorage.getItem(this.key))) this.language = window.localStorage.getItem(this.key); } catch (_) {}
             document.documentElement.lang = this.language;
@@ -26,12 +44,38 @@
             notifications.update();
         },
         apply(root) {
-            (root || document).querySelectorAll('[data-i18n]').forEach((node) => {
+            const scope = root || document;
+            scope.querySelectorAll('[data-i18n]').forEach((node) => {
                 const value = this.t(node.dataset.i18n);
                 if (value === node.dataset.i18n) return;
                 const textNodes = Array.from(node.childNodes).filter((child) => child.nodeType === Node.TEXT_NODE);
                 if (textNodes.length) textNodes[textNodes.length - 1].nodeValue = node.childNodes.length > 1 ? ` ${value}` : value;
                 else node.textContent = value;
+            });
+            // Prekladáme iba celé, známe reťazce UI; text zadaný používateľom sa tak nedotkne.
+            const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+            let textNode;
+            while ((textNode = walker.nextNode())) {
+                if (textNode.parentElement.closest('[data-i18n], .task-title, .task-description, .comment-body, .project-card-title, .project-card-description, .project-link-name, .project-member-identity, .project-member-email, .meta-project, .task-creator, #task-detail-title, #project-detail-view h2:not(.project-task-heading), #project-detail-view .project-detail-heading p, #task-project option, #project-transfer-member option')) continue;
+                if (!this.originalText.has(textNode)) this.originalText.set(textNode, textNode.nodeValue.trim());
+                const original = this.originalText.get(textNode);
+                const translated = this.language === 'cs' ? (this.skText[original] || this.skExtraText[original] || original) : original;
+                if (textNode.nodeValue.trim() !== translated) {
+                    const leading = textNode.nodeValue.match(/^\s*/)[0];
+                    const trailing = textNode.nodeValue.match(/\s*$/)[0];
+                    textNode.nodeValue = `${leading}${translated}${trailing}`;
+                }
+            }
+            scope.querySelectorAll('*').forEach((node) => {
+                ['aria-label', 'placeholder', 'data-placeholder', 'title'].forEach((attribute) => {
+                    if (!node.hasAttribute(attribute)) return;
+                    let originals = this.originalAttributes.get(node);
+                    if (!originals) { originals = {}; this.originalAttributes.set(node, originals); }
+                    if (!(attribute in originals)) originals[attribute] = node.getAttribute(attribute);
+                    const original = originals[attribute];
+                    const translated = this.language === 'cs' ? (this.skText[original] || this.skExtraText[original] || original) : original;
+                    if (node.getAttribute(attribute) !== translated) node.setAttribute(attribute, translated);
+                });
             });
         }
     };
@@ -147,7 +191,10 @@
             /* Nadpis aktualizujeme až po obnove obsahu, aby sa do šablóny úloh neuložil názov inej trasy. */
             const heading = document.getElementById('page-title');
             if (heading) heading.textContent = title;
-            if (view) dropdowns.init(view);
+            if (view) {
+                i18n.apply(view);
+                dropdowns.init(view);
+            }
             document.querySelectorAll('.auth-card').forEach((card) => {
                 card.hidden = card.id === 'login-form' ? route.name !== 'login' : route.name !== 'register';
             });
@@ -212,7 +259,7 @@
             items.forEach((item) => {
                 const row = document.createElement('li'); row.classList.toggle('notification-unread', !item.is_read);
                 const message = document.createElement('span'); message.textContent = item.message;
-                const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
+                const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString(i18n.locale());
                 row.append(message, time); list.append(row);
             });
         },
@@ -750,8 +797,8 @@
         },
         renderLocked() {
             const box = document.createElement('div'); box.className = 'comments-locked';
-            const heading = document.createElement('h4'); heading.textContent = '🔒 Komentáre sú funkcia Premium';
-            const message = document.createElement('p'); message.textContent = 'Vo vlákne môžeš viesť diskusiu k úlohe. Pre pridávanie komentárov a odpovedí je potrebný plán Premium.';
+            const heading = document.createElement('h4'); heading.textContent = i18n.language === 'cs' ? '🔒 Komentáře jsou funkcí Premium' : '🔒 Komentáre sú funkcia Premium';
+            const message = document.createElement('p'); message.textContent = i18n.language === 'cs' ? 'Ve vlákně můžeš diskutovat o úkolu. Pro přidávání komentářů a odpovědí je potřeba plán Premium.' : 'Vo vlákne môžeš viesť diskusiu k úlohe. Pre pridávanie komentárov a odpovedí je potrebný plán Premium.';
             box.append(heading, message); this.container.replaceChildren(box); this.container.removeAttribute('aria-busy');
         },
         renderError(error) {
@@ -771,7 +818,7 @@
         /* Strom zostavujeme podľa parent_id a hĺbku počítame lokálne pre bezpečné odsadenie a limit odpovedí. */
         render() {
             const root = document.createElement('section'); root.className = 'comments-section'; root.setAttribute('aria-labelledby', 'comments-heading');
-            const heading = document.createElement('h4'); heading.id = 'comments-heading'; heading.textContent = `Komentáre (${this.items.length})`; root.append(heading);
+            const heading = document.createElement('h4'); heading.id = 'comments-heading'; heading.textContent = `${i18n.language === 'cs' ? 'Komentáře' : 'Komentáre'} (${this.items.length})`; root.append(heading);
             if (this.canAdd) root.append(this.makeForm(null));
             const list = document.createElement('div'); list.className = 'comment-tree';
             const children = new Map();
@@ -784,7 +831,7 @@
                     const meta = document.createElement('div'); meta.className = 'comment-meta';
                     const author = document.createElement('strong'); author.textContent = item.author?.name || 'Používateľ';
                     const date = document.createElement('time');
-                    if (item.created_at && !Number.isNaN(Date.parse(item.created_at))) { date.dateTime = item.created_at; date.textContent = new Intl.DateTimeFormat('sk-SK', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at)); }
+                    if (item.created_at && !Number.isNaN(Date.parse(item.created_at))) { date.dateTime = item.created_at; date.textContent = new Intl.DateTimeFormat(i18n.locale(), { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at)); }
                     meta.append(author, date);
                     const body = document.createElement('p'); body.className = 'comment-body'; body.textContent = item.body || ''; article.append(meta, body);
                     const controls = document.createElement('div'); controls.className = 'comment-controls';
@@ -878,8 +925,8 @@
             const date = new Date(year, month - 1, day);
             if (Number.isNaN(date.getTime())) return value;
             if (value === components.today()) return 'Dnes';
-            if (value < components.today()) return `Po termíne · ${date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' })}`;
-            return date.toLocaleDateString('sk-SK', { weekday: 'short', day: 'numeric', month: 'short' });
+            if (value < components.today()) return `${i18n.language === 'cs' ? 'Po termínu' : 'Po termíne'} · ${date.toLocaleDateString(i18n.locale(), { day: 'numeric', month: 'short' })}`;
+            return date.toLocaleDateString(i18n.locale(), { weekday: 'short', day: 'numeric', month: 'short' });
         },
         makeCard(task, projects) {
             /* Text používateľa vkladáme cez textContent a elementy, aby sa názov nikdy nespustil ako HTML. */
@@ -894,7 +941,7 @@
             check.dataset.action = 'task-complete';
             check.disabled = !task.can_complete;
             if (check.disabled) check.title = 'Na dokončenie tejto úlohy nemáš oprávnenie.';
-            check.setAttribute('aria-label', `${task.is_done ? 'Znovu otvoriť' : 'Označiť ako hotovú'} úlohu ${task.title}`);
+            check.setAttribute('aria-label', `${task.is_done ? (i18n.language === 'cs' ? 'Znovu otevřít' : 'Znovu otvoriť') : (i18n.language === 'cs' ? 'Označit jako dokončený' : 'Označiť ako hotovú')} ${i18n.language === 'cs' ? 'úkol' : 'úlohu'} ${task.title}`);
             check.setAttribute('aria-pressed', String(Boolean(task.is_done)));
             const main = document.createElement('div');
             main.className = 'task-main';
@@ -953,8 +1000,8 @@
             doneList.replaceChildren();
             open.forEach((task) => openList.append(this.makeCard(task, projects)));
             done.forEach((task) => doneList.append(this.makeCard(task, projects)));
-            this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
-            this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
+            this.emptyState(openList, open.length, i18n.language === 'cs' ? 'Nemáš žádné otevřené úkoly.' : 'Nemáš otvorené úlohy.', 'task-open-empty');
+            this.emptyState(doneList, done.length, i18n.language === 'cs' ? 'Zatím nemáš žádné dokončené úkoly.' : 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
             this.updateCounts(tasks);
         },
         updateCounts(tasks) {
@@ -964,8 +1011,8 @@
                 'open-task-count': String(open.length),
                 'overdue-task-count': String(open.filter((task) => task.due_date && task.due_date < components.today()).length),
                 'completed-task-count': String(done.length),
-                'open-section-count': `${open.length} ${open.length === 1 ? 'úloha' : 'úloh'}`,
-                'done-section-count': `${done.length} ${done.length === 1 ? 'úloha' : 'úloh'}`
+                'open-section-count': `${open.length} ${i18n.t(open.length === 1 ? 'day_task_count_one' : 'day_task_count_other')}`,
+                'done-section-count': `${done.length} ${i18n.t(done.length === 1 ? 'day_task_count_one' : 'day_task_count_other')}`
             };
             // Projektový detail tieto počítadlá nemá; aktualizujeme iba prvky prítomné v aktuálnom pohľade.
             Object.entries(counts).forEach(([id, value]) => {
@@ -978,7 +1025,7 @@
             card.classList.toggle('is-done', isDone);
             card.classList.toggle('is-overdue', Boolean(task.due_date && task.due_date < components.today() && !isDone));
             button.setAttribute('aria-pressed', String(isDone));
-            button.setAttribute('aria-label', `${isDone ? 'Znovu otvoriť' : 'Označiť ako hotovú'} úlohu ${task.title}`);
+            button.setAttribute('aria-label', `${isDone ? (i18n.language === 'cs' ? 'Znovu otevřít' : 'Znovu otvoriť') : (i18n.language === 'cs' ? 'Označit jako dokončený' : 'Označiť ako hotovú')} ${i18n.language === 'cs' ? 'úkol' : 'úlohu'} ${task.title}`);
         },
         complete(button) {
             const card = button.closest('.task-card');
@@ -1357,8 +1404,8 @@
                 const title = document.createElement('span'); title.className = 'project-card-title'; title.textContent = project.name;
                 const desc = document.createElement('span'); desc.className = 'project-card-description'; desc.textContent = project.description || 'Bez popisu';
                 open.append(icon, title, desc);
-                const stats = document.createElement('div'); stats.className = 'project-card-stats'; stats.textContent = `${counts.done} z ${counts.total} hotových`;
-                const progress = document.createElement('progress'); progress.max = counts.total || 1; progress.value = counts.done; progress.setAttribute('aria-label', `Priebeh projektu ${project.name}`);
+                const stats = document.createElement('div'); stats.className = 'project-card-stats'; stats.textContent = i18n.t('completed_of').replace('{completed}', counts.done).replace('{total}', counts.total);
+                const progress = document.createElement('progress'); progress.max = counts.total || 1; progress.value = counts.done; progress.setAttribute('aria-label', i18n.t('project_progress_for').replace('{name}', project.name));
                 const edit = document.createElement('button'); edit.className = 'project-edit'; edit.type = 'button'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť'; edit.setAttribute('aria-label', `Upraviť projekt ${project.name}`);
                 edit.hidden = !project.can_manage_project;
                 card.append(open, stats, progress, edit); list.append(card);
@@ -1462,6 +1509,7 @@
             const status = document.createElement('div'); status.className = 'project-invitation-status'; status.setAttribute('aria-live', 'polite');
             form.append(emailLabel, email, presetLabel, preset, fieldset, note, submit, status); section.append(form);
             // Predvoľba používa rovnaký prístupný vlastný select ako ostatné výbery v aplikácii.
+            i18n.apply(form);
             dropdowns.init(form);
             const dropdown = document.createElement('details'); dropdown.className = 'project-invitation-dropdown';
             const dropdownHeading = document.createElement('summary'); const dropdownHeadingText = document.createElement('span'); dropdownHeadingText.textContent = 'Pozvánky a ich stav'; dropdownHeading.append(dropdownHeadingText);
@@ -1478,7 +1526,8 @@
                 if (!invitations.length) { list.textContent = 'Projekt nemá žiadne pozvánky.'; return; }
                 invitations.forEach((invitation) => {
                     const row = document.createElement('div'); row.className = 'project-invitation-row';
-                    const label = document.createElement('span'); label.textContent = `${invitation.email} · ${invitation.status} · platnosť do ${new Date(invitation.expires_at).toLocaleDateString('sk-SK')}`; row.append(label);
+                    const invitationStatus = { pending: i18n.language === 'cs' ? 'čeká na vyřízení' : 'čaká na vybavenie', accepted: i18n.language === 'cs' ? 'přijata' : 'prijatá', declined: i18n.language === 'cs' ? 'odmítnuta' : 'odmietnutá', revoked: i18n.language === 'cs' ? 'odvolána' : 'odvolaná', expired: i18n.language === 'cs' ? 'vypršela' : 'expirovala' }[invitation.status] || invitation.status;
+                    const label = document.createElement('span'); label.textContent = `${invitation.email} · ${invitationStatus} · ${i18n.language === 'cs' ? 'platnost do' : 'platnosť do'} ${new Date(invitation.expires_at).toLocaleDateString(i18n.locale())}`; row.append(label);
                     if (invitation.status === 'pending') { const revoke = document.createElement('button'); revoke.type = 'button'; revoke.className = 'button button-quiet'; revoke.dataset.action = 'invitation-revoke'; revoke.dataset.invitationId = String(invitation.id); revoke.dataset.projectId = String(projectId); revoke.textContent = 'Odvolať'; row.append(revoke); }
                     list.append(row);
                 });
@@ -1491,7 +1540,7 @@
             catch (error) { ui.showToast(error.message || 'Oprávnenia sa nepodarilo uložiť.', 'error'); } finally { button.disabled = false; }
         },
         async removeMember(button) {
-            if (!await ui.confirm('Člen stratí prístup k projektu a jeho úlohám.', 'Odstrániť člena?', 'Odstrániť')) return;
+            if (!await ui.confirm(i18n.language === 'cs' ? 'Člen ztratí přístup k projektu a jeho úkolům.' : 'Člen stratí prístup k projektu a jeho úlohám.', i18n.language === 'cs' ? 'Odstranit člena?' : 'Odstrániť člena?', i18n.language === 'cs' ? 'Odstranit' : 'Odstrániť')) return;
             button.disabled = true;
             try { await api.request('DELETE', `/api/projects/${router.current().id}/members`, { user_id: Number(button.dataset.userId) }); ui.showToast('Člen bol odstránený.'); await views.loadProjects(state.routeSequence, router.current()); }
             catch (error) { ui.showToast(error.message || 'Člena sa nepodarilo odstrániť.', 'error'); } finally { button.disabled = false; }
@@ -1500,7 +1549,7 @@
             const projectId = Number(button.dataset.projectId);
             const select = document.getElementById('project-transfer-member');
             const member = state.projectMembers.find((entry) => Number(entry.id) === Number(select?.value));
-            if (!member || !await ui.confirm(`Vlastníkom projektu sa stane ${member.name}. Tvoje ďalšie oprávnenia budú nastavené podľa výberu.`, 'Potvrdiť prevod vlastníctva?', 'Previesť')) return;
+            if (!member || !await ui.confirm(i18n.language === 'cs' ? `Vlastníkem projektu se stane ${member.name}. Tvá další oprávnění budou nastavena podle výběru.` : `Vlastníkom projektu sa stane ${member.name}. Tvoje ďalšie oprávnenia budú nastavené podľa výberu.`, i18n.language === 'cs' ? 'Potvrdit převod vlastnictví?' : 'Potvrdiť prevod vlastníctva?', i18n.language === 'cs' ? 'Převést' : 'Previesť')) return;
             const payload = { user_id: Number(member.id), confirmed: true, name: button.closest('.project-transfer').querySelector('.project-transfer-name').value.trim() };
             if (!payload.name || payload.name.length > 40) { ui.showToast('Názov projektu musí mať 1 až 40 znakov.', 'error'); return; }
             this.permissionFields.forEach((field) => { payload[field] = Boolean(button.closest('.project-transfer').querySelector(`[name="${field}"]`).checked); });
@@ -1521,7 +1570,7 @@
                 const result = await api.request('POST', `/api/projects/${form.dataset.projectId}/invitations`, payload);
                 const invitationBaseUrl = String((window.TASKO_CONFIG || {}).invitationBaseUrl || window.location.origin).replace(/\/$/, '');
                 const link = `${invitationBaseUrl}/#invite-${result.id}-${result.token}`;
-                const label = document.createElement('p'); label.textContent = `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
+                const label = document.createElement('p'); label.textContent = i18n.language === 'cs' ? `Pozvánka pro ${result.email} platí 7 dní. Zkopíruj tento odkaz a pošli ho pozvanému:` : `Pozvánka pre ${result.email} platí 7 dní. Skopíruj tento odkaz a pošli ho pozvanému:`;
                 const visibleLink = document.createElement('code'); visibleLink.className = 'project-invitation-link'; visibleLink.textContent = link;
                 const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'button button-primary invitation-copy-button'; copy.textContent = 'Kopírovať odkaz'; copy.addEventListener('click', async () => {
                     let copied = false;
@@ -1560,7 +1609,7 @@
             const text = document.createElement('div'); const title = document.createElement('h2'); title.textContent = project.name; const desc = document.createElement('p'); desc.textContent = project.description || 'Bez popisu'; text.append(title, desc);
             const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button button-primary'; edit.dataset.action = 'project-edit'; edit.dataset.projectId = String(project.id); edit.textContent = 'Upraviť projekt'; head.append(icon, text, edit); root.append(head);
             edit.hidden = !project.can_manage_project;
-            const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
+            const summary = document.createElement('p'); summary.className = 'project-detail-summary'; summary.textContent = i18n.language === 'cs' ? `${counts.open} otevřených · ${counts.done} dokončených z ${counts.total} úkolů` : `${counts.open} otvorených · ${counts.done} hotových z ${counts.total} úloh`; root.append(summary);
             // Checkboxy sú zatiaľ iba náhľad serverových práv; ich editovanie patrí do kroku 2.
             const memberSection = document.createElement('details'); memberSection.className = 'task-section project-members';
             const memberHeading = document.createElement('summary'); memberHeading.className = 'project-task-heading project-collapsible-heading'; memberHeading.textContent = `Členovia projektu (${members.length})`; memberSection.append(memberHeading);
@@ -1568,12 +1617,12 @@
                 ['Projekt', [
                     ['can_view_project', 'Zobraziť projekt'], ['can_manage_project', 'Spravovať projekt'], ['can_manage_members', 'Spravovať členov']
                 ]],
-                ['Úlohy', [
+                [i18n.language === 'cs' ? 'Úkoly' : 'Úlohy', [
                     ['can_view_tasks', 'Zobraziť úlohy'], ['can_add_tasks', 'Pridávať úlohy'], ['can_complete_tasks', 'Dokončiť úlohy ostatných'],
                     ['can_edit_own_tasks', 'Upraviť vlastné úlohy'], ['can_edit_other_tasks', 'Upraviť úlohy ostatných'],
                     ['can_delete_own_tasks', 'Zmazať vlastné úlohy'], ['can_delete_other_tasks', 'Zmazať úlohy ostatných']
                 ]],
-                ['Komentáre', [
+                [i18n.language === 'cs' ? 'Komentáře' : 'Komentáre', [
                     ['can_view_comments', 'Zobraziť komentáre'], ['can_add_comments', 'Pridávať komentáre'],
                     ['can_edit_own_comments', 'Upraviť vlastné komentáre'], ['can_edit_other_comments', 'Upraviť komentáre ostatných'],
                     ['can_delete_own_comments', 'Zmazať vlastné komentáre'], ['can_delete_other_comments', 'Zmazať komentáre ostatných']
@@ -1594,7 +1643,7 @@
                 identity.append(name, email);
                 const meta = document.createElement('span'); meta.className = 'project-member-meta';
                 const role = document.createElement('span'); role.className = 'project-member-role'; role.textContent = member.is_owner ? 'Vlastník' : 'Člen';
-                const added = document.createElement('span'); added.className = 'project-member-added'; added.textContent = `Pridaný ${member.added_at ? new Date(member.added_at).toLocaleDateString('sk-SK') : '—'}`;
+                const added = document.createElement('span'); added.className = 'project-member-added'; added.textContent = `${i18n.language === 'cs' ? 'Přidán' : 'Pridaný'} ${member.added_at ? new Date(member.added_at).toLocaleDateString(i18n.locale()) : '—'}`;
                 meta.append(role, added); summaryRow.append(identity, meta); item.append(summaryRow);
                 const permissionPanel = document.createElement('div'); permissionPanel.className = 'project-member-permissions';
                 permissionGroups.forEach(([groupName, permissions]) => {
@@ -1642,10 +1691,10 @@
             }
             const openTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && !task.is_done);
             const doneTasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id) && task.is_done);
-            [["Otvorené", openTasks], ["Hotové", doneTasks]].forEach(([label, tasks]) => {
+            [[i18n.language === 'cs' ? 'Otevřené' : 'Otvorené', openTasks], [i18n.language === 'cs' ? 'Dokončené' : 'Hotové', doneTasks]].forEach(([label, tasks]) => {
                 const section = document.createElement('section'); section.className = 'task-section'; const h = document.createElement('h3'); h.className = 'project-task-heading'; h.textContent = `${label} (${tasks.length})`; section.append(h);
                 if (tasks.length) tasks.forEach((task) => section.append(taskList.makeCard(task, new Map(state.projects.map((item) => [Number(item.id), item])))));
-                else { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = label === 'Otvorené' ? 'V tomto projekte nie sú otvorené úlohy.' : 'Zatiaľ tu nie sú hotové úlohy.'; section.append(empty); }
+                else { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = label === (i18n.language === 'cs' ? 'Otevřené' : 'Otvorené') ? (i18n.language === 'cs' ? 'V tomto projektu nejsou otevřené žádné úkoly.' : 'V tomto projekte nie sú otvorené úlohy.') : i18n.language === 'cs' ? 'Zatím tu nejsou dokončené žádné úkoly.' : 'Zatiaľ tu nie sú hotové úlohy.'; section.append(empty); }
                 root.append(section);
             });
             // Obsah projektu je prehľadnejší pred správou členov a pozvánok.
@@ -1674,7 +1723,7 @@
                         const row = document.createElement('li');
                         const title = document.createElement('strong'); title.textContent = labels[item.event_type] || 'Zmena v projekte';
                         const by = document.createElement('span'); by.textContent = item.actor_name ? `Používateľ: ${item.actor_name}` : 'Používateľský účet už nie je dostupný';
-                        const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString('sk-SK');
+                        const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString(i18n.locale());
                         row.append(title, by, time); list.append(row);
                     });
                     before = page?.next_before ?? null;
@@ -1700,7 +1749,7 @@
                 if (!invitation) {
                     message.textContent = 'Pozvánka už nie je platná alebo je určená inému účtu.';
                     document.querySelectorAll('[data-action="invitation-accept"], [data-action="invitation-decline"]').forEach((button) => { button.disabled = true; });
-                } else message.textContent = `Projekt „${invitation.project_name}“ ťa pozýva. Prihlásený účet: ${state.user.email}.`;
+                } else message.textContent = i18n.language === 'cs' ? `Projekt „${invitation.project_name}“ tě zve. Přihlášený účet: ${state.user.email}.` : `Projekt „${invitation.project_name}“ ťa pozýva. Prihlásený účet: ${state.user.email}.`;
             } catch (error) { if (message) message.textContent = error.message || 'Pozvánku sa nepodarilo načítať.'; }
         },
         async loadSidebarProjects(routeSequence) {
@@ -1886,14 +1935,15 @@
         },
         async clearCompleted(button) {
             const count = state.tasks.filter((task) => task.is_done).length;
-            if (!count) { ui.showToast('Nemáš žiadne hotové úlohy.', 'info'); return; }
-            if (!await ui.confirm(`Naozaj chceš zmazať ${count} hotových ${count === 1 ? 'úlohu' : 'úloh'}?`, 'Zmazať hotové úlohy?', 'Zmazať všetky')) return;
+            if (!count) { ui.showToast(i18n.language === 'cs' ? 'Nemáš žádné dokončené úkoly.' : 'Nemáš žiadne hotové úlohy.', 'info'); return; }
+            const taskWord = i18n.language === 'cs' ? (count === 1 ? 'úkol' : 'úkolů') : (count === 1 ? 'úlohu' : 'úloh');
+            if (!await ui.confirm(i18n.language === 'cs' ? `Opravdu chceš smazat ${count} dokončených ${taskWord}?` : `Naozaj chceš zmazať ${count} hotových ${taskWord}?`, i18n.language === 'cs' ? 'Smazat dokončené úkoly?' : 'Zmazať hotové úlohy?', i18n.language === 'cs' ? 'Smazat všechny' : 'Zmazať všetky')) return;
             button.disabled = true;
             try {
                 await api.request('DELETE', '/api/tasks/completed');
                 state.tasks = state.tasks.filter((task) => !task.is_done);
                 this.renderCompleted();
-                ui.showToast('Hotové úlohy boli zmazané.', 'success');
+                ui.showToast(i18n.language === 'cs' ? 'Dokončené úkoly byly smazány.' : 'Hotové úlohy boli zmazané.', 'success');
             } catch (error) { ui.showToast(error.message || 'Hotové úlohy sa nepodarilo zmazať.', 'error'); }
             finally { button.disabled = false; }
         },
@@ -2183,8 +2233,10 @@
     // Demo údaje zobraz iba pri lokálnom mocku, aby sa neplietli so skutočným účtom.
     const demoLoginHint = document.getElementById('demo-login-hint');
     if (demoLoginHint) demoLoginHint.hidden = !Boolean((window.TASKO_CONFIG || {}).demoMode);
-    taskForm.initEditor();
     i18n.apply();
+    taskForm.initEditor();
+    // Observer drží češtinu aj na prvkoch, ktoré API alebo obrazovky vykreslia až neskôr.
+    new MutationObserver(() => i18n.apply()).observe(document.body, { childList: true, characterData: true, subtree: true });
     dropdowns.init(document);
     datePicker.init(document);
     views.init();
