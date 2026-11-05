@@ -103,6 +103,10 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .pagination-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 18px 0; }
 .pagination-controls[hidden] { display: none; }
 .pagination-controls span { min-width: 110px; text-align: center; color: var(--text-muted); }
+/* Aktívne stránky majú plnú akcentovú farbu; zosvetlené ostávajú iba skutočne nedostupné smery. */
+.pagination-controls .button { min-height: 40px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); color: var(--accent-contrast); background: var(--accent); }
+.pagination-controls .button:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 82%, var(--ink)); }
+.pagination-controls .button:disabled { border-color: var(--line); color: var(--muted); background: var(--surface); cursor: not-allowed; opacity: .55; }
 .task-scroll-sentinel { min-height: 1px; }
 /* Filtre sa pri úzkom zobrazení skladajú do dvoch stĺpcov, aby audit ostal ovládateľný na mobile. */
 .audit-card { display: grid; gap: 16px; }
