@@ -1,0 +1,3 @@
+# Ak Apache používa koreň repozitára ako DocumentRoot, otvorí sa aplikácia v public/.
+RewriteEngine On
+RewriteRule ^$ /public/ [R=302,L]
