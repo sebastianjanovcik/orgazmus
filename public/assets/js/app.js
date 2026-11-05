@@ -1621,31 +1621,33 @@
             this.loadSharedSidebar();
         },
         async loadSharedSidebar() {
-            const list = document.getElementById('sidebar-shared-list');
-            if (!list || !state.user) return;
+            const lists = ['sidebar-shared-list', 'drawer-shared-list'].map((id) => document.getElementById(id)).filter(Boolean);
+            if (!lists.length || !state.user) return;
             const request = (this.sharedRequest || 0) + 1;
             this.sharedRequest = request;
             try {
                 const shared = await api.request('GET', '/api/shared');
-                if (request !== this.sharedRequest || !list.isConnected) return;
+                if (request !== this.sharedRequest) return;
                 state.shared = { projects: Array.isArray(shared.projects) ? shared.projects : [], tasks: Array.isArray(shared.tasks) ? shared.tasks : [] };
-                list.replaceChildren();
-                state.shared.projects.forEach((project) => {
-                    const link = document.createElement('a'); link.className = 'project-link'; link.href = `#project-${encodeURIComponent(project.id)}`; link.dataset.action = 'navigate';
-                    const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = this.icons[project.icon] || '📁';
-                    const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = project.name;
-                    link.append(icon, name); list.append(link);
+                lists.filter((list) => list.isConnected).forEach((list) => {
+                    list.replaceChildren();
+                    state.shared.projects.forEach((project) => {
+                        const link = document.createElement('a'); link.className = 'project-link'; link.href = `#project-${encodeURIComponent(project.id)}`; link.dataset.action = 'navigate';
+                        const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = this.icons[project.icon] || '📁';
+                        const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = project.name;
+                        link.append(icon, name); list.append(link);
+                    });
+                    state.shared.tasks.forEach((task) => {
+                        const link = document.createElement('a'); link.className = 'project-link'; link.href = `#task-${encodeURIComponent(task.id)}`; link.dataset.action = 'shared-task'; link.dataset.taskId = String(task.id);
+                        const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '☷';
+                        const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = task.title;
+                        link.append(icon, name); list.append(link);
+                    });
+                    if (!list.children.length) { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš zdieľaný projekt ani úlohu.'; list.append(empty); }
                 });
-                state.shared.tasks.forEach((task) => {
-                    const link = document.createElement('a'); link.className = 'project-link'; link.href = `#task-${encodeURIComponent(task.id)}`; link.dataset.action = 'shared-task'; link.dataset.taskId = String(task.id);
-                    const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '☷';
-                    const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = task.title;
-                    link.append(icon, name); list.append(link);
-                });
-                if (!list.children.length) { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš zdieľaný projekt ani úlohu.'; list.append(empty); }
             } catch (error) {
                 if (request !== this.sharedRequest) return;
-                list.textContent = error.message || 'Zdieľaný obsah sa nepodarilo načítať.';
+                lists.filter((list) => list.isConnected).forEach((list) => { list.textContent = error.message || 'Zdieľaný obsah sa nepodarilo načítať.'; });
             }
         },
         counts(project) {
