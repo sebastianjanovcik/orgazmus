@@ -136,6 +136,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     project_id BIGINT UNSIGNED NOT NULL,
     created_by BIGINT UNSIGNED NOT NULL,
+    assignee_id BIGINT UNSIGNED NULL,
+    reviewer_id BIGINT UNSIGNED NULL,
     title VARCHAR(150) NOT NULL,
     description TEXT NULL,
     priority TINYINT UNSIGNED NOT NULL DEFAULT 2,
@@ -147,13 +149,40 @@ CREATE TABLE IF NOT EXISTS tasks (
     PRIMARY KEY (id),
     KEY idx_tasks_project_state_date (project_id, is_done, due_date, priority, id),
     KEY idx_tasks_due_date (due_date),
+    KEY idx_tasks_assignee (assignee_id),
+    KEY idx_tasks_reviewer (reviewer_id),
     CONSTRAINT fk_tasks_project FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
     CONSTRAINT fk_tasks_creator FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_tasks_assignee FOREIGN KEY (assignee_id) REFERENCES users (id) ON DELETE SET NULL,
+    CONSTRAINT fk_tasks_reviewer FOREIGN KEY (reviewer_id) REFERENCES users (id) ON DELETE SET NULL,
     CONSTRAINT chk_tasks_priority CHECK (priority BETWEEN 1 AND 4),
     CONSTRAINT chk_tasks_completion CHECK (
         (is_done = FALSE AND completed_at IS NULL) OR
         (is_done = TRUE AND completed_at IS NOT NULL)
     )
+) ENGINE=InnoDB;
+
+-- Samostatný prístup k úlohe neudeľuje členstvo v projekte; práva sa kontrolujú pri každom čítaní a zápise.
+CREATE TABLE IF NOT EXISTS task_shares (
+    task_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    can_view BOOLEAN NOT NULL DEFAULT TRUE,
+    can_edit BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete BOOLEAN NOT NULL DEFAULT FALSE,
+    can_complete BOOLEAN NOT NULL DEFAULT FALSE,
+    can_view_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_add_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_own_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_edit_other_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_own_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    can_delete_other_comments BOOLEAN NOT NULL DEFAULT FALSE,
+    shared_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (task_id, user_id),
+    KEY idx_task_shares_user (user_id, task_id),
+    CONSTRAINT fk_task_shares_task FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_shares_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_shares_actor FOREIGN KEY (shared_by) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS comments (

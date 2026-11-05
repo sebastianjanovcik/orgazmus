@@ -302,6 +302,13 @@ try {
     if (preg_match('#^/api/tasks/([^/]+)/(complete|uncomplete)$#D', $route, $taskActionRoute) === 1) {
         $allowedMethods[$route] = ['POST'];
     }
+    if (preg_match('#^/api/tasks/([^/]+)/shares(?:/([^/]+))?$#D', $route) === 1) {
+        $allowedMethods[$route] = str_ends_with($route, '/shares') ? ['GET', 'POST'] : ['DELETE'];
+    }
+    if (preg_match('#^/api/tasks/([^/]+)/participants$#D', $route) === 1) {
+        $allowedMethods[$route] = ['GET'];
+    }
+    if ($route === '/api/shared') $allowedMethods[$route] = ['GET'];
     if ($route === '/api/tasks/completed') {
         $allowedMethods[$route] = ['DELETE'];
     }
@@ -578,6 +585,15 @@ try {
         $pdo = tasko_db();
 
         if ($method === 'GET') {
+            $visibility = $_GET['visibility'] ?? 'all';
+            if (!is_string($visibility) || !in_array($visibility, ['all', 'mine', 'shared'], true)) {
+                throw new TaskoHttpException(400, 'bad_request', 'Filter visibility musí byť all, mine alebo shared.');
+            }
+            $visibilitySql = match ($visibility) {
+                'mine' => 'p.user_id = :owner_id',
+                'shared' => 'p.user_id <> :owner_id AND pm.can_view_project = 1',
+                default => '(p.user_id = :owner_id OR pm.can_view_project = 1)',
+            };
             $statement = $pdo->prepare(
                 'SELECT p.id, p.user_id, p.name, p.description, p.icon, p.color, pm.can_manage_project,
                         COUNT(t.id) AS task_count,
@@ -585,7 +601,7 @@ try {
                  FROM projects p
                  LEFT JOIN tasks t ON t.project_id = p.id
                  LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
-                 WHERE p.user_id = :owner_id OR pm.can_view_project = 1
+                 WHERE ' . $visibilitySql . '
                  GROUP BY p.id, p.name, p.description, p.icon, p.color, pm.can_manage_project
                  ORDER BY p.id'
             );
@@ -1004,6 +1020,86 @@ try {
         tasko_json_response(200, tasko_project_row($pdo, $newOwnerId, $projectId));
     }
 
+    // Zdieľanie úlohy mení iba prístup k danému záznamu; projektové práva ostávajú oddelené.
+    if (preg_match('#^/api/tasks/([^/]+)/shares(?:/([^/]+))?$#D', $route, $shareRoute) === 1 && in_array($method, ['GET', 'POST', 'DELETE'], true)) {
+        $user = tasko_authenticated_user();
+        if ($method !== 'GET') tasko_require_same_origin();
+        if (!tasko_validate_id($shareRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        $pdo = tasko_db();
+        $task = tasko_task_find($pdo, (int) $user['id'], (int) $shareRoute[1]);
+        $manager = $pdo->prepare('SELECT p.user_id, pm.can_manage_project FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id WHERE p.id = :project_id');
+        $manager->execute(['user_id' => (int) $user['id'], 'project_id' => (int) $task['project_id']]);
+        $managerRow = $manager->fetch() ?: [];
+        $canManage = (int) ($managerRow['user_id'] ?? 0) === (int) $user['id'] || (bool) ($managerRow['can_manage_project'] ?? false) || (int) $task['created_by'] === (int) $user['id'];
+        if (!$canManage) throw new TaskoHttpException(403, 'forbidden', 'Zdieľanie tejto úlohy môže spravovať jej tvorca alebo správca projektu.');
+        if ($method === 'GET') {
+            $list = $pdo->prepare('SELECT s.user_id, u.name, u.email, s.can_view, s.can_edit, s.can_delete, s.can_complete, s.can_view_comments, s.can_add_comments, s.can_edit_own_comments, s.can_edit_other_comments, s.can_delete_own_comments, s.can_delete_other_comments FROM task_shares s INNER JOIN users u ON u.id = s.user_id WHERE s.task_id = :task_id ORDER BY u.name');
+            $list->execute(['task_id' => (int) $task['id']]);
+            $rights = ['can_view', 'can_edit', 'can_delete', 'can_complete', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments', 'can_edit_other_comments', 'can_delete_own_comments', 'can_delete_other_comments'];
+            $rows = array_map(static function (array $row) use ($rights): array { foreach ($rights as $key) $row[$key] = (bool) $row[$key]; $row['user_id'] = (int) $row['user_id']; return $row; }, $list->fetchAll());
+            tasko_json_response(200, $rows);
+        }
+        if ($method === 'DELETE') {
+            if (!isset($shareRoute[2]) || !tasko_validate_id($shareRoute[2])) throw new TaskoHttpException(404, 'not_found', 'Zdieľanie sa nenašlo.');
+            $pdo->beginTransaction();
+            $remove = $pdo->prepare('DELETE FROM task_shares WHERE task_id = :task_id AND user_id = :user_id');
+            $remove->execute(['task_id' => (int) $task['id'], 'user_id' => (int) $shareRoute[2]]);
+            if ($remove->rowCount() > 0) tasko_record_audit_event($pdo, (int) $task['project_id'], 'task_share', (int) $task['id'], (int) $user['id'], 'task_share_revoked', ['recipient_id' => (int) $shareRoute[2]]);
+            $pdo->commit();
+            tasko_json_response(204);
+        }
+        $input = tasko_read_json_body();
+        $allowed = ['can_view', 'can_edit', 'can_delete', 'can_complete', 'can_view_comments', 'can_add_comments', 'can_edit_own_comments', 'can_edit_other_comments', 'can_delete_own_comments', 'can_delete_other_comments'];
+        $unknown = array_diff(array_keys($input), ['email', ...$allowed]);
+        $email = filter_var($input['email'] ?? null, FILTER_VALIDATE_EMAIL);
+        $errors = [];
+        if ($unknown !== []) $errors['share'] = 'Požiadavka obsahuje nepovolené polia.';
+        if (!is_string($email)) $errors['email'] = 'Zadaj platný e-mail existujúceho účtu.';
+        $permissions = ['can_view' => true];
+        foreach (array_slice($allowed, 1) as $field) {
+            $value = $input[$field] ?? false;
+            if (!is_bool($value)) $errors[$field] = 'Oprávnenie musí byť zapnuté alebo vypnuté.';
+            $permissions[$field] = $value;
+        }
+        if (array_key_exists('can_view', $input) && $input['can_view'] !== true) $errors['can_view'] = 'Zdieľaná úloha musí byť viditeľná.';
+        if ($errors !== []) tasko_validation_error($errors);
+        $recipient = $pdo->prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(:email)');
+        $recipient->execute(['email' => $email]);
+        $recipientId = (int) ($recipient->fetchColumn() ?: 0);
+        if ($recipientId === 0 || $recipientId === (int) $user['id']) throw new TaskoHttpException(422, 'validation_failed', 'Vyber iný e-mail existujúceho účtu.');
+        $columns = implode(', ', array_keys($permissions));
+        $values = implode(', ', array_map(static fn (string $key): string => ':' . $key, array_keys($permissions)));
+        $updates = implode(', ', array_map(static fn (string $key): string => "$key = VALUES($key)", array_keys($permissions)));
+        $pdo->beginTransaction();
+        $pdo->prepare("INSERT INTO task_shares (task_id, user_id, shared_by, $columns) VALUES (:task_id, :user_id, :shared_by, $values) ON DUPLICATE KEY UPDATE $updates, shared_by = VALUES(shared_by)")
+            ->execute($permissions + ['task_id' => (int) $task['id'], 'user_id' => $recipientId, 'shared_by' => (int) $user['id']]);
+        tasko_record_audit_event($pdo, (int) $task['project_id'], 'task_share', (int) $task['id'], (int) $user['id'], 'task_shared', ['recipient_id' => $recipientId, 'permissions' => $permissions]);
+        $pdo->commit();
+        tasko_json_response(200, ['user_id' => $recipientId, 'email' => $email] + $permissions);
+    }
+
+    if (preg_match('#^/api/tasks/([^/]+)/participants$#D', $route, $participantsRoute) === 1 && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($participantsRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        $pdo = tasko_db();
+        $task = tasko_task_find($pdo, (int) $user['id'], (int) $participantsRoute[1]);
+        tasko_require_task_right($pdo, (int) $task['id'], (int) $user['id'], 'edit');
+        $members = $pdo->prepare('SELECT DISTINCT u.id, u.name FROM users u WHERE u.id = (SELECT user_id FROM projects WHERE id = :owner_project) OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = :member_project AND pm.user_id = u.id AND pm.can_view_tasks = 1) OR EXISTS (SELECT 1 FROM task_shares ts WHERE ts.task_id = :share_task AND ts.user_id = u.id AND ts.can_view = 1) ORDER BY u.name');
+        $members->execute(['owner_project' => (int) $task['project_id'], 'member_project' => (int) $task['project_id'], 'share_task' => (int) $task['id']]);
+        tasko_json_response(200, array_map(static fn (array $member): array => ['id' => (int) $member['id'], 'name' => (string) $member['name']], $members->fetchAll()));
+    }
+
+    if ($route === '/api/shared' && $method === 'GET') {
+        $user = tasko_authenticated_user();
+        $pdo = tasko_db();
+        $projects = $pdo->prepare('SELECT p.id, p.name, p.icon, p.color FROM projects p INNER JOIN project_members pm ON pm.project_id = p.id WHERE pm.user_id = :user_id AND p.user_id <> :owner_id AND pm.can_view_project = 1 ORDER BY p.name');
+        $projects->execute(['user_id' => (int) $user['id'], 'owner_id' => (int) $user['id']]);
+        $tasks = $pdo->prepare('SELECT t.id, t.title, t.due_date FROM task_shares s INNER JOIN tasks t ON t.id = s.task_id WHERE s.user_id = :user_id ORDER BY t.due_date, t.id');
+        $tasks->execute(['user_id' => (int) $user['id']]);
+        $sharedTasks = array_map(static fn (array $task): array => ['id' => (int) $task['id'], 'title' => (string) $task['title'], 'due_date' => (string) $task['due_date']], $tasks->fetchAll());
+        tasko_json_response(200, ['projects' => $projects->fetchAll(), 'tasks' => $sharedTasks]);
+    }
+
     if ($route === '/api/tasks' && in_array($method, ['GET', 'POST'], true)) {
         $user = tasko_authenticated_user();
         if ($method === 'POST') {
@@ -1098,14 +1194,14 @@ try {
         $taskId = (int) $commentsRoute[1];
         $pdo = tasko_db();
         $task = tasko_task_find($pdo, $userId, $taskId);
-        tasko_require_project_permission($pdo, (int) $task['project_id'], $userId, 'can_view_comments');
+        tasko_require_task_right($pdo, $taskId, $userId, 'view_comments');
 
         if ($method === 'GET') {
             tasko_json_response(200, tasko_comments_find($pdo, $taskId, $userId));
         }
 
         tasko_require_same_origin();
-        tasko_require_project_permission($pdo, (int) $task['project_id'], $userId, 'can_add_comments');
+        tasko_require_task_right($pdo, $taskId, $userId, 'add_comments');
         $input = tasko_read_json_body();
         $unknown = array_diff(array_keys($input), ['body', 'parent_id', 'depth']);
         $body = tasko_validate_comment_body($input['body'] ?? null);
@@ -1168,15 +1264,17 @@ try {
         $row = $created->fetch();
         if (!is_array($row)) throw new RuntimeException('Vložený komentár sa nepodarilo načítať.');
         $commentRights = $pdo->prepare(
-            'SELECT p.user_id AS owner_id, pm.can_edit_own_comments, pm.can_delete_own_comments
+            'SELECT p.user_id AS owner_id, pm.can_edit_own_comments, pm.can_delete_own_comments,
+                    ts.can_edit_own_comments AS share_edit_own, ts.can_delete_own_comments AS share_delete_own
              FROM tasks t INNER JOIN projects p ON p.id = t.project_id
              LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id
+             LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = :share_user_id
              WHERE t.id = :task_id'
         );
-        $commentRights->execute(['user_id' => $userId, 'task_id' => $taskId]);
+        $commentRights->execute(['user_id' => $userId, 'share_user_id' => $userId, 'task_id' => $taskId]);
         $rights = $commentRights->fetch() ?: [];
         $owner = (int) ($rights['owner_id'] ?? 0) === $userId;
-        tasko_json_response(201, tasko_comment_data($row, $userId, $owner || (bool) ($rights['can_edit_own_comments'] ?? false), $owner || (bool) ($rights['can_delete_own_comments'] ?? false)));
+        tasko_json_response(201, tasko_comment_data($row, $userId, $owner || (bool) ($rights['can_edit_own_comments'] ?? false) || (bool) ($rights['share_edit_own'] ?? false), $owner || (bool) ($rights['can_delete_own_comments'] ?? false) || (bool) ($rights['share_delete_own'] ?? false)));
     }
 
     if (preg_match('#^/api/comments/([^/]+)$#D', $route, $commentRoute) === 1 && in_array($method, ['PATCH', 'DELETE'], true)) {
@@ -1191,7 +1289,7 @@ try {
         $comment->execute(['id' => (int) $commentRoute[1]]);
         $row = $comment->fetch();
         if (!is_array($row)) throw new TaskoHttpException(404, 'not_found', 'Komentár sa nenašiel.');
-        tasko_require_record_permission($pdo, (int) $row['project_id'], (int) $user['id'], (int) $row['author_id'], 'comments', $method === 'PATCH' ? 'edit' : 'delete');
+        tasko_require_task_right($pdo, (int) $row['task_id'], (int) $user['id'], ($method === 'PATCH' ? 'edit_' : 'delete_') . ((int) $row['author_id'] === (int) $user['id'] ? 'own' : 'other') . '_comments');
         if ($method === 'PATCH') {
             $input = tasko_read_json_body();
             if (array_diff(array_keys($input), ['body']) !== []) tasko_validation_error(['comment' => 'Pošli iba text komentára.']);
@@ -1228,24 +1326,12 @@ try {
         $taskId = (int) $taskActionRoute[1];
         $pdo = tasko_db();
         $task = tasko_task_find($pdo, (int) $user['id'], $taskId);
-        if ((int) $task['created_by'] !== (int) $user['id']) {
-            tasko_require_project_permission($pdo, (int) $task['project_id'], (int) $user['id'], 'can_complete_tasks');
-        }
-        if ($taskActionRoute[2] === 'complete') {
-            $update = $pdo->prepare(
-                'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
-                 SET t.is_done = 1, t.completed_at = COALESCE(t.completed_at, UTC_TIMESTAMP())
-                 WHERE t.id = :task_id AND (p.user_id = :user_id OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = :member_id AND (pm.can_complete_tasks = 1 OR t.created_by = :creator_id)))'
-            );
-        } else {
-            $update = $pdo->prepare(
-                'UPDATE tasks t INNER JOIN projects p ON p.id = t.project_id
-                 SET t.is_done = 0, t.completed_at = NULL
-                 WHERE t.id = :task_id AND (p.user_id = :user_id OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = :member_id AND (pm.can_complete_tasks = 1 OR t.created_by = :creator_id)))'
-            );
-        }
+        tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'complete');
+        $update = $taskActionRoute[2] === 'complete'
+            ? $pdo->prepare('UPDATE tasks SET is_done = 1, completed_at = COALESCE(completed_at, UTC_TIMESTAMP()) WHERE id = :task_id')
+            : $pdo->prepare('UPDATE tasks SET is_done = 0, completed_at = NULL WHERE id = :task_id');
         $pdo->beginTransaction();
-        $update->execute(['task_id' => $taskId, 'user_id' => (int) $user['id'], 'member_id' => (int) $user['id'], 'creator_id' => (int) $user['id']]);
+        $update->execute(['task_id' => $taskId]);
         $completed = $taskActionRoute[2] === 'complete';
         if ((bool) $task['is_done'] !== $completed) {
             tasko_record_audit_event($pdo, (int) $task['project_id'], 'task', $taskId, (int) $user['id'], $completed ? 'task_completed' : 'task_reopened', ['changes' => ['is_done' => ['old' => (bool) $task['is_done'], 'new' => $completed]]]);
@@ -1266,7 +1352,7 @@ try {
         if ($method === 'GET') tasko_json_response(200, $current);
         tasko_require_same_origin();
         if ($method === 'DELETE') {
-            tasko_require_record_permission($pdo, (int) $current['project_id'], (int) $user['id'], (int) $current['created_by'], 'tasks', 'delete');
+            tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'delete');
             $pdo->beginTransaction();
             $pdo->prepare('SELECT id FROM tasks WHERE id = :task_id FOR UPDATE')->execute(['task_id' => $taskId]);
             $taskComments = $pdo->prepare('SELECT id, parent_id, body FROM comments WHERE task_id = :task_id');
@@ -1278,11 +1364,11 @@ try {
             tasko_json_response(204);
         }
 
-        tasko_require_record_permission($pdo, (int) $current['project_id'], (int) $user['id'], (int) $current['created_by'], 'tasks', 'edit');
+        tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'edit');
 
         $input = tasko_read_json_body();
         // Povolené názvy polí tvoria aj zoznam SQL identifikátorov; hodnoty ostávajú parametrizované.
-        $allowedFields = ['title', 'description', 'project_id', 'priority', 'due_date'];
+        $allowedFields = ['title', 'description', 'project_id', 'priority', 'due_date', 'assignee_id', 'reviewer_id'];
         $unknown = array_diff(array_keys($input), $allowedFields);
         if ($unknown !== [] || $input === []) {
             tasko_validation_error(['task' => 'Pošli aspoň jedno povolené pole úlohy.']);
@@ -1326,6 +1412,18 @@ try {
         if (array_key_exists('due_date', $input)) {
             $values['due_date'] = $input['due_date'];
             if (!tasko_validate_date($values['due_date'])) $fields['due_date'] = 'Zadaj platný dátum YYYY-MM-DD.';
+        }
+        foreach (['assignee_id', 'reviewer_id'] as $field) {
+            if (!array_key_exists($field, $input)) continue;
+            $candidate = $input[$field];
+            if ($candidate !== null && !tasko_validate_id($candidate)) { $fields[$field] = 'Vyber používateľa s prístupom k úlohe.'; continue; }
+            if ($candidate !== null) {
+                $assignmentProjectId = (int) ($values['project_id'] ?? $current['project_id']);
+                $eligible = $pdo->prepare('SELECT 1 FROM projects p WHERE p.id = :owner_project AND p.user_id = :owner_user UNION SELECT 1 FROM project_members pm WHERE pm.project_id = :member_project AND pm.user_id = :member_user AND pm.can_view_tasks = 1 UNION SELECT 1 FROM task_shares ts WHERE ts.task_id = :task_id AND ts.user_id = :share_user AND ts.can_view = 1');
+                $eligible->execute(['owner_project' => $assignmentProjectId, 'owner_user' => (int) $candidate, 'member_project' => $assignmentProjectId, 'member_user' => (int) $candidate, 'task_id' => $taskId, 'share_user' => (int) $candidate]);
+                if (!$eligible->fetchColumn()) $fields[$field] = 'Používateľ nemá prístup k tejto úlohe.';
+                else $values[$field] = (int) $candidate;
+            } else $values[$field] = null;
         }
         if ($fields !== []) tasko_validation_error($fields);
 

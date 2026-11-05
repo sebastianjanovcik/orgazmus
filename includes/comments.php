@@ -22,12 +22,15 @@ function tasko_comments_find(PDO $pdo, int $taskId, int $userId): array
 {
     $access = $pdo->prepare(
         'SELECT p.user_id AS owner_id, pm.can_edit_own_comments, pm.can_edit_other_comments,
-                pm.can_delete_own_comments, pm.can_delete_other_comments
+                pm.can_delete_own_comments, pm.can_delete_other_comments,
+                ts.can_edit_own_comments AS share_edit_own, ts.can_edit_other_comments AS share_edit_other,
+                ts.can_delete_own_comments AS share_delete_own, ts.can_delete_other_comments AS share_delete_other
          FROM tasks t INNER JOIN projects p ON p.id = t.project_id
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :user_id
+         LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = :share_user_id
          WHERE t.id = :task_id'
     );
-    $access->execute(['user_id' => $userId, 'task_id' => $taskId]);
+    $access->execute(['user_id' => $userId, 'share_user_id' => $userId, 'task_id' => $taskId]);
     $rights = $access->fetch() ?: [];
     $statement = $pdo->prepare(
         'WITH RECURSIVE comment_tree AS (
@@ -51,8 +54,8 @@ function tasko_comments_find(PDO $pdo, int $taskId, int $userId): array
         static function (array $row) use ($userId, $rights): array {
             $owner = (int) ($rights['owner_id'] ?? 0) === $userId;
             $own = (int) $row['author_id'] === $userId;
-            return tasko_comment_data($row, $userId, $owner || (bool) ($rights[$own ? 'can_edit_own_comments' : 'can_edit_other_comments'] ?? false),
-                $owner || (bool) ($rights[$own ? 'can_delete_own_comments' : 'can_delete_other_comments'] ?? false));
+            return tasko_comment_data($row, $userId, $owner || (bool) ($rights[$own ? 'can_edit_own_comments' : 'can_edit_other_comments'] ?? false) || (bool) ($rights[$own ? 'share_edit_own' : 'share_edit_other'] ?? false),
+                $owner || (bool) ($rights[$own ? 'can_delete_own_comments' : 'can_delete_other_comments'] ?? false) || (bool) ($rights[$own ? 'share_delete_own' : 'share_delete_other'] ?? false));
         },
         $statement->fetchAll()
     );

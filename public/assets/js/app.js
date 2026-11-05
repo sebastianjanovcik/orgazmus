@@ -237,7 +237,7 @@
         }
     };
 
-    const state = { routeSequence: 0, user: null, projects: [], tasks: [], projectMembers: [], taskFilter: 'all', authReady: false };
+    const state = { routeSequence: 0, user: null, projects: [], tasks: [], projectMembers: [], shared: { projects: [], tasks: [] }, taskFilter: 'all', authReady: false };
 
     /* Používateľská voľba témy sa uloží lokálne; režim systém preberie nastavenie zariadenia. */
     const theme = {
@@ -1069,8 +1069,7 @@
         filtered(tasks) {
             if (state.taskFilter === 'all') return tasks;
             return tasks.filter((task) => {
-                const project = state.projects.find((item) => Number(item.id) === Number(task.project_id));
-                const mine = Number(task.created_by) === Number(state.user?.id) && project?.is_owner !== false;
+                const mine = Number(task.created_by) === Number(state.user?.id);
                 return mine === (state.taskFilter === 'mine');
             });
         },
@@ -1162,6 +1161,14 @@
                     creator.textContent = `| ${i18n.language === 'cs' ? 'Přidal' : 'Pridal'} – ${task.creator_name}`;
                     meta.append(creator);
                 }
+            }
+            if (task.assignee_name) {
+                const assignee = document.createElement('span'); assignee.className = 'task-creator';
+                assignee.textContent = `| Vykonáva: ${task.assignee_name}`; meta.append(assignee);
+            }
+            if (task.reviewer_name) {
+                const reviewer = document.createElement('span'); reviewer.className = 'task-creator';
+                reviewer.textContent = `| Kontroluje: ${task.reviewer_name}`; meta.append(reviewer);
             }
             main.append(meta);
             const due = document.createElement('time');
@@ -1308,7 +1315,9 @@
             const facts = document.createElement('dl');
             [[ 'Priorita', this.priorities[Math.min(4, Math.max(1, Number(task.priority) || 2))] ],
                 [ 'Projekt', project ? project.name : 'Bez projektu' ], [ 'Termín', this.dateLabel(task.due_date) ],
-                [ 'Stav', task.is_done ? 'Hotová' : 'Otvorená' ]].forEach(([label, value]) => {
+                [ 'Stav', task.is_done ? 'Hotová' : 'Otvorená' ],
+                [ 'Vykonávajúci člen', task.assignee_name || 'Nepriradený' ],
+                [ 'Kontrolný člen', task.reviewer_name || 'Nepriradený' ]].forEach(([label, value]) => {
                 const term = document.createElement('dt'); term.textContent = label;
                 const detail = document.createElement('dd'); detail.textContent = value;
                 facts.append(term, detail);
@@ -1336,6 +1345,16 @@
                 actions.append(edit);
             }
             content.append(actions);
+            const canManageShares = Number(task.created_by) === Number(state.user?.id) || Boolean(project?.is_owner || project?.can_manage_project);
+            if (canManageShares) {
+                const section = document.createElement('section'); section.className = 'task-share-section'; section.setAttribute('aria-labelledby', 'task-share-heading');
+                const heading = document.createElement('h3'); heading.id = 'task-share-heading'; heading.textContent = 'Zdieľať úlohu'; section.append(heading);
+                const form = document.createElement('form'); form.className = 'task-share-form'; form.dataset.taskId = String(task.id);
+                form.innerHTML = '<label>E-mail používateľa<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Prístup<select name="role"><option value="viewer">Divák</option><option value="editor">Editor</option></select></label><label class="inline-check"><input name="comments" type="checkbox"> Povoliť komentáre</label><button class="button button-primary" type="submit">Zdieľať úlohu</button>';
+                const list = document.createElement('div'); list.className = 'task-share-list'; list.id = `task-share-list-${task.id}`; list.setAttribute('aria-live', 'polite');
+                for (let index = 0; index < 2; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-share-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
+                section.append(form, list); content.append(section); this.loadShares(task.id, list);
+            }
             if (router.current().name === 'calendar') {
                 // Kalendárový detail zachová vybraný deň aj pri rýchlom vytvorení ďalšej úlohy.
                 const addAnother = document.createElement('button');
@@ -1351,6 +1370,21 @@
             ui.openPanel('task-detail-panel');
             commentThreads.canAdd = Boolean(task.can_add_comments);
             commentThreads.load(task.id);
+        },
+        async loadShares(taskId, list) {
+            try {
+                const shares = await api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}/shares`);
+                if (!list.isConnected) return;
+                list.replaceChildren();
+                if (!shares.length) { list.textContent = 'Úloha zatiaľ nie je zdieľaná.'; return; }
+                shares.forEach((share) => {
+                    const row = document.createElement('div'); row.className = 'task-share-row';
+                    const identity = document.createElement('span'); identity.textContent = `${share.name} · ${share.email}`;
+                    const role = document.createElement('span'); role.textContent = share.can_edit ? 'Editor' : 'Divák';
+                    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button'; remove.dataset.action = 'task-share-remove'; remove.dataset.taskId = String(taskId); remove.dataset.userId = String(share.user_id); remove.textContent = 'Odobrať';
+                    row.append(identity, role, remove); list.append(row);
+                });
+            } catch (error) { if (list.isConnected) list.textContent = error.message || 'Zdieľanie sa nepodarilo načítať.'; }
         }
     };
 
@@ -1453,9 +1487,27 @@
                 option.value = String(project.id); option.textContent = project.name; option.dataset.userContent = 'true';
                 return option;
             }));
+            if (task && !state.projects.some((project) => Number(project.id) === Number(task.project_id))) {
+                select.add(new Option('Zdieľaná úloha', String(task.project_id)));
+            }
             const preferred = task ? task.project_id : state.projects[0]?.id;
             if (preferred != null) select.value = String(preferred);
             dropdowns.sync(select);
+            const assignments = document.getElementById('task-assignment-fields');
+            assignments.hidden = !task || !task.can_edit;
+            ['assignee_id', 'reviewer_id'].forEach((field) => form.elements[field].replaceChildren(new Option('Nepriradený', '')));
+            if (task && task.can_edit) {
+                api.request('GET', `/api/tasks/${encodeURIComponent(task.id)}/participants`).then((people) => {
+                    if (this.editingId !== task.id) return;
+                    ['assignee_id', 'reviewer_id'].forEach((field) => {
+                        const control = form.elements[field];
+                        const selected = task[field] == null ? '' : String(task[field]);
+                        control.replaceChildren(new Option('Nepriradený', ''));
+                        (Array.isArray(people) ? people : []).forEach((person) => control.add(new Option(person.name, String(person.id))));
+                        control.value = selected;
+                    });
+                }).catch((error) => ui.showToast(error.message || 'Členov s prístupom sa nepodarilo načítať.', 'error'));
+            }
             document.getElementById('task-panel-title').textContent = task ? 'Upraviť úlohu' : 'Nová úloha';
             i18n.apply(document.getElementById('task-panel'));
             document.querySelector('.task-delete-button').hidden = !task;
@@ -1471,6 +1523,10 @@
                 priority: Number(form.elements.priority.value), due_date: form.elements.due_date.value,
                 description: description || null
             };
+            if (this.editingId && !document.getElementById('task-assignment-fields').hidden) {
+                data.assignee_id = form.elements.assignee_id.value ? Number(form.elements.assignee_id.value) : null;
+                data.reviewer_id = form.elements.reviewer_id.value ? Number(form.elements.reviewer_id.value) : null;
+            }
             const fields = {};
             if (!title || title.length > 150) fields.title = 'Názov musí mať 1 až 150 znakov.';
             if (!data.project_id) fields.project_id = 'Vyber projekt.';
@@ -1528,7 +1584,7 @@
         colors: ['#6558d3', '#e28a42', '#4188c7', '#45a875', '#c45678', '#8a71d8', '#4e9b9b', '#bd9a36'],
         editingId: null,
         limitReached() {
-            return state.user?.plan !== 'premium' && state.projects.length >= 3;
+            return state.user?.plan !== 'premium' && state.projects.filter((project) => project.is_owner).length >= 3;
         },
         explainLimit() {
             ui.showToast('Plán Standard povoľuje najviac 3 projekty. Na vytvorenie ďalšieho projektu potrebuješ plán Premium.', 'error');
@@ -1551,7 +1607,7 @@
             const list = document.getElementById('sidebar-project-list');
             if (!list) return;
             list.replaceChildren();
-            state.projects.forEach((project) => {
+            state.projects.filter((project) => project.is_owner).forEach((project) => {
                 const link = document.createElement('a');
                 link.className = 'project-link'; link.href = `#project-${encodeURIComponent(project.id)}`;
                 link.dataset.action = 'navigate';
@@ -1562,6 +1618,35 @@
             });
             i18n.apply(list);
             this.updateCreateButtons();
+            this.loadSharedSidebar();
+        },
+        async loadSharedSidebar() {
+            const list = document.getElementById('sidebar-shared-list');
+            if (!list || !state.user) return;
+            const request = (this.sharedRequest || 0) + 1;
+            this.sharedRequest = request;
+            try {
+                const shared = await api.request('GET', '/api/shared');
+                if (request !== this.sharedRequest || !list.isConnected) return;
+                state.shared = { projects: Array.isArray(shared.projects) ? shared.projects : [], tasks: Array.isArray(shared.tasks) ? shared.tasks : [] };
+                list.replaceChildren();
+                state.shared.projects.forEach((project) => {
+                    const link = document.createElement('a'); link.className = 'project-link'; link.href = `#project-${encodeURIComponent(project.id)}`; link.dataset.action = 'navigate';
+                    const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = this.icons[project.icon] || '📁';
+                    const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = project.name;
+                    link.append(icon, name); list.append(link);
+                });
+                state.shared.tasks.forEach((task) => {
+                    const link = document.createElement('a'); link.className = 'project-link'; link.href = `#task-${encodeURIComponent(task.id)}`; link.dataset.action = 'shared-task'; link.dataset.taskId = String(task.id);
+                    const icon = document.createElement('span'); icon.className = 'project-link-icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = '☷';
+                    const name = document.createElement('span'); name.className = 'project-link-name'; name.textContent = task.title;
+                    link.append(icon, name); list.append(link);
+                });
+                if (!list.children.length) { const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš zdieľaný projekt ani úlohu.'; list.append(empty); }
+            } catch (error) {
+                if (request !== this.sharedRequest) return;
+                list.textContent = error.message || 'Zdieľaný obsah sa nepodarilo načítať.';
+            }
         },
         counts(project) {
             const tasks = state.tasks.filter((task) => Number(task.project_id) === Number(project.id));
@@ -1578,12 +1663,15 @@
             const standard = state.user?.plan !== 'premium';
             if (notice) {
                 notice.hidden = !standard;
-                notice.textContent = standard ? `Plán Standard umožňuje najviac 3 projekty. Používaš ${state.projects.length} z 3.` : 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.';
-                notice.classList.toggle('is-limit-reached', standard && state.projects.length >= 3);
+                const ownedCount = state.projects.filter((project) => project.is_owner).length;
+                notice.textContent = standard ? `Plán Standard umožňuje najviac 3 projekty. Používaš ${ownedCount} z 3.` : 'Plán Premium umožňuje vytvárať neobmedzený počet projektov.';
+                notice.classList.toggle('is-limit-reached', standard && ownedCount >= 3);
             }
             const projects = state.taskFilter === 'all' ? state.projects : state.projects.filter((project) => Boolean(project.is_owner) === (state.taskFilter === 'mine'));
             if (!projects.length) {
-                const empty = document.createElement('p'); empty.className = 'project-empty'; empty.textContent = 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.'; list.append(empty); i18n.apply(list); return;
+                const empty = document.createElement('p'); empty.className = 'project-empty';
+                empty.textContent = state.taskFilter === 'shared' ? 'Nemáš prístup k žiadnym zdieľaným projektom.' : state.taskFilter === 'mine' ? 'Zatiaľ nemáš vlastný projekt.' : 'Zatiaľ nemáš žiadny projekt. Vytvor si prvý a začni si organizovať úlohy.';
+                list.append(empty); i18n.apply(list); return;
             }
             projects.forEach((project) => {
                 const counts = this.counts(project);
@@ -2053,7 +2141,7 @@
             const end = components.addDays(info.endStr.slice(0, 10), -1);
             try {
                 const [tasksResult, projectsResult] = await Promise.allSettled([
-                    api.request('GET', `/api/tasks?from=${encodeURIComponent(info.startStr.slice(0, 10))}&to=${encodeURIComponent(end)}`),
+                    api.request('GET', `/api/tasks?from=${encodeURIComponent(info.startStr.slice(0, 10))}&to=${encodeURIComponent(end)}&visibility=${encodeURIComponent(state.taskFilter)}`),
                     api.request('GET', '/api/projects')
                 ]);
                 if (sequence !== this.calendarSequence || routeSequence !== state.routeSequence || router.current().name !== 'calendar') return;
@@ -2422,6 +2510,27 @@
             const task = state.tasks.find((item) => String(item.id) === this.closest('.task-card')?.dataset.taskId);
             if (task) taskList.showDetail(task);
         }
+        if (action === 'shared-task') {
+            event.preventDefault();
+            const taskId = this.dataset.taskId;
+            api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}`).then((task) => {
+                const index = state.tasks.findIndex((item) => Number(item.id) === Number(task.id));
+                if (index < 0) state.tasks.push(task); else state.tasks[index] = task;
+                taskList.showDetail(task);
+            }).catch((error) => ui.showToast(error.message || 'Zdieľaná úloha už nie je dostupná.', 'error'));
+        }
+        if (action === 'task-share-remove') {
+            const button = this;
+            if (!ui.confirm) return;
+            ui.confirm('Naozaj chceš odobrať prístup k tejto úlohe?', 'Odobrať zdieľanie?', 'Odobrať').then((confirmed) => {
+                if (!confirmed) return;
+                button.disabled = true;
+                api.request('DELETE', `/api/tasks/${encodeURIComponent(button.dataset.taskId)}/shares/${encodeURIComponent(button.dataset.userId)}`)
+                    .then(() => taskList.loadShares(button.dataset.taskId, button.closest('.task-share-list')))
+                    .catch((error) => ui.showToast(error.message || 'Zdieľanie sa nepodarilo odobrať.', 'error'))
+                    .finally(() => { button.disabled = false; });
+            });
+        }
         if (action === 'task-edit') {
             const task = state.tasks.find((item) => String(item.id) === this.dataset.taskId);
             if (task && !task.is_done) { ui.closePanels(); taskForm.open(task); }
@@ -2486,6 +2595,20 @@
     $(document).on('submit', '#task-form', function (event) {
         event.preventDefault();
         taskForm.save(this.querySelector('[type="submit"]'));
+    });
+    $(document).on('submit', '.task-share-form', function (event) {
+        event.preventDefault();
+        const form = this;
+        const editor = form.elements.role.value === 'editor';
+        const comments = form.elements.comments.checked;
+        const permissions = { can_view: true, can_edit: editor, can_delete: false, can_complete: editor,
+            can_view_comments: comments, can_add_comments: comments, can_edit_own_comments: comments,
+            can_edit_other_comments: false, can_delete_own_comments: comments, can_delete_other_comments: false };
+        const button = form.querySelector('button[type="submit"]'); button.disabled = true;
+        api.request('POST', `/api/tasks/${encodeURIComponent(form.dataset.taskId)}/shares`, { email: form.elements.email.value.trim(), ...permissions })
+            .then(() => { form.reset(); ui.showToast('Úloha bola zdieľaná.'); taskList.loadShares(form.dataset.taskId, form.parentElement.querySelector('.task-share-list')); projectManager.renderSidebar(); })
+            .catch((error) => ui.showToast(error.message || 'Úlohu sa nepodarilo zdieľať.', 'error'))
+            .finally(() => { button.disabled = false; });
     });
 
     $(document).on('submit', '#project-form', function (event) {

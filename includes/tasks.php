@@ -17,6 +17,10 @@ function tasko_task_data(array $task): array
         'project_id' => (int) $task['project_id'],
         'created_by' => (int) $task['created_by'],
         'creator_name' => (string) $task['creator_name'],
+        'assignee_id' => $task['assignee_id'] === null ? null : (int) $task['assignee_id'],
+        'assignee_name' => $task['assignee_name'] === null ? null : (string) $task['assignee_name'],
+        'reviewer_id' => $task['reviewer_id'] === null ? null : (int) $task['reviewer_id'],
+        'reviewer_name' => $task['reviewer_name'] === null ? null : (string) $task['reviewer_name'],
         'title' => (string) $task['title'],
         'description' => $task['description'] === null ? null : (string) $task['description'],
         'priority' => (int) $task['priority'],
@@ -38,11 +42,11 @@ function tasko_task_data(array $task): array
 function tasko_task_filters(array $query): array
 {
     $filters = [];
-    $unknown = array_diff(array_keys($query), ['project_id', 'date', 'from', 'to', 'done']);
+    $unknown = array_diff(array_keys($query), ['project_id', 'date', 'from', 'to', 'done', 'visibility']);
     if ($unknown !== []) {
         throw new TaskoHttpException(400, 'bad_request', 'Požiadavka obsahuje neznámy filter úloh.');
     }
-    foreach (['project_id', 'date', 'from', 'to', 'done'] as $key) {
+    foreach (['project_id', 'date', 'from', 'to', 'done', 'visibility'] as $key) {
         if (!array_key_exists($key, $query)) {
             continue;
         }
@@ -63,6 +67,9 @@ function tasko_task_filters(array $query): array
     if (isset($filters['done']) && !in_array($filters['done'], ['0', '1'], true)) {
         throw new TaskoHttpException(400, 'bad_request', 'Filter done prijíma iba 0 alebo 1.');
     }
+    if (isset($filters['visibility']) && !in_array($filters['visibility'], ['all', 'mine', 'shared'], true)) {
+        throw new TaskoHttpException(400, 'bad_request', 'Filter visibility musí byť all, mine alebo shared.');
+    }
     if (isset($filters['from'], $filters['to']) && $filters['from'] > $filters['to']) {
         throw new TaskoHttpException(400, 'bad_request', 'Filter from nemôže byť neskôr ako to.');
     }
@@ -73,11 +80,11 @@ function tasko_task_filters(array $query): array
 /** Vráti úlohy iba z projektov, v ktorých má používateľ právo čítať úlohy. */
 function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 {
-    $conditions = ['(p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1))'];
+    $conditions = ['(p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1) OR ts.can_view = 1)'];
     $parameters = ['owner_id' => $userId, 'member_id' => $userId, 'edit_owner' => $userId,
         'edit_creator_own' => $userId, 'edit_creator_other' => $userId, 'delete_owner' => $userId,
         'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
-        'complete_owner' => $userId, 'complete_creator' => $userId,
+        'complete_owner' => $userId, 'complete_creator' => $userId, 'complete_assignee' => $userId,
         'comments_view_owner' => $userId, 'comments_add_owner' => $userId];
     if (isset($filters['project_id'])) {
         $conditions[] = 't.project_id = :project_id';
@@ -101,22 +108,34 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
         $conditions[] = 't.is_done = :is_done';
         $parameters['is_done'] = (int) $filters['done'];
     }
+    if (($filters['visibility'] ?? 'all') === 'mine') {
+        $conditions[] = 't.created_by = :visibility_mine';
+        $parameters['visibility_mine'] = $userId;
+    } elseif (($filters['visibility'] ?? 'all') === 'shared') {
+        $conditions[] = '(t.created_by <> :visibility_owner OR ts.can_view = 1)';
+        $parameters['visibility_owner'] = $userId;
+    }
 
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name,
+                t.assignee_id, assignee.name AS assignee_name, t.reviewer_id, reviewer.name AS reviewer_name, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at,
-                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
-                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
-                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR pm.can_complete_tasks = 1) AS can_complete,
-                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1) AS can_view_comments,
-                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
+                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1) OR ts.can_edit = 1) AS can_edit,
+                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1) OR ts.can_delete = 1) AS can_delete,
+                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR t.assignee_id = :complete_assignee OR pm.can_complete_tasks = 1 OR ts.can_complete = 1) AS can_complete,
+                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1 OR ts.can_view_comments = 1) AS can_view_comments,
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
          INNER JOIN users creator ON creator.id = t.created_by
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
+         LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = :share_user_id
+         LEFT JOIN users assignee ON assignee.id = t.assignee_id
+         LEFT JOIN users reviewer ON reviewer.id = t.reviewer_id
          WHERE ' . implode(' AND ', $conditions) . '
          ORDER BY t.is_done ASC, t.due_date ASC, t.priority DESC, t.id ASC'
     );
+    $parameters['share_user_id'] = $userId;
     $statement->execute($parameters);
 
     return array_map('tasko_task_data', $statement->fetchAll());
@@ -126,23 +145,27 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
 function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
 {
     $statement = $pdo->prepare(
-        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name, t.title, t.description, t.priority,
+        'SELECT t.id, t.project_id, t.created_by, creator.name AS creator_name,
+                t.assignee_id, assignee.name AS assignee_name, t.reviewer_id, reviewer.name AS reviewer_name, t.title, t.description, t.priority,
                 t.due_date, t.is_done, t.completed_at,
-                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1)) AS can_edit,
-                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1)) AS can_delete,
-                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR pm.can_complete_tasks = 1) AS can_complete,
-                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1) AS can_view_comments,
-                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1) AS can_add_comments
+                (p.user_id = :edit_owner OR (t.created_by = :edit_creator_own AND pm.can_edit_own_tasks = 1) OR (t.created_by <> :edit_creator_other AND pm.can_edit_other_tasks = 1) OR ts.can_edit = 1) AS can_edit,
+                (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1) OR ts.can_delete = 1) AS can_delete,
+                (p.user_id = :complete_owner OR t.created_by = :complete_creator OR t.assignee_id = :complete_assignee OR pm.can_complete_tasks = 1 OR ts.can_complete = 1) AS can_complete,
+                (p.user_id = :comments_view_owner OR pm.can_view_comments = 1 OR ts.can_view_comments = 1) AS can_view_comments,
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
          INNER JOIN users creator ON creator.id = t.created_by
          LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = :member_id
-         WHERE (p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1)) AND t.id = :task_id'
+         LEFT JOIN task_shares ts ON ts.task_id = t.id AND ts.user_id = :share_user_id
+         LEFT JOIN users assignee ON assignee.id = t.assignee_id
+         LEFT JOIN users reviewer ON reviewer.id = t.reviewer_id
+         WHERE (p.user_id = :owner_id OR (pm.user_id IS NOT NULL AND pm.can_view_tasks = 1) OR ts.can_view = 1) AND t.id = :task_id'
     );
-    $statement->execute(['member_id' => $userId, 'owner_id' => $userId, 'task_id' => $taskId,
+    $statement->execute(['member_id' => $userId, 'share_user_id' => $userId, 'owner_id' => $userId, 'task_id' => $taskId,
         'edit_owner' => $userId, 'edit_creator_own' => $userId, 'edit_creator_other' => $userId,
         'delete_owner' => $userId, 'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
-        'complete_owner' => $userId, 'complete_creator' => $userId,
+        'complete_owner' => $userId, 'complete_creator' => $userId, 'complete_assignee' => $userId,
         'comments_view_owner' => $userId, 'comments_add_owner' => $userId]);
     $task = $statement->fetch();
     if (!is_array($task)) {
