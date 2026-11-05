@@ -1074,26 +1074,29 @@
             });
         },
         filterControl(kind = 'tasks') {
-            const wrap = document.createElement('label'); wrap.className = 'task-origin-filter';
+            const wrap = document.createElement('div'); wrap.className = 'task-origin-filter';
             const caption = document.createElement('span'); caption.textContent = i18n.language === 'cs' ? 'Zobrazit' : 'Zobraziť';
-            const select = document.createElement('select'); select.setAttribute('aria-label', caption.textContent);
-            const options = kind === 'projects'
-                ? [['all', 'Všetko', 'Vše'], ['mine', 'Moje', 'Moje'], ['shared', 'Zdieľané', 'Sdílené']]
-                : [['all', 'Všetky úlohy', 'Všechny úkoly'], ['mine', 'Moje úlohy', 'Moje úkoly'], ['shared', 'Zdieľané úlohy', 'Sdílené úkoly']];
-            options.forEach(([value, sk, cs]) => { const option = document.createElement('option'); option.value = value; option.textContent = i18n.language === 'cs' ? cs : sk; select.append(option); });
-            select.value = state.taskFilter;
-            select.addEventListener('change', () => {
-                state.taskFilter = select.value;
-                const route = router.current();
-                if (route.name === 'tasks') this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
-                else if (route.name === 'done') views.renderCompleted();
-                else if (route.name === 'calendar' && views.calendar) views.loadCalendarRange({ startStr: components.localDateStr(views.calendar.view.activeStart), endStr: components.localDateStr(views.calendar.view.activeEnd) }, state.routeSequence);
-                else if (route.name === 'projects') projectManager.renderList();
-                else if (route.name === 'project') { const project = state.projects.find((item) => Number(item.id) === Number(route.id)); if (project) projectManager.renderDetail(project, state.projectMembers); }
+            const group = document.createElement('div'); group.className = 'task-origin-options'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', caption.textContent);
+            const options = [['all', 'Všetky', 'Všechny'], ['mine', 'Moje', 'Moje'], ['shared', 'Zdieľané', 'Sdílené']];
+            options.forEach(([value, sk, cs]) => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'task-origin-button'; button.dataset.filter = value;
+                button.textContent = i18n.language === 'cs' ? cs : sk;
+                button.setAttribute('aria-pressed', String(state.taskFilter === value));
+                button.addEventListener('click', () => {
+                    state.taskFilter = value;
+                    document.querySelectorAll('.task-origin-button').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.filter === value)));
+                    const route = router.current();
+                    if (route.name === 'tasks') this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                    else if (route.name === 'done') views.renderCompleted();
+                    else if (route.name === 'calendar' && views.calendar) views.loadCalendarRange({ startStr: components.localDateStr(views.calendar.view.activeStart), endStr: components.localDateStr(views.calendar.view.activeEnd) }, state.routeSequence);
+                    else if (route.name === 'projects') projectManager.renderList();
+                    else if (route.name === 'project') { const project = state.projects.find((item) => Number(item.id) === Number(route.id)); if (project) projectManager.renderDetail(project, state.projectMembers); }
+                });
+                group.append(button);
             });
-            wrap.append(caption, select); return wrap;
-        },
-        priorities: { 1: 'Nízka', 2: 'Stredná', 3: 'Vysoká', 4: 'Kritická' },
+            wrap.append(caption, group); return wrap;
+        },        priorities: { 1: 'Nízka', 2: 'Stredná', 3: 'Vysoká', 4: 'Kritická' },
         plainText(value) {
             /* Popis API môže obsahovať povolené formátovanie; detail zoznamu ukáže iba jeho text. */
             const parsed = new DOMParser().parseFromString(String(value || ''), 'text/html');
