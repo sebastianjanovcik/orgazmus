@@ -5,8 +5,8 @@
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
         dictionaries: {
-            sk: { all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
-            cs: { all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
+            sk: { audit: 'Audit logu', all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
+            cs: { audit: 'Auditní protokol', all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
         /* Základné popisky mimo dátových šablón sa menia spolu s jazykovým nastavením. */
         labels: {
@@ -136,7 +136,18 @@
             'Projekt bol upravený.': ['Projekt bol upravený.', 'Projekt byl upraven.'], 'Projekt bol vytvorený.': ['Projekt bol vytvorený.', 'Projekt byl vytvořen.'],
             'Projekt a jeho úlohy boli odstránené.': ['Projekt a jeho úlohy boli odstránené.', 'Projekt a jeho úkoly byly odstraněny.'],
             'Pridaný': ['Pridaný', 'Přidán'],
-            'Priebeh projektu': ['Priebeh projektu', 'Průběh projektu'], 'Užívateľ': ['Používateľ', 'Uživatel'], 'Používateľ': ['Používateľ', 'Uživatel']
+            'Priebeh projektu': ['Priebeh projektu', 'Průběh projektu'], 'Užívateľ': ['Používateľ', 'Uživatel'], 'Používateľ': ['Používateľ', 'Uživatel'],
+            'Audit logu': ['Audit logu', 'Auditní protokol'], 'Záznam zmien v účte a dostupných projektoch.': ['Záznam zmien v účte a dostupných projektoch.', 'Záznam změn v účtu a dostupných projektech.'],
+            'Hľadať': ['Hľadať', 'Hledat'], 'Typ': ['Typ', 'Typ'], 'Všetky typy': ['Všetky typy', 'Všechny typy'],
+            'Účet': ['Účet', 'Účet'], 'Projekt': ['Projekt', 'Projekt'], 'Úloha': ['Úloha', 'Úkol'], 'Komentár': ['Komentár', 'Komentář'], 'Pozvánka': ['Pozvánka', 'Pozvánka'], 'Členstvo': ['Členstvo', 'Členství'],
+            'Od': ['Od', 'Od'], 'Do': ['Do', 'Do'], 'Načítať staršie': ['Načítať staršie', 'Načíst starší'],
+            'Meno, aktivita, IP alebo zmena': ['Meno, aktivita, IP alebo zmena', 'Jméno, aktivita, IP nebo změna'],
+            'Kurzor auditu nie je platný.': ['Kurzor auditu nie je platný.', 'Kurzor auditu není platný.'],
+            'Vyhľadávanie musí byť text.': ['Vyhľadávanie musí byť text.', 'Vyhledávání musí být text.'],
+            'Vyhľadávanie môže mať najviac 100 znakov.': ['Vyhľadávanie môže mať najviac 100 znakov.', 'Vyhledávání může mít nejvýše 100 znaků.'],
+            'Vyber platný typ záznamu.': ['Vyber platný typ záznamu.', 'Vyberte platný typ záznamu.'],
+            'Zadaj platný dátum vo formáte YYYY-MM-DD.': ['Zadaj platný dátum vo formáte YYYY-MM-DD.', 'Zadejte platné datum ve formátu YYYY-MM-DD.'],
+            'Dátum do musí byť rovnaký alebo neskorší ako dátum od.': ['Dátum do musí byť rovnaký alebo neskorší ako dátum od.', 'Datum do musí být stejný nebo pozdější než datum od.']
         },
         language: 'sk',
         key: 'tasko.language',
@@ -178,6 +189,7 @@
                 if (textNodes.length) textNodes[textNodes.length - 1].nodeValue = node.childNodes.length > 1 ? ` ${value}` : value;
                 else node.textContent = value;
             });
+            scope.querySelectorAll('[data-i18n-placeholder]').forEach((node) => { node.placeholder = this.text(node.dataset.i18nPlaceholder); });
             const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
             while (walker.nextNode()) {
                 const node = walker.currentNode;
@@ -261,7 +273,7 @@
             login: { title: 'login', auth: true }, register: { title: 'register', auth: true },
             tasks: { title: 'all_tasks' }, projects: { title: 'projects' },
             calendar: { title: 'calendar' }, done: { title: 'done' },
-            stats: { title: 'stats' }, settings: { title: 'settings' }
+            stats: { title: 'stats' }, audit: { title: 'audit' }, settings: { title: 'settings' }
         },
         current() {
             const value = window.location.hash.replace(/^#\/?/, '');
@@ -296,6 +308,8 @@
                 if (route.name === 'tasks') view.innerHTML = this.tasksMarkup;
                 else if (route.name === 'projects') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite"><div class="project-skeleton"></div><div class="project-skeleton"></div><div class="project-skeleton"></div></div>`;
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
+                // Globálny audit používa rovnaké skeletony ako projektová história a ponúka filtre nad celým účtom.
+                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label>Hľadať<input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label>Typ<select name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label>Od<input type="date" name="from"></label><label>Do<input type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite"><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li><li class="project-audit-skeleton" aria-hidden="true"></li></ol><button class="button button-quiet project-audit-more" id="audit-more" type="button" hidden>Načítať staršie</button></section>`;
                 else if (route.name === 'invitation') view.innerHTML = `<section class="invitation-accept-card" aria-labelledby="invitation-title"><p class="eyebrow">TASKO</p><h1 id="invitation-title">Pozvánka do projektu</h1><p id="invitation-message">Skontroluj účet a potvrď pozvánku.</p><div class="panel-actions"><button class="button button-quiet" type="button" data-action="invitation-decline">Odmietnuť</button><span class="action-spacer"></span><button class="button button-primary" type="button" data-action="invitation-accept">Prijať pozvánku</button></div></section>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
@@ -320,6 +334,7 @@
                 else link.removeAttribute('aria-current');
             });
             if (route.name === 'tasks' && state.user) views.loadTasks(sequence);
+            if (route.name === 'audit' && state.user) views.loadAudit(sequence);
             if (['calendar', 'done', 'stats'].includes(route.name) && state.user) views.loadInsights(sequence, route.name);
             if ((route.name === 'projects' || route.name === 'project') && state.user) views.loadProjects(sequence, route);
             if (route.name === 'invitation' && state.user) views.loadInvitation(sequence, route);
@@ -1871,7 +1886,8 @@
                             ? `${i18n.language === 'cs' ? 'Uživatel' : 'Používateľ'}: ${item.actor_name}`
                             : (i18n.language === 'cs' ? 'Uživatelský účet již není dostupný' : 'Používateľský účet už nie je dostupný');
                         const time = document.createElement('time'); time.dateTime = item.created_at; time.textContent = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
-                        row.append(title, by, time); list.append(row);
+                        const ip = document.createElement('span'); ip.textContent = `(${item.ip_address || (i18n.language === 'cs' ? 'IP nezaznamenána' : 'IP nezaznamenaná')})`;
+                        row.append(time, by, ip, title); list.append(row);
                     });
                     before = page?.next_before ?? null;
                     const oldButton = section.querySelector('.project-audit-more'); if (oldButton) oldButton.remove();
@@ -2101,6 +2117,87 @@
                 ui.showToast('Hotové úlohy boli zmazané.', 'success');
             } catch (error) { ui.showToast(error.message || 'Hotové úlohy sa nepodarilo zmazať.', 'error'); }
             finally { button.disabled = false; }
+        },
+        /** Serverové filtre a ID kurzor udržiavajú hľadanie rýchle a prístupové pravidlá mimo klienta. */
+        async loadAudit(routeSequence) {
+            const form = document.getElementById('audit-filters');
+            const list = document.getElementById('audit-list');
+            const more = document.getElementById('audit-more');
+            if (!form || !list || !more) return;
+            let before = null;
+            let debounce = null;
+            let requestSequence = 0;
+            const activityLabels = {
+                account_created: ['Vytvorený účet', 'Vytvořen účet'], profile_updated: ['Upravený profil', 'Upraven profil'],
+                account_login: ['Prihlásenie', 'Přihlášení'], account_logout: ['Odhlásenie', 'Odhlášení'],
+                password_changed: ['Zmenené heslo', 'Změněno heslo'], plan_changed: ['Zmenený plán', 'Změněn plán'],
+                project_created: ['Vytvorený projekt', 'Vytvořen projekt'], project_updated: ['Upravený projekt', 'Upraven projekt'],
+                project_deleted: ['Odstránený projekt', 'Odstraněn projekt'], task_created: ['Vytvorená úloha', 'Vytvořen úkol'],
+                task_updated: ['Upravená úloha', 'Upraven úkol'], task_deleted: ['Odstránená úloha', 'Odstraněn úkol'],
+                task_completed: ['Dokončená úloha', 'Dokončen úkol'], task_reopened: ['Obnovená úloha', 'Znovu otevřen úkol'],
+                comment_created: ['Pridaný komentár', 'Přidán komentář'], comment_updated: ['Upravený komentár', 'Upraven komentář'],
+                comment_deleted: ['Odstránený komentár', 'Odstraněn komentář'], invitation_created: ['Vytvorená pozvánka', 'Vytvořena pozvánka'],
+                invitation_revoked: ['Odvolaná pozvánka', 'Odvolána pozvánka'], invitation_accepted: ['Prijatá pozvánka', 'Přijata pozvánka'],
+                invitation_declined: ['Odmietnutá pozvánka', 'Odmítnuta pozvánka'],
+                member_removed: ['Odstránený člen', 'Odstraněn člen'], permissions_changed: ['Zmenené oprávnenia člena', 'Změněna oprávnění člena'],
+                ownership_transferred: ['Prevedené vlastníctvo', 'Převedeno vlastnictví']
+            };
+            const fieldLabels = {
+                name: ['Názov', 'Název'], description: ['Popis', 'Popis'], icon: ['Ikona', 'Ikona'], color: ['Farba', 'Barva'],
+                title: ['Názov úlohy', 'Název úkolu'], priority: ['Priorita', 'Priorita'], due_date: ['Termín', 'Termín'],
+                is_done: ['Dokončená', 'Dokončený'], project_id: ['ID projektu', 'ID projektu'], task_id: ['ID úlohy', 'ID úkolu'],
+                parent_id: ['ID rodičovského komentára', 'ID rodičovského komentáře'], body: ['Text komentára', 'Text komentáře'],
+                email: ['E-mail', 'E-mail'], password: ['Heslo', 'Heslo'], plan: ['Plán', 'Plán'], owner_id: ['Vlastník', 'Vlastník'],
+                activity: ['Aktivita', 'Aktivita'], permissions: ['Oprávnenia', 'Oprávnění'], member_id: ['ID člena', 'ID člena'],
+                member_name: ['Meno člena', 'Jméno člena'], invitation_id: ['ID pozvánky', 'ID pozvánky'], invited_user_id: ['ID pozvaného', 'ID pozvaného'],
+                task_count: ['Počet úloh', 'Počet úkolů'], comment_count: ['Počet komentárov', 'Počet komentářů']
+            };
+            const translatedField = (field, entityType) => {
+                if (field === 'name' && entityType === 'account') return i18n.language === 'cs' ? 'Jméno' : 'Meno';
+                const variants = fieldLabels[field];
+                return variants ? variants[i18n.language === 'cs' ? 1 : 0] : field;
+            };
+            const read = async (append = false) => {
+                const currentRequest = ++requestSequence;
+                const params = new URLSearchParams(new FormData(form));
+                if (append && before) params.set('before', before);
+                else { before = null; params.delete('before'); }
+                if (!append) {
+                    list.replaceChildren();
+                    for (let index = 0; index < 3; index += 1) { const skeleton = document.createElement('li'); skeleton.className = 'project-audit-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
+                    more.hidden = true;
+                }
+                try {
+                    const page = await api.request('GET', `/api/audit?${params}`);
+                    if (currentRequest !== requestSequence || routeSequence !== state.routeSequence) return;
+                    if (!append) list.replaceChildren();
+                    const items = Array.isArray(page?.items) ? page.items : [];
+                    if (!items.length && !append) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'Pro vybraný filtr nebyly nalezeny žádné záznamy.' : 'Pre vybraný filter sa nenašli žiadne záznamy.'; list.append(empty); }
+                    items.forEach((item) => {
+                        const row = document.createElement('li');
+                        const stamp = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
+                        const actor = item.actor_name || (i18n.language === 'cs' ? 'Nedostupný účet' : 'Nedostupný účet');
+                        const ip = item.ip_address || (i18n.language === 'cs' ? 'IP nezaznamenána' : 'IP nezaznamenaná');
+                        const meta = document.createElement('span'); meta.textContent = `${stamp} · ${actor} · (${ip})`;
+                        const action = document.createElement('strong'); action.textContent = (activityLabels[item.event_type] || [item.event_type, item.event_type])[i18n.language === 'cs' ? 1 : 0];
+                        row.append(meta, action);
+                        const changes = item.details?.changes;
+                        const formatValue = (value) => typeof value === 'boolean' ? (value ? (i18n.language === 'cs' ? 'Ano' : 'Áno') : (i18n.language === 'cs' ? 'Ne' : 'Nie')) : (value && typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—'));
+                        if (changes && typeof changes === 'object') { const summary = document.createElement('span'); summary.textContent = Object.entries(changes).map(([field, values]) => `${translatedField(field, item.entity_type)}: ${formatValue(values?.old)} → ${formatValue(values?.new)}`).join(' · '); row.append(summary); }
+                        else if (item.details?.snapshot) { const summary = document.createElement('span'); summary.textContent = Object.entries(item.details.snapshot).filter(([field]) => field !== 'reason').map(([field, value]) => `${translatedField(field, item.entity_type)}: ${formatValue(value)}`).join(' · '); if (summary.textContent) row.append(summary); }
+                        list.append(row);
+                    });
+                    before = page?.next_before ?? null;
+                    more.hidden = !before;
+                } catch (error) {
+                    if (currentRequest !== requestSequence) return;
+                    list.replaceChildren(); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message ? i18n.text(error.message) : (i18n.language === 'cs' ? 'Audit se nepodařilo načíst.' : 'Audit sa nepodarilo načítať.'); list.append(failure);
+                }
+            };
+            form.addEventListener('input', () => { window.clearTimeout(debounce); debounce = window.setTimeout(() => read(), 250); });
+            form.addEventListener('change', () => read());
+            more.addEventListener('click', () => read(true));
+            await read();
         },
         async loadTasks(routeSequence) {
             const requestSequence = ++taskList.requestSequence;

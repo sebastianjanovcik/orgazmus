@@ -97,17 +97,23 @@ CREATE TABLE IF NOT EXISTS project_invitations (
     CONSTRAINT fk_project_invitations_inviter FOREIGN KEY (invited_by) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Audit sa používa iba na vkladanie a čítanie; aplikácia neposkytuje jeho úpravu ani mazanie.
-CREATE TABLE IF NOT EXISTS project_audit_log (
+-- Spoločný append-only denník uchová aj udalosti bez projektu a po zmazaní projektu.
+CREATE TABLE IF NOT EXISTS audit_log (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    project_id BIGINT UNSIGNED NOT NULL,
+    project_id BIGINT UNSIGNED NULL,
+    entity_type VARCHAR(40) NOT NULL,
+    entity_id BIGINT UNSIGNED NULL,
     actor_id BIGINT UNSIGNED NULL,
-    event_type VARCHAR(60) NOT NULL,
+    ip_address VARCHAR(45) NULL,
+    event_type VARCHAR(80) NOT NULL,
     details JSON NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_project_audit_page (project_id, id),
-    CONSTRAINT fk_project_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE SET NULL
+    KEY idx_audit_project_page (project_id, id),
+    KEY idx_audit_actor_page (actor_id, id),
+    KEY idx_audit_entity_page (entity_type, id),
+    KEY idx_audit_created (created_at, id),
+    CONSTRAINT fk_audit_actor FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Notifikácie patria jedinému príjemcovi; značka prečítania sa nastavuje až po vykreslení záznamu.

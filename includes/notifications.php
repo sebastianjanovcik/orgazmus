@@ -1,16 +1,32 @@
 <?php
 declare(strict_types=1);
 
-/** Uloží udalosť aj jej adresátom určené upozornenia v rámci aktuálnej transakcie. */
-function tasko_record_project_event(PDO $pdo, int $projectId, ?int $actorId, string $event, array $details, array $recipients = []): void
+/** Uloží nemenný záznam zmeny; IP berie iba z priameho spojenia, nie z nedôveryhodných proxy hlavičiek. */
+function tasko_record_audit_event(PDO $pdo, ?int $projectId, string $entityType, ?int $entityId, ?int $actorId, string $event, array $details): void
 {
-    $audit = $pdo->prepare('INSERT INTO project_audit_log (project_id, actor_id, event_type, details) VALUES (:project_id, :actor_id, :event_type, :details)');
+    $remoteAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+    $ipAddress = is_string($remoteAddress) && filter_var($remoteAddress, FILTER_VALIDATE_IP) ? $remoteAddress : null;
+    $audit = $pdo->prepare('INSERT INTO audit_log (project_id, entity_type, entity_id, actor_id, ip_address, event_type, details) VALUES (:project_id, :entity_type, :entity_id, :actor_id, :ip_address, :event_type, :details)');
     $audit->execute([
         'project_id' => $projectId,
+        'entity_type' => $entityType,
+        'entity_id' => $entityId,
         'actor_id' => $actorId,
+        'ip_address' => $ipAddress,
         'event_type' => $event,
         'details' => json_encode($details, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
     ]);
+}
+
+/** Uloží projektovú udalosť aj notifikácie v rámci aktuálnej transakcie. */
+function tasko_record_project_event(PDO $pdo, int $projectId, ?int $actorId, string $event, array $details, array $recipients = []): void
+{
+    $entityType = str_starts_with($event, 'invitation_') ? 'invitation' : (in_array($event, ['member_removed', 'permissions_changed'], true) ? 'membership' : 'project');
+    $entityId = str_starts_with($event, 'invitation_') && isset($details['invitation_id'])
+        ? (int) $details['invitation_id']
+        : (isset($details['member_id']) ? (int) $details['member_id'] : $projectId);
+    $auditDetails = isset($details['changes']) ? $details : ['snapshot' => $details];
+    tasko_record_audit_event($pdo, $projectId, $entityType, $entityId, $actorId, $event, $auditDetails);
 
     $messages = [
         'invitation_created' => 'Bola vytvorená pozvánka do projektu.',
