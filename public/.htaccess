@@ -7,4 +7,7 @@
 
 # API cesty obsluhuje spoločný front controller.
 RewriteEngine On
+# Endpointy ako /api/me majú zároveň fyzický priečinok; vypnutie presmerovania na lomku
+# umožní, aby požiadavku spracovalo pravidlo nižšie namiesto DirectorySlash.
+DirectorySlash Off
 RewriteRule ^api(?:/.*)?$ api/index.php [QSA,L]
