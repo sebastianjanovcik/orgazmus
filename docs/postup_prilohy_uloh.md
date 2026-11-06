@@ -1,0 +1,83 @@
+# Postup: prílohy k úlohám
+
+Tento dokument rozdeľuje zavedenie príloh na samostatné, overiteľné kroky. Súčasný kontrakt v `docs/api.md` ani implementácia zatiaľ prílohy nedefinujú. Pred implementáciou preto treba rozhodnutia nižšie zapracovať do kontraktu a následne nimi viesť databázu, API aj rozhranie.
+
+## Cieľ a rozsah
+
+Používateľ môže k úlohe nahrať jeden alebo viac súborov, zobraziť ich zoznam, stiahnuť ich a odstrániť v súlade s prístupom k danej úlohe. Súbory sa ukladajú súkromne na serveri; databáza obsahuje iba ich metadáta a interný identifikátor uloženia. Prílohy sa nesprístupnia cez verejnú URL ani cez odhadnuteľný názov súboru.
+
+Prvá verzia má podporovať bežné dokumenty a obrázky potrebné pre úlohy. Povolené prípony, MIME typy, maximálnu veľkosť súboru, maximálny počet súborov na úlohu a prípadný celkový limit používateľa treba určiť podľa cieľového hostingu pred implementáciou. Neodvodzovať typ iba z názvu alebo hlavičky od klienta. Súčasťou rozsahu nie je antivírusové skenovanie, náhľady, verzovanie ani externé úložisko; ak ich hosting alebo produkt bude vyžadovať, doplnia sa ako samostatné rozhodnutia.
+
+## Predpoklady
+
+- Úlohy a API používajú existujúci model prihlásenia, vlastníctva a zdieľaného prístupu. Každá operácia s prílohou musí znovu overiť prístup k nadradenej úlohe.
+- API dnes používa JSON; prenos binárneho súboru bude osobitná požiadavka `multipart/form-data`. Ostatné odpovede zachovajú existujúcu obálku `data` a tvar chýb.
+- Schéma je spravovaná cez SQL v `db/`; nasadenie musí vedieť pripraviť súkromný zapisovateľný adresár a jeho limit úložiska.
+- Zmazanie úlohy musí riešiť aj jej súbory, aby nevznikali osirelé dáta. Pri zmazaní súboru treba bezpečne spracovať zlyhanie odstránenia z disku.
+
+## Kroky realizácie
+
+### 1. Uzavrieť produktové a prevádzkové pravidlá
+
+Rozhodnúť a zdokumentovať povolené typy, limity počtu a veľkosti, oprávnenia na pridanie/odstránenie, správanie pri zmazaní úlohy a umiestnenie úložiska. Potvrdiť limity PHP/web servera a plán zálohovania súborov. Prístup a operácie majú kopírovať pravidlá úlohy: zobraziť/stiahnuť môže používateľ s právom čítať úlohu; pridať/zmazať môže používateľ s právom upravovať ju (prípadné osobitné pravidlo pre autora prílohy výslovne rozhodnúť).
+
+**Výstup:** uzavretá tabuľka limitov a oprávnení, bez neurčených bezpečnostných predvolených hodnôt.
+
+### 2. Doplniť API kontrakt a mock
+
+V `docs/api.md` opísať objekt `attachment` (identifikátor, názov zobrazenia, MIME typ overený serverom, veľkosť, autor a dátum vytvorenia) a endpointy:
+
+- `GET /api/tasks/{id}/attachments` – zoznam príloh pri práve čítať úlohu;
+- `POST /api/tasks/{id}/attachments` – jeden súbor ako `multipart/form-data`, pri práve upraviť úlohu;
+- `GET /api/tasks/{id}/attachments/{attachment_id}` – bezpečné stiahnutie po overení väzby aj prístupu;
+- `DELETE /api/tasks/{id}/attachments/{attachment_id}` – odstránenie po overení oprávnenia.
+
+Zadefinovať stavové kódy a chyby pre neplatný typ, prekročenú veľkosť/počet, chýbajúci súbor, nedostupnú úlohu/prílohu, nedostatočné oprávnenie a zlyhanie úložiska. Názov súboru z klienta je iba zobrazovaný údaj, nikdy cesta. Mock doplniť iba vtedy, ak frontendový tok ešte používa Postman mock.
+
+**Výstup:** kontrakt, ktorý jednoznačne opisuje požiadavky aj odpovede a nevracia internú cestu k súboru.
+
+### 3. Pridať schému a súkromné úložisko
+
+Vytvoriť tabuľku `task_attachments` s cudzím kľúčom na úlohu, autorom, bezpečným náhodným identifikátorom úložiska, pôvodným názvom určeným na zobrazenie, overeným MIME typom, veľkosťou a časom vytvorenia. Pridať indexy potrebné na zoznam podľa úlohy. Cudzí kľúč nastavovať v súlade s existujúcim správaním zmazania úlohy; databázové zmazanie samo osebe neodstráni súbor z disku.
+
+Úložisko umiestniť mimo verejného webového koreňa (alebo ho v hostingu zablokovať pravidlami servera). Na disk zapisovať pod náhodným interným kľúčom, nie pod používateľským názvom. Nastaviť minimálne potrebné oprávnenia k adresáru a zdokumentovať jeho konfiguráciu bez tajomstiev.
+
+**Výstup:** opakovateľná zmena schémy a zdokumentované lokálne/nasadzovacie nastavenie úložiska.
+
+### 4. Implementovať backendový tok nahratia
+
+Pridať validáciu `multipart/form-data`: kontrolovať chybu uploadu, skutočnú veľkosť, povolený typ podľa obsahu (napr. `finfo`), príponu podľa allowlistu a bezpečné dekódovanie obrazových typov, ak sú povolené. Odmietnuť nezhodu typu/prípony, nulový súbor, prekročené limity a nečakané polia. Uplatniť existujúcu ochranu CSRF/origin a oprávnenie k úlohe.
+
+Zápis súboru a metadát spracovať tak, aby čiastočný neúspech nezanechal osirelý súbor ani neplatný riadok: pri chybe DB odstrániť už zapísaný súbor; pri chybe disku nevytvárať metadáta. Použiť parametrizované SQL a nevystavovať lokálnu cestu ani diagnostiku servera klientovi.
+
+**Výstup:** bezpečne fungujúci zoznam a nahratie podľa kontraktu.
+
+### 5. Implementovať stiahnutie, mazanie a upratovanie
+
+Sťahovanie vykonáva PHP po kontrole session, prístupu k úlohe a zhody `attachment_id` s `task_id`. Vrátiť bezpečné hlavičky `Content-Type`, `Content-Length`, `X-Content-Type-Options: nosniff` a `Content-Disposition` s korektne zakódovaným názvom; aktívny obsah zobrazovať ako prílohu, nie vykonateľnú stránku. Pri sťahovaní neskladať cestu z parametrov požiadavky.
+
+Mazanie musí overiť právo pred zásahom a bezpečne koordinovať DB a disk. Zohľadniť aj hromadné zmazanie dokončených úloh a zmazanie projektu/úlohy, ak tieto cesty odstraňujú úlohy. Pridať opakovateľné upratanie osirelých súborov alebo transakčný/outbox postup, ak jednoduché mazanie pri požiadavke nezaručí konzistenciu.
+
+**Výstup:** chránené stiahnutie a mazanie bez možnosti čítať či odstrániť cudzí súbor.
+
+### 6. Doplniť používateľské rozhranie
+
+Do detailu úlohy pridať výber súboru, zoznam príloh s názvom/typom/veľkosťou, stav nahrávania, úspešné dokončenie a konkrétne chyby. Zobraziť len akcie zodpovedajúce oprávneniam API. Ovládanie sprístupniť klávesnicou a mobilu; počas načítania zobraziť skeleton zodpovedajúci zoznamu príloh. Nové viditeľné texty dodať po slovensky aj česky.
+
+**Výstup:** prístupný tok pridania, stiahnutia a odstránenia súboru v detaile úlohy.
+
+### 7. Overiť bezpečnosť a celý tok
+
+Overiť povolený súbor aj odmietnutie zakázaného typu, falšovanej prípony/MIME, prekročených limitov, prázdneho a poškodeného súboru. Overiť neprihlásený prístup, používateľa bez prístupu, cudziu úlohu, podvrhnuté ID prílohy z inej úlohy, názvy s cestou/Unicode/hlavičkovými znakmi, zlyhanie zápisu disku/DB a upratanie pri mazaní úloh. Skontrolovať CSRF ochranu a limity web servera/PHP. V prehliadači prejsť pridanie, zoznam, stiahnutie a odstránenie na mobile aj desktopovej šírke.
+
+**Výstup:** zaznamenané výsledky kontrol, potvrdené limity prostredia a aktualizovaný `docs/api.md`/README s prevádzkovým nastavením.
+
+## Kritériá dokončenia
+
+- Príloha je dostupná iba po autorizovanom API toku; priama verejná URL neexistuje.
+- Server kontroluje oprávnenie ku každej operácii aj väzbu prílohy na úlohu.
+- Názvy a MIME typy od klienta sa považujú za nedôveryhodné; fyzické názvy sú náhodné.
+- Limity sú vynútené na aplikačnej aj hostingovej vrstve a opísané v kontrakte.
+- Zmazanie prílohy aj nadradenej úlohy nenecháva súbory bez metadát ani metadáta bez súborov bez zdokumentovaného mechanizmu obnovy.
+- Rozhranie funguje klávesnicou a na mobilnom zobrazení; nové texty sú dostupné v slovenčine a češtine.
+- PHP syntax, API tok a používateľský tok sú overené podľa projektových pravidiel; neoverené správanie je výslovne zaznamenané.
