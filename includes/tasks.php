@@ -32,6 +32,7 @@ function tasko_task_data(array $task): array
         'can_complete' => (bool) $task['can_complete'],
         'can_view_comments' => (bool) $task['can_view_comments'],
         'can_add_comments' => (bool) $task['can_add_comments'],
+        'can_add_attachments' => (bool) ($task['can_add_attachments'] ?? false),
     ];
 }
 
@@ -105,7 +106,8 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
         'edit_creator_own' => $userId, 'edit_creator_other' => $userId, 'delete_owner' => $userId,
         'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
         'complete_owner' => $userId, 'complete_creator' => $userId, 'complete_assignee' => $userId,
-        'comments_view_owner' => $userId, 'comments_add_owner' => $userId];
+        'comments_view_owner' => $userId, 'comments_add_owner' => $userId,
+        'attachments_owner' => $userId, 'attachments_comment_owner' => $userId];
     if (isset($filters['project_id'])) {
         $conditions[] = 't.project_id = :project_id';
         $parameters['project_id'] = (int) $filters['project_id'];
@@ -157,7 +159,8 @@ function tasko_tasks_find(PDO $pdo, int $userId, array $filters): array
                 (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1) OR ts.can_delete = 1) AS can_delete,
                 (p.user_id = :complete_owner OR t.created_by = :complete_creator OR t.assignee_id = :complete_assignee OR pm.can_complete_tasks = 1 OR ts.can_complete = 1) AS can_complete,
                 (p.user_id = :comments_view_owner OR pm.can_view_comments = 1 OR ts.can_view_comments = 1) AS can_view_comments,
-                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments,
+                (p.user_id = :attachments_owner OR (pm.can_add_tasks = 1 AND (p.user_id = :attachments_comment_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1))) AS can_add_attachments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
          INNER JOIN users creator ON creator.id = t.created_by
@@ -240,7 +243,8 @@ function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
                 (p.user_id = :delete_owner OR (t.created_by = :delete_creator_own AND pm.can_delete_own_tasks = 1) OR (t.created_by <> :delete_creator_other AND pm.can_delete_other_tasks = 1) OR ts.can_delete = 1) AS can_delete,
                 (p.user_id = :complete_owner OR t.created_by = :complete_creator OR t.assignee_id = :complete_assignee OR pm.can_complete_tasks = 1 OR ts.can_complete = 1) AS can_complete,
                 (p.user_id = :comments_view_owner OR pm.can_view_comments = 1 OR ts.can_view_comments = 1) AS can_view_comments,
-                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments
+                (p.user_id = :comments_add_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1) AS can_add_comments,
+                (p.user_id = :attachments_owner OR (pm.can_add_tasks = 1 AND (p.user_id = :attachments_comment_owner OR pm.can_add_comments = 1 OR ts.can_add_comments = 1))) AS can_add_attachments
          FROM tasks t
          INNER JOIN projects p ON p.id = t.project_id
          INNER JOIN users creator ON creator.id = t.created_by
@@ -254,7 +258,8 @@ function tasko_task_find(PDO $pdo, int $userId, int $taskId): array
         'edit_owner' => $userId, 'edit_creator_own' => $userId, 'edit_creator_other' => $userId,
         'delete_owner' => $userId, 'delete_creator_own' => $userId, 'delete_creator_other' => $userId,
         'complete_owner' => $userId, 'complete_creator' => $userId, 'complete_assignee' => $userId,
-        'comments_view_owner' => $userId, 'comments_add_owner' => $userId]);
+        'comments_view_owner' => $userId, 'comments_add_owner' => $userId,
+        'attachments_owner' => $userId, 'attachments_comment_owner' => $userId]);
     $task = $statement->fetch();
     if (!is_array($task)) {
         throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');

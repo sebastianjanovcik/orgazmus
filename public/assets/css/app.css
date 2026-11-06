@@ -218,6 +218,32 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .task-detail-content > .panel-actions { justify-content: flex-end; margin-top: 22px; padding: 20px 0 4px; border-top: 0; }
 .task-detail-content > .panel-actions .button { flex: 0 1 auto; min-width: 170px; }
 .task-detail-content > .calendar-add-task { width: 100%; margin-top: 12px; }
+
+/* Drop zóna ostáva použiteľným tlačidlom aj bez podpory ťahania a zvýrazňuje klávesnicový fokus. */
+.task-attachments { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+.task-attachments > h3 { margin: 0 0 12px; font-size: 17px; }
+.attachment-dropzone { display: grid; justify-items: center; gap: 5px; width: 100%; min-height: 86px; padding: 16px; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); border-radius: 15px; color: var(--ink); background: color-mix(in srgb, var(--accent) 5%, var(--surface-solid)); font: inherit; text-align: center; cursor: pointer; }
+.attachment-dropzone span { color: var(--muted); font-size: 13px; }
+.attachment-help { margin: 7px 2px 0; color: var(--muted); font-size: 12px; }
+.attachment-dropzone:hover, .attachment-dropzone.is-dragging { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid)); }
+.attachment-dropzone:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 65%, white); outline-offset: 3px; }
+.attachment-queue, .attachment-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.attachment-queue[hidden] { display: none; }
+.attachment-queue-item, .attachment-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+.attachment-queue-item { flex-wrap: wrap; }
+.attachment-queue-item > .attachment-name, .attachment-details { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.attachment-queue-status, .attachment-meta { color: var(--muted); font-size: 12px; }
+.attachment-details { display: grid; gap: 3px; }
+.attachment-name { font-size: 13px; }
+.attachment-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.attachment-actions .button { min-height: 34px; padding: 6px 10px; font-size: 12px; }
+.attachment-queue-item progress { flex: 1 0 100%; width: 100%; height: 6px; accent-color: var(--accent); }
+.attachment-error { margin: 14px 0 8px; color: var(--danger); font-size: 13px; }
+.attachment-empty { margin: 14px 0 4px; color: var(--muted); font-size: 13px; }
+.attachment-skeleton-row { display: grid; gap: 7px; min-height: 54px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+.attachment-skeleton-row span { display: block; width: 62%; height: 10px; border-radius: 8px; background: color-mix(in srgb, var(--muted) 15%, transparent); animation: tasko-skeleton 1.4s ease-in-out infinite; }
+.attachment-skeleton-row span + span { width: 36%; height: 7px; animation-delay: .15s; }
+@media (max-width: 520px) { .attachment-row { align-items: flex-start; flex-direction: column; } .attachment-actions { width: 100%; } }
 /* Vlákna držia čitateľné odsadenie aj na úzkych displejoch a skeleton kopíruje kartu komentára. */
 .task-comments { margin-top: 22px; }
 .comment-skeleton { height: 94px; margin: 10px 0; border: 1px solid var(--glass-border); border-radius: 15px; background: linear-gradient(100deg, var(--surface-solid) 20%, color-mix(in srgb, var(--ink) 7%, var(--surface-solid)) 45%, var(--surface-solid) 70%); background-size: 220% 100%; animation: task-skeleton-shimmer 1.4s infinite; }

@@ -29,7 +29,8 @@ adresár na disku. Predvolená lokálna cesta je `var/attachments/`, mimo
 `public/` a ignorovaná Gitom. V produkcii nastav adresár s minimálnymi
 prístupovými právami, dostupným priestorom podľa prevádzkového limitu a
 zálohovaním; PHP musí mať `upload_max_filesize=32M` a `post_max_size` aspoň
-`34M`.
+`34M`, zapnuté rozšírenia `fileinfo`, `zip` a `gd` (vrátane WebP podpory v GD)
+a limit tela HTTP požiadavky nad `34M` na webovom serveri.
 
 Pri zlyhaní fyzického mazania zostáva požiadavka v `task_attachment_cleanup`.
 Naplánuj opakované spustenie `php db/cleanup_task_attachments.php` (napríklad

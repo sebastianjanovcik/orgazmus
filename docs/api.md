@@ -49,6 +49,9 @@ ISO dátum), `is_done` (boolean) a `completed_at` (UTC značka alebo `null`).
 Popis povoľuje iba značky `b`, `strong`, `i`, `em`, `ul`, `ol`, `li`, `br`
 a `p`, bez atribútov; `<script>` a `<style>` aj s obsahom sa odstránia.
 Prázdny popis sa uloží ako `null`. Úloha patrí jednému projektu.
+Odpoveď úlohy obsahuje aj odvodené boolean práva `can_edit`, `can_delete`,
+`can_complete`, `can_view_comments`, `can_add_comments` a `can_add_attachments`;
+posledné je pravdivé iba ak používateľ spĺňa obe podmienky na nahratie príloh.
 
 ```json
 {"id":100,"project_id":10,"title":"Pripraviť návrh","description":"Prvá verzia","priority":2,"due_date":"2026-10-30","is_done":false,"completed_at":null}
@@ -140,7 +143,7 @@ aktuálneho používateľa a vráti napríklad `{"data":{"deleted":3}}`.
 | `413` | `file_too_large`, `task_attachment_limit`, `payload_too_large` | Súbor, súčet príloh úlohy alebo telo požiadavky prekračuje limit. |
 | `415` | `unsupported_media_type` | Chýba alebo je nesprávny typ obsahu požiadavky. |
 | `422` | `validation_failed`, `comment_too_deep`, `upload_required`, `invalid_file_type` | Vstup nespĺňa pravidlá alebo súbor chýba či nemá povolený typ. |
-| `500` | `storage_error` | Súkromné úložisko alebo zápis metadát nie je dostupný. |
+| `500` | `storage_error`, `server_error` | Súkromné úložisko, kontrola typu alebo zápis metadát nie je dostupný. |
 
 Príklad chyby validácie:
 
@@ -218,18 +221,20 @@ K `403` pridávajú spoločné odpovede tieto kódy: `forbidden`, `invitation_ac
 
 ## Prílohy k úlohám
 
-Objekt `attachment` obsahuje verejné ID, pôvodný názov iba na zobrazenie, MIME typ overený serverom, veľkosť v bajtoch, autora a čas vytvorenia. Nikdy neobsahuje interný kľúč ani cestu úložiska.
+Objekt `attachment` obsahuje verejné ID, pôvodný názov iba na zobrazenie, MIME typ overený serverom, veľkosť v bajtoch, autora (`null`, ak účet autora už neexistuje) a čas vytvorenia. Nikdy neobsahuje interný kľúč ani cestu úložiska.
 
 ```json
 {"id":501,"name":"navrh.pdf","mime_type":"application/pdf","size":245760,"author":{"id":1,"name":"Jana Nová"},"created_at":"2026-11-06T12:00:00Z"}
 ```
 
-Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
+Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky do 8 000 × 8 000 pixelov a najviac 12 megapixelov. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
+
+PHP nasadenie potrebuje rozšírenia `fileinfo`, `zip` a `gd` s podporou WebP. `upload_max_filesize` musí byť aspoň `32M`, `post_max_size` aspoň `34M` a limit tela webového servera musí presiahnuť `34M`.
 
 | Metóda a cesta | Vstup | Úspech | Osobitné chyby |
 | --- | --- | --- | --- |
 | `GET /api/tasks/{id}/attachments` | — | `200`, `data:{items:attachment[]}` | `403 forbidden`, `404 not_found` |
-| `POST /api/tasks/{id}/attachments` | `multipart/form-data`, presne jedno pole `file` | `201`, `data:attachment` | `403 forbidden`, `404 not_found`, `413 file_too_large` / `task_attachment_limit`, `415 unsupported_media_type`, `422 upload_required` / `invalid_file_type` / `validation_failed`, `500 storage_error` |
+| `POST /api/tasks/{id}/attachments` | `multipart/form-data`, presne jedno pole `file` | `201`, `data:attachment` | `403 forbidden`, `404 not_found`, `413 file_too_large` / `task_attachment_limit`, `415 unsupported_media_type`, `422 upload_required` / `invalid_file_type` / `validation_failed`, `500 storage_error` / `server_error` |
 | `GET /api/tasks/{id}/attachments/{attachment_id}` | — | `200` binárny obsah s `Content-Disposition: attachment`, `Content-Length`, overeným `Content-Type` a `X-Content-Type-Options: nosniff` | `403 forbidden`, `404 not_found`, `500 storage_error` |
 | `DELETE /api/tasks/{id}/attachments/{attachment_id}` | — | `204` bez tela | `403 forbidden`, `404 not_found`, `500 server_error` pri zlyhaní DB |
 
@@ -238,6 +243,7 @@ Každá cesta vyžaduje prihlásenie a nové overenie prístupu k úlohe. Zoznam
 Pri odstránení prílohy alebo nadradenej úlohy sa interný kľúč najskôr zapíše do transakčného outboxu. Fyzické mazanie sa opakuje po API operácii a cez `php db/cleanup_task_attachments.php`; pri dočasnej chybe disku zostáva položka vo fronte.
 
 Nahratie odosiela vždy jeden súbor; klient môže zaradiť viac súborov do frontu a odoslať ich samostatne. Názov klienta sa normalizuje na zobrazovaný názov a nikdy sa nepoužije ako cesta. Binárny úspech sťahovania je jediná výnimka zo JSON obálky; chyby aj pri týchto endpointoch majú štandardný tvar `error`.
+
 ## Postman mock
 
 Mock je statický: prehráva uložené príklady a neukladá zmeny ani session.

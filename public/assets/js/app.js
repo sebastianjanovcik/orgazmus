@@ -10,6 +10,44 @@
         },
         /* Základné popisky mimo dátových šablón sa menia spolu s jazykovým nastavením. */
         labels: {
+            'Prílohy': ['Prílohy', 'Přílohy'],
+            'Pridať súbory': ['Pridať súbory', 'Přidat soubory'],
+            'Pretiahni súbory sem alebo klikni na výber.': ['Pretiahni súbory sem alebo klikni na výber.', 'Přetáhni soubory sem nebo klikni pro výběr.'],
+            'PDF, Word, Excel, PowerPoint a obrázky (JPG, PNG, GIF, WebP); najviac 32 MB na súbor.': ['PDF, Word, Excel, PowerPoint a obrázky (JPG, PNG, GIF, WebP); najviac 32 MB na súbor.', 'PDF, Word, Excel, PowerPoint a obrázky (JPG, PNG, GIF, WebP); nejvýše 32 MB na soubor.'],
+            'Vybrať súbory': ['Vybrať súbory', 'Vybrat soubory'],
+            'Nahrávanie čaká': ['Nahrávanie čaká', 'Nahrávání čeká'],
+            'Nahráva sa': ['Nahráva sa', 'Nahrává se'],
+            'Nahraté': ['Nahraté', 'Nahráno'],
+            'Nahrávanie zlyhalo': ['Nahrávanie zlyhalo', 'Nahrávání selhalo'],
+            'Odstrániť prílohu?': ['Odstrániť prílohu?', 'Odstranit přílohu?'],
+            'Naozaj chceš odstrániť túto prílohu?': ['Naozaj chceš odstrániť túto prílohu?', 'Opravdu chceš odstranit tuto přílohu?'],
+            'Sťahovať': ['Sťahovať', 'Stáhnout'],
+            'Skryť výsledok': ['Skryť výsledok', 'Skrýt výsledek'],
+            'Prílohy sa nepodarilo načítať.': ['Prílohy sa nepodarilo načítať.', 'Přílohy se nepodařilo načíst.'],
+            'Zatiaľ tu nie sú žiadne prílohy.': ['Zatiaľ tu nie sú žiadne prílohy.', 'Zatím tu nejsou žádné přílohy.'],
+            'Prílohu sa nepodarilo odstrániť.': ['Prílohu sa nepodarilo odstrániť.', 'Přílohu se nepodařilo odstranit.'],
+            'Nahrávanie sa nepodarilo dokončiť.': ['Nahrávanie sa nepodarilo dokončiť.', 'Nahrávání se nepodařilo dokončit.'],
+            'Názov súboru nie je platný.': ['Názov súboru nie je platný.', 'Název souboru není platný.'],
+            'Vyber jeden súbor na nahratie.': ['Vyber jeden súbor na nahratie.', 'Vyber jeden soubor k nahrání.'],
+            'Súbor prekračuje limit 32 MB.': ['Súbor prekračuje limit 32 MB.', 'Soubor překračuje limit 32 MB.'],
+            'Súčet príloh úlohy nesmie prekročiť 1 GB.': ['Súčet príloh úlohy nesmie prekročiť 1 GB.', 'Součet příloh úkolu nesmí překročit 1 GB.'],
+            'Prázdne súbory nie je možné pridať.': ['Prázdne súbory nie je možné pridať.', 'Prázdné soubory nelze přidat.'],
+            'Typ súboru nie je povolený alebo obsah nezodpovedá prípone.': ['Typ súboru nie je povolený alebo obsah nezodpovedá prípone.', 'Typ souboru není povolený nebo obsah neodpovídá příponě.'],
+            'Súbor sa nepodarilo prijať. Skús ho vybrať znova.': ['Súbor sa nepodarilo prijať. Skús ho vybrať znova.', 'Soubor se nepodařilo přijmout. Zkus ho vybrat znovu.'],
+            'Súbor sa nepodarilo uložiť do súkromného úložiska.': ['Súbor sa nepodarilo uložiť do súkromného úložiska.', 'Soubor se nepodařilo uložit do soukromného úložiště.'],
+            'Nastala chyba servera.': ['Nastala chyba servera.', 'Nastala chyba serveru.'],
+            'Súkromné úložisko príloh nie je nakonfigurované.': ['Súkromné úložisko príloh nie je nakonfigurované.', 'Soukromé úložiště příloh není nakonfigurováno.'],
+            'Súkromné úložisko príloh nie je dostupné.': ['Súkromné úložisko príloh nie je dostupné.', 'Soukromé úložiště příloh není dostupné.'],
+            'Súkromné úložisko príloh nie je zapisovateľné.': ['Súkromné úložisko príloh nie je zapisovateľné.', 'Soukromé úložiště příloh není zapisovatelné.'],
+            'Súkromné úložisko musí byť mimo verejného koreňa.': ['Súkromné úložisko musí byť mimo verejného koreňa.', 'Soukromé úložiště musí být mimo veřejný kořen webu.'],
+            'Kontrola typu súboru nie je dostupná.': ['Kontrola typu súboru nie je dostupná.', 'Kontrola typu souboru není dostupná.'],
+            'Nahratie vyžaduje multipart/form-data.': ['Nahratie vyžaduje multipart/form-data.', 'Nahrání vyžaduje multipart/form-data.'],
+            'Požiadavka môže obsahovať iba jedno pole file.': ['Požiadavka môže obsahovať iba jedno pole file.', 'Požadavek může obsahovat pouze jedno pole file.'],
+            'Metadáta prílohy sa nepodarilo načítať.': ['Metadáta prílohy sa nepodarilo načítať.', 'Metadata přílohy se nepodařilo načíst.'],
+            'Príloha sa nenašla.': ['Príloha sa nenašla.', 'Příloha nebyla nalezena.'],
+            'Súbor v súkromnom úložisku nie je dostupný.': ['Súbor v súkromnom úložisku nie je dostupný.', 'Soubor v soukromém úložišti není dostupný.'],
+            'Úloha sa nenašla.': ['Úloha sa nenašla.', 'Úkol nebyl nalezen.'],
+            'Na túto akciu nemáš oprávnenie.': ['Na túto akciu nemáš oprávnenie.', 'K této akci nemáš oprávnění.'],
             'Otvorenie profilu': ['Otvoriť profil', 'Otevřít profil'],
             'Zavrieť': ['Zavrieť', 'Zavřít'], 'Zavrieť menu': ['Zavrieť menu', 'Zavřít menu'],
             'Horná lišta': ['Horná lišta', 'Horní lišta'], 'Hlavná navigácia': ['Hlavná navigácia', 'Hlavní navigace'],
@@ -177,6 +215,8 @@
             this.apply();
             taskForm.setEditorLanguage();
             router.navigate();
+            attachmentManager.renderQueue();
+            attachmentManager.renderList();
             notifications.update();
         },
         apply(root) {
@@ -232,6 +272,29 @@
                             message: error.message || 'Požiadavku sa nepodarilo dokončiť.',
                             fields: error.fields || {}
                         });
+                    });
+            });
+        },
+        /* FormData necháva multipart boundary na prehliadači a priebeh sleduje XMLHttpRequest upload event. */
+        upload(url, file, onProgress) {
+            const config = window.TASKO_CONFIG || {};
+            const form = new FormData();
+            form.append('file', file, file.name);
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: `${String(config.apiBase || '').replace(/\/$/, '')}${url}`,
+                    method: 'POST', data: form, processData: false, contentType: false,
+                    xhr() {
+                        const request = $.ajaxSettings.xhr();
+                        request.upload.addEventListener('progress', (event) => {
+                            if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100));
+                        });
+                        return request;
+                    }
+                }).done((response) => resolve(response && response.data))
+                    .fail((xhr) => {
+                        const error = xhr.responseJSON && xhr.responseJSON.error || {};
+                        reject({ status: xhr.status, code: error.code || 'request_failed', message: error.message || 'Nahrávanie sa nepodarilo dokončiť.', fields: error.fields || {} });
                     });
             });
         }
@@ -1063,6 +1126,219 @@
     };
 
     /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
+    /* Spravuje prílohy otvorenej úlohy oddelene od editora, aby sa front nezmenil pri prekreslení detailu. */
+    const attachmentManager = {
+        taskId: null,
+        canAdd: false,
+        canDelete: false,
+        items: [],
+        queue: [],
+        loading: true,
+        loadError: null,
+        uploading: false,
+        nextQueueId: 1,
+        mount(task) {
+            this.taskId = Number(task.id);
+            this.canAdd = Boolean(task.can_add_attachments);
+            this.canDelete = Boolean(task.can_delete);
+            this.items = [];
+            this.queue = [];
+            this.loading = true;
+            this.loadError = null;
+            const section = document.createElement('section');
+            section.className = 'task-attachments';
+            const heading = document.createElement('h3');
+            heading.textContent = i18n.text('Prílohy');
+            section.append(heading);
+            if (this.canAdd) {
+                const dropzone = document.createElement('button');
+                dropzone.type = 'button';
+                dropzone.className = 'attachment-dropzone';
+                dropzone.dataset.action = 'attachments-pick';
+                const prompt = document.createElement('strong');
+                prompt.textContent = i18n.text('Pridať súbory');
+                const instruction = document.createElement('span');
+                instruction.textContent = i18n.text('Pretiahni súbory sem alebo klikni na výber.');
+                dropzone.append(prompt, instruction);
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.multiple = true;
+                input.accept = '.doc,.docx,.pdf,.jpg,.jpeg,.png,.gif,.webp,.xls,.xlsx,.ppt,.pptx';
+                input.className = 'visually-hidden';
+                input.dataset.attachmentInput = 'true';
+                input.setAttribute('aria-label', i18n.text('Vybrať súbory'));
+                input.tabIndex = 0;
+                const help = document.createElement('span');
+                help.className = 'attachment-help';
+                help.textContent = i18n.text('PDF, Word, Excel, PowerPoint a obrázky (JPG, PNG, GIF, WebP); najviac 32 MB na súbor.');
+                section.append(dropzone, input, help);
+                input.setAttribute('aria-describedby', `attachment-help-${this.taskId}`);
+                help.id = `attachment-help-${this.taskId}`;
+            }
+            const queue = document.createElement('ol');
+            queue.className = 'attachment-queue';
+            const region = document.createElement('div');
+            region.className = 'attachment-list-region';
+            const announcement = document.createElement('div');
+            announcement.className = 'visually-hidden';
+            announcement.dataset.attachmentAnnouncement = 'true';
+            announcement.setAttribute('aria-live', 'polite');
+            section.append(queue, announcement, region);
+            this.root = section;
+            this.renderQueue();
+            this.renderList();
+            return section;
+        },
+        async load() { await this.refresh(true); },
+        async refresh(showSkeleton = false) {
+            const taskId = this.taskId;
+            if (!taskId || !this.root) return;
+            if (showSkeleton) { this.loading = true; this.loadError = null; this.renderList(); }
+            try {
+                const result = await api.request('GET', `/api/tasks/${encodeURIComponent(taskId)}/attachments`);
+                if (this.taskId !== taskId) return;
+                this.items = Array.isArray(result?.items) ? result.items : [];
+                this.loading = false;
+                this.loadError = null;
+                this.renderList();
+            } catch (error) {
+                if (this.taskId !== taskId) return;
+                this.loading = false;
+                this.loadError = error.message || i18n.text('Prílohy sa nepodarilo načítať.');
+                this.renderList();
+            }
+        },
+        renderList() {
+            if (!this.root) return;
+            const region = this.root.querySelector('.attachment-list-region');
+            if (this.loading) {
+                const skeleton = document.createElement('ul');
+                skeleton.className = 'attachment-list attachment-list-skeleton';
+                skeleton.setAttribute('aria-hidden', 'true');
+                for (let index = 0; index < 3; index++) {
+                    const row = document.createElement('li'); row.className = 'attachment-skeleton-row';
+                    row.innerHTML = '<span></span><span></span>';
+                    skeleton.append(row);
+                }
+                region.replaceChildren(skeleton);
+                return;
+            }
+            if (this.loadError) {
+                const message = document.createElement('p'); message.className = 'attachment-error'; message.textContent = i18n.text(this.loadError);
+                const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'button button-quiet';
+                retry.dataset.action = 'attachments-retry'; retry.textContent = i18n.text('Skúsiť znova');
+                region.replaceChildren(message, retry);
+                return;
+            }
+            if (this.items.length === 0) {
+                const empty = document.createElement('p'); empty.className = 'attachment-empty';
+                empty.textContent = i18n.text('Zatiaľ tu nie sú žiadne prílohy.');
+                region.replaceChildren(empty);
+                return;
+            }
+            const list = document.createElement('ul'); list.className = 'attachment-list';
+            this.items.forEach((item) => {
+                const row = document.createElement('li'); row.className = 'attachment-row';
+                const details = document.createElement('div'); details.className = 'attachment-details';
+                const name = document.createElement('strong'); name.className = 'attachment-name'; name.textContent = item.name;
+                const meta = document.createElement('span'); meta.className = 'attachment-meta';
+                meta.textContent = `${item.mime_type} · ${this.formatSize(item.size)}`;
+                details.append(name, meta);
+                const actions = document.createElement('div'); actions.className = 'attachment-actions';
+                const download = document.createElement('a'); download.className = 'button button-quiet';
+                download.href = `${String((window.TASKO_CONFIG || {}).apiBase || '').replace(/\/$/, '')}/api/tasks/${encodeURIComponent(this.taskId)}/attachments/${encodeURIComponent(item.id)}`;
+                download.textContent = i18n.text('Sťahovať');
+                actions.append(download);
+                if (this.canDelete) {
+                    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'button button-danger';
+                    remove.dataset.action = 'attachment-delete'; remove.dataset.attachmentId = String(item.id);
+                    remove.textContent = i18n.text('Odstrániť'); actions.append(remove);
+                }
+                row.append(details, actions); list.append(row);
+            });
+            region.replaceChildren(list);
+        },
+        renderQueue() {
+            if (!this.root) return;
+            const list = this.root.querySelector('.attachment-queue');
+            list.replaceChildren();
+            list.hidden = this.queue.length === 0;
+            this.queue.forEach((item) => {
+                const row = document.createElement('li'); row.className = `attachment-queue-item is-${item.status}`;
+                const name = document.createElement('strong'); name.className = 'attachment-name'; name.textContent = item.file.name;
+                const status = document.createElement('span'); status.className = 'attachment-queue-status';
+                status.textContent = item.status === 'queued' ? i18n.text('Nahrávanie čaká')
+                    : item.status === 'uploading' ? `${i18n.text('Nahráva sa')} ${item.progress}%`
+                        : item.status === 'done' ? i18n.text('Nahraté') : i18n.text(item.error || 'Nahrávanie zlyhalo');
+                row.append(name, status);
+                if (item.status === 'uploading') {
+                    const progress = document.createElement('progress'); progress.max = 100; progress.value = item.progress;
+                    progress.setAttribute('aria-label', `${i18n.text('Nahráva sa')}: ${item.file.name}`); row.append(progress);
+                }
+                const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'text-button';
+                remove.dataset.action = 'attachment-queue-remove'; remove.dataset.queueId = String(item.id);
+                remove.textContent = i18n.text(item.status === 'queued' ? 'Zrušiť' : 'Skryť výsledok');
+                remove.disabled = item.status === 'uploading'; row.append(remove); list.append(row);
+            });
+        },
+        announce(message) {
+            const node = this.root?.querySelector('[data-attachment-announcement]');
+            if (node) node.textContent = message;
+        },
+        formatSize(bytes) {
+            const value = Number(bytes) || 0;
+            if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+            if (value >= 1024) return `${Math.ceil(value / 1024)} kB`;
+            return `${value} B`;
+        },
+        addFiles(files) {
+            if (!this.canAdd || !files?.length) return;
+            Array.from(files).forEach((file) => this.queue.push({ id: this.nextQueueId++, file, status: 'queued', progress: 0, error: null }));
+            this.renderQueue();
+            this.processQueue();
+        },
+        async processQueue() {
+            if (this.uploading) return;
+            this.uploading = true;
+            const taskId = this.taskId;
+            try {
+                while (this.taskId === taskId) {
+                    const item = this.queue.find((entry) => entry.status === 'queued');
+                    if (!item) break;
+                    item.status = 'uploading'; this.renderQueue();
+                    this.announce(`${i18n.text('Nahráva sa')}: ${item.file.name}`);
+                    try {
+                        await api.upload(`/api/tasks/${encodeURIComponent(taskId)}/attachments`, item.file, (progress) => {
+                            if (item.progress !== progress) { item.progress = progress; this.renderQueue(); }
+                        });
+                        item.status = 'done'; item.progress = 100;
+                        this.announce(`${i18n.text('Nahraté')}: ${item.file.name}`);
+                        await this.refresh(false);
+                    } catch (error) {
+                        item.status = 'error'; item.error = error.message || i18n.text('Nahrávanie sa nepodarilo dokončiť.');
+                        this.announce(`${i18n.text('Nahrávanie zlyhalo')}: ${item.file.name}. ${i18n.text(item.error)}`);
+                    }
+                    this.renderQueue();
+                }
+            } finally { this.uploading = false; }
+        },
+        removeQueued(queueId) {
+            const item = this.queue.find((entry) => entry.id === Number(queueId));
+            if (item?.status === 'uploading') return;
+            this.queue = this.queue.filter((entry) => entry.id !== Number(queueId));
+            this.renderQueue();
+        },
+        async removeAttachment(attachmentId) {
+            const confirmed = await ui.confirm('Naozaj chceš odstrániť túto prílohu?', 'Odstrániť prílohu?');
+            if (!confirmed) return;
+            const taskId = this.taskId;
+            try {
+                await api.request('DELETE', `/api/tasks/${encodeURIComponent(taskId)}/attachments/${encodeURIComponent(attachmentId)}`);
+                await this.refresh(false);
+            } catch (error) { ui.showToast(error.message || 'Prílohu sa nepodarilo odstrániť.', 'error'); }
+        }
+    };
+
     const taskList = {
         requestSequence: 0,
         liveTimer: null,
@@ -1436,6 +1712,7 @@
                 facts.append(term, detail);
             });
             content.append(title, description, facts);
+            content.append(attachmentManager.mount(task));
             const comments = document.createElement('div'); comments.id = 'task-comments'; comments.className = 'task-comments'; comments.setAttribute('aria-live', 'polite'); comments.setAttribute('aria-busy', 'true');
             comments.innerHTML = '<div class="comment-skeleton" aria-hidden="true"></div>';
             content.append(comments);
@@ -1471,6 +1748,7 @@
             document.getElementById('task-detail-title').textContent = 'Detail úlohy';
             i18n.apply(document.getElementById('task-detail-panel'));
             ui.openPanel('task-detail-panel');
+            attachmentManager.load();
             commentThreads.canAdd = Boolean(task.can_add_comments);
             commentThreads.load(task.id);
         },
@@ -2839,6 +3117,10 @@
     /* Delegované udalosti fungujú aj pre obsah, ktorý neskôr vykreslia pohľady. */
     $(document).on('click', '[data-action]', function (event) {
         const action = this.dataset.action;
+        if (action === 'attachments-pick') this.parentElement.querySelector('[data-attachment-input]')?.click();
+        if (action === 'attachments-retry') attachmentManager.refresh(true);
+        if (action === 'attachment-queue-remove') attachmentManager.removeQueued(this.dataset.queueId);
+        if (action === 'attachment-delete') attachmentManager.removeAttachment(this.dataset.attachmentId);
         if (action === 'comments-retry') commentThreads.load(commentThreads.taskId);
         if (action === 'comment-reply') commentThreads.toggleReply(this);
         if (action === 'comment-delete') commentThreads.remove(this);
@@ -2908,6 +3190,25 @@
             event.preventDefault();
             ui.showToast('Táto akcia bude dokončená v ďalšom kroku.');
         }
+    });
+
+    // Drag udalosti musia zrušiť predvolené otvorenie súboru prehliadačom mimo drop zóny.
+    $(document).on('dragenter dragover', '.attachment-dropzone', function (event) {
+        event.preventDefault();
+        this.classList.add('is-dragging');
+    });
+    $(document).on('dragleave', '.attachment-dropzone', function (event) {
+        const related = event.originalEvent.relatedTarget;
+        if (!related || !this.contains(related)) this.classList.remove('is-dragging');
+    });
+    $(document).on('drop', '.attachment-dropzone', function (event) {
+        event.preventDefault();
+        this.classList.remove('is-dragging');
+        attachmentManager.addFiles(event.originalEvent.dataTransfer?.files);
+    });
+    $(document).on('change', '[data-attachment-input]', function () {
+        attachmentManager.addFiles(this.files);
+        this.value = '';
     });
 
     /* Kliknutie na voľnú časť karty otvorí detail; ovládací prvok stavu zostáva samostatný. */

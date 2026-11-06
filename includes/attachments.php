@@ -58,6 +58,9 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
     ];
     if (!isset($allowed[$extension])) return null;
 
+    if (!class_exists(finfo::class)) {
+        throw new TaskoHttpException(500, 'server_error', 'Kontrola typu súboru nie je dostupná.');
+    }
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $detected = $finfo->file($path);
     if (!is_string($detected)) return null;
@@ -72,7 +75,7 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
         // Dekódovanie má pevný rozmerový strop, aby komprimovaný obrázok nemohol vyčerpať pamäť PHP.
         if (!is_array($image) || ($image['mime'] ?? null) !== $allowed[$extension] || $detected !== $allowed[$extension]
             || (int) $image[0] > 8000 || (int) $image[1] > 8000 || (int) $image[0] * (int) $image[1] > 12_000_000) return null;
-        if (!function_exists('imagecreatefromstring')) return null;
+        if (!function_exists('imagecreatefromstring') || ($extension === 'webp' && !function_exists('imagecreatefromwebp'))) return null;
         $decoded = @imagecreatefromstring((string) file_get_contents($path));
         if ($decoded === false) return null;
         imagedestroy($decoded);
@@ -95,7 +98,8 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
         $hasMacro = false;
         for ($index = 0; $index < $zip->numFiles; $index++) {
             $entryName = $zip->getNameIndex($index);
-            if (is_string($entryName) && preg_match('/(?:^|\/)vbaProject\.bin$/i', $entryName)) $hasMacro = true;
+            if (is_string($entryName) && (preg_match('/(?:^|\/)vbaProject\.bin$/i', $entryName)
+                || preg_match('/^xl\/macrosheets\//i', $entryName))) $hasMacro = true;
         }
         $valid = is_string($contentTypes)
             && str_contains($contentTypes, $expectedType)
@@ -109,6 +113,7 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
     if (!str_starts_with($head, "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")) return null;
     $contents = file_get_contents($path);
     if (!is_string($contents)) return null;
+    if (preg_match('/VBA|PROJECTwm|_VBA_PROJECT/i', $contents)) return null;
     $signature = match ($extension) {
         'doc' => 'WordDocument', 'xls' => (str_contains($contents, 'Workbook') || str_contains($contents, 'Book')),
         'ppt' => 'PowerPoint Document', default => false,
@@ -149,9 +154,10 @@ function tasko_attachment_create(PDO $pdo, int $taskId, array $user): array
     if (!str_starts_with($contentType, 'multipart/form-data;')) {
         throw new TaskoHttpException(415, 'unsupported_media_type', 'Nahratie vyžaduje multipart/form-data.');
     }
-    if (array_keys($_FILES) !== ['file'] || $_POST !== []) {
+    if (array_diff(array_keys($_FILES), ['file']) !== [] || $_POST !== []) {
         throw new TaskoHttpException(422, 'validation_failed', 'Požiadavka môže obsahovať iba jedno pole file.');
     }
+    if (!array_key_exists('file', $_FILES)) throw new TaskoHttpException(422, 'upload_required', 'Vyber jeden súbor na nahratie.');
     $upload = $_FILES['file'];
     if (!is_array($upload) || is_array($upload['name'] ?? null)) {
         throw new TaskoHttpException(422, 'upload_required', 'Vyber jeden súbor na nahratie.');

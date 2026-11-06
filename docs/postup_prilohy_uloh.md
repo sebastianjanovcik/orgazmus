@@ -1,6 +1,6 @@
 # Postup: prílohy k úlohám
 
-Tento dokument rozdeľuje zavedenie príloh na samostatné, overiteľné kroky. Súčasný kontrakt v `docs/api.md` ani implementácia zatiaľ prílohy nedefinujú. Pred implementáciou preto treba rozhodnutia nižšie zapracovať do kontraktu a následne nimi viesť databázu, API aj rozhranie.
+Tento dokument rozdeľuje zavedenie príloh na samostatné, overiteľné kroky. Kontrakt v `docs/api.md` a implementácia sa dopĺňajú v tomto poradí; po každej fáze sa overí jej nadväznosť na ďalšiu.
 
 ## Cieľ a rozsah
 
