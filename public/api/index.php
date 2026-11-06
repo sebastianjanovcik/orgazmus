@@ -1249,7 +1249,11 @@ try {
                     'summary' => tasko_tasks_summary(tasko_db(), (int) $user['id'], $filters),
                 ]);
             }
-            tasko_json_response(200, ['items' => $tasks, 'next_before_id' => $hasMore && $tasks !== [] ? end($tasks)['id'] : null]);
+            tasko_json_response(200, [
+                'items' => $tasks,
+                'next_before_id' => $hasMore && $tasks !== [] ? end($tasks)['id'] : null,
+                'summary' => tasko_tasks_summary(tasko_db(), (int) $user['id'], $filters),
+            ]);
         }
         tasko_json_response(200, $tasks);
     }
