@@ -175,8 +175,6 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .section-heading h2 { margin: 0; font-size: 16px; font-weight: 750; }
 .section-count { color: var(--muted); font-size: 12px; }
 .section-count::before { content: "·"; padding-right: 8px; }
-.done-list-link { margin-left: auto; color: var(--accent); font-size: 12px; font-weight: 700; text-decoration: none; }
-.done-list-link:hover { text-decoration: underline; }
 .task-card { display: flex; align-items: flex-start; gap: 13px; min-width: 0; margin-bottom: 10px; padding: 15px 16px; border: 1px solid var(--glass-border); border-radius: 19px; background: var(--surface); box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); transition: transform .18s, border-color .18s; }
 .task-card:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 26%, var(--glass-border)); }
 .task-check { display: grid; flex: none; width: 26px; height: 26px; margin-top: 1px; place-items: center; border: 2px solid color-mix(in srgb, var(--ink) 38%, transparent); border-radius: 50%; background: transparent; cursor: pointer; }

@@ -5,8 +5,8 @@
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
         dictionaries: {
-            sk: { audit: 'Audit log', all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
-            cs: { audit: 'Auditní protokol', all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
+            sk: { audit: 'Audit log', all_tasks: 'Otvorené úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
+            cs: { audit: 'Auditní protokol', all_tasks: 'Otevřené úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánované žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
         /* Základné popisky mimo dátových šablón sa menia spolu s jazykovým nastavením. */
         labels: {
@@ -1198,17 +1198,12 @@
                 (Number(b.priority) || 0) - (Number(a.priority) || 0) ||
                 Number(a.id) - Number(b.id)
             );
-            const done = tasks.filter((task) => task.is_done);
             const openList = document.getElementById('task-open-list');
-            const doneList = document.getElementById('task-done-list');
-            if (!openList || !doneList) return;
+            if (!openList) return;
             openList.replaceChildren();
-            doneList.replaceChildren();
             open.forEach((task) => openList.append(this.makeCard(task, projects)));
-            done.forEach((task) => doneList.append(this.makeCard(task, projects)));
-            this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
-            this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
-            // Načítavanie sleduje koniec otvorených úloh, aby dlhý zoznam hotových neblokoval ďalšiu dávku.
+            this.emptyState(openList, open.length, i18n.language === 'cs' ? 'Nemáš žádné otevřené úkoly.' : 'Nemáš otvorené úlohy.', 'task-open-empty');
+            // Načítavanie sleduje koniec otvorených úloh; hotové úlohy sa zobrazujú iba na samostatnej obrazovke.
             const section = openList.closest('.task-section');
             if (section) {
                 let sentinel = section.querySelector('.task-scroll-sentinel');
@@ -1226,8 +1221,7 @@
                 'open-task-count': String(open),
                 'overdue-task-count': String(overdue),
                 'completed-task-count': String(done),
-                'open-section-count': i18n.taskCount(open),
-                'done-section-count': i18n.taskCount(done)
+                'open-section-count': i18n.taskCount(open)
             };
             // Projektový detail tieto počítadlá nemá; aktualizujeme iba prvky prítomné v aktuálnom pohľade.
             Object.entries(counts).forEach(([id, value]) => {
@@ -1254,7 +1248,7 @@
             const previousSummary = updateMainSummary ? { ...this.summary } : null;
             this.pendingCompletions.add(taskId);
             button.disabled = true;
-            // Aktualizácia karty a počtov je okamžitá; jej pozícia zostane rovnaká až do ďalšieho načítania.
+            // Súhrn a otvorená karta sa upravia okamžite; pri chybe sa zoznam znovu vykreslí.
             this.setCardDone(card, button, task, nextState);
             // Súhrn pokrýva aj nenačítané strany, preto ho pri zmene upravíme nezávisle od kariet v pamäti.
             if (updateMainSummary) {
@@ -1285,6 +1279,7 @@
                     this.setCardDone(card, button, task, previousState);
                     if (previousSummary) this.summary = previousSummary;
                     this.updateCounts(state.tasks);
+                    if (router.current().name === 'tasks') this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
                     ui.showToast(error.message || 'Stav úlohy sa nepodarilo uložiť.', 'error');
                 })
                 .finally(() => {
@@ -1301,24 +1296,20 @@
             container.append(empty);
         },
         loading() {
-            ['task-open-list', 'task-done-list'].forEach((id) => {
-                const container = document.getElementById(id);
-                if (!container) return;
-                const count = 10;
-                container.replaceChildren(...Array.from({ length: count }, () => {
+            const container = document.getElementById('task-open-list');
+            if (container) {
+                container.replaceChildren(...Array.from({ length: 10 }, () => {
                     const row = document.createElement('div');
                     row.className = 'task-skeleton';
                     row.setAttribute('aria-hidden', 'true');
                     return row;
                 }));
-            });
+            }
             document.getElementById('open-section-count').textContent = 'Načítavam…';
-            document.getElementById('done-section-count').textContent = 'Načítavam…';
         },
         error(error) {
-            ['task-open-list', 'task-done-list'].forEach((id) => {
-                const container = document.getElementById(id);
-                if (!container) return;
+            const container = document.getElementById('task-open-list');
+            if (container) {
                 const box = document.createElement('div');
                 box.className = 'task-load-error';
                 const message = document.createElement('p');
@@ -1330,9 +1321,8 @@
                 retry.textContent = 'Skúsiť znova';
                 box.append(message, retry);
                 container.replaceChildren(box);
-            });
+            }
             document.getElementById('open-section-count').textContent = 'Chyba';
-            document.getElementById('done-section-count').textContent = 'Chyba';
             i18n.apply(document.getElementById('view'));
         },
         showDetail(task) {
@@ -2460,10 +2450,9 @@
             taskList.hasMore = false;
             taskList.summary = null;
             taskList.loading();
-            const [tasksResult, doneResult, projectsResult] = await Promise.allSettled([
+            const [tasksResult, projectsResult] = await Promise.allSettled([
                 // Otvorená stránka nezaberá miesto dokončenými úlohami a obsahuje prehľadný kurzor zoradenia.
                 api.request('GET', `/api/tasks?limit=10&done=0&visibility=${encodeURIComponent(state.taskFilter)}`),
-                api.request('GET', `/api/tasks?limit=10&done=1&visibility=${encodeURIComponent(state.taskFilter)}`),
                 api.request('GET', '/api/projects')
             ]);
             if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
@@ -2476,17 +2465,15 @@
                 return;
             }
             const openTasks = Array.isArray(tasksResult.value?.items) ? tasksResult.value.items : [];
-            const doneTasks = doneResult.status === 'fulfilled' && Array.isArray(doneResult.value?.items) ? doneResult.value.items : [];
-            state.tasks = openTasks.concat(doneTasks);
+            state.tasks = openTasks;
             taskList.summary = tasksResult.value?.summary ?? null;
             taskList.nextCursor = tasksResult.value?.next_cursor ?? null;
             taskList.hasMore = taskList.nextCursor !== null;
-            if (doneResult.status === 'rejected') ui.showToast(doneResult.reason?.message || i18n.t('no_tasks_loaded'), 'error');
             notifications.update();
             taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
             if (!taskList.scrollObserver && 'IntersectionObserver' in window) {
                 taskList.scrollObserver = new IntersectionObserver((entries) => {
-                    if (entries.some((entry) => entry.isIntersecting)) views.loadMoreTasks(routeSequence);
+                    if (router.current().name === 'tasks' && entries.some((entry) => entry.isIntersecting)) views.loadMoreTasks(state.routeSequence);
                 }, { rootMargin: '240px' });
                 const sentinel = document.querySelector('.task-scroll-sentinel');
                 if (sentinel) taskList.scrollObserver.observe(sentinel);
