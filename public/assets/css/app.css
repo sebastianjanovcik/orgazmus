@@ -117,6 +117,9 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .audit-filters .audit-search-filter > input { width: 100%; margin-top: 0; }
 .audit-pagination { width: 100%; flex-wrap: wrap; gap: 8px; }
 .audit-pagination .button { min-width: 40px; min-height: 40px; padding: 6px 10px; }
+/* Aktu?lna strana pou??va akcent, ostatn? ??sla zost?vaj? tlmen? a ?ahko porovnate?n?. */
+.audit-pagination .button:not([aria-current="page"]) { border-color: var(--line); color: var(--ink); background: var(--surface); }
+.audit-pagination .button[aria-current="page"] { border-color: var(--accent); color: var(--accent-contrast); background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); font-weight: 800; }
 .audit-pagination > span { min-width: auto; }
 .audit-filters label > input, .audit-filters label > .styled-select, .audit-filters label > .date-picker { margin-top: 12px; }
 .audit-filters input, .audit-filters select { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); }
