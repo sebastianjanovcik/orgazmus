@@ -538,6 +538,8 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 36px); font-weight: 790; letter-spac
 .task-origin-button:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; }
 
 @media (max-width: 575.98px) {
+    /* Nadpis a prepínač viditeľnosti ukladaj pod seba, aby filter nezostal natlačený vedľa textu. */
+    .page-heading:has(> .task-origin-filter) { flex-direction: column; align-items: stretch; }
     .task-origin-filter { width: 100%; justify-content: space-between; margin: 12px 0 0; }
     .task-origin-options { flex: 1; }
     .task-origin-button { min-width: 0; padding-right: 7px; padding-left: 7px; }
