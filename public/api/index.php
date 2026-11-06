@@ -388,7 +388,8 @@ try {
         $count = $pdo->prepare('SELECT COUNT(*) FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE ' . $whereSql);
         $count->execute($params);
         $total = (int) $count->fetchColumn();
-        $pageSize = 25;
+        // Globálny audit vracia malé dávky, aby ich rozhranie mohlo pripájať pri posúvaní.
+        $pageSize = 10;
         $query = $pdo->prepare('SELECT a.id, a.project_id, a.entity_type, a.entity_id, a.actor_id, u.name AS actor_name, a.ip_address, a.event_type, a.details, a.created_at FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id WHERE ' . $whereSql . ' ORDER BY a.id DESC LIMIT :page_size OFFSET :page_offset');
         foreach ($params as $key => $value) $query->bindValue(':' . $key, $value);
         $query->bindValue(':page_size', $pageSize, PDO::PARAM_INT);
@@ -417,7 +418,7 @@ try {
         $pageInput = $_GET['page'] ?? '1';
         if (!is_string($pageInput) || !preg_match('/^[1-9][0-9]{0,5}$/D', $pageInput)) tasko_validation_error(['page' => 'Strana auditu nie je platná.']);
         $pageNumber = (int) $pageInput;
-        $pageSize = 25;
+        $pageSize = 10;
         $count = $pdo->prepare('SELECT COUNT(*) FROM audit_log WHERE project_id = :project_id');
         $count->execute(['project_id' => $projectId]);
         $total = (int) $count->fetchColumn();
