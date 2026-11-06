@@ -5,7 +5,7 @@
     /* Kľúče sú spoločné pre oba jazyky; pri neznámom kľúči zostane čitateľný pôvodný text. */
     const i18n = {
         dictionaries: {
-            sk: { audit: 'Audit logu', all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
+            sk: { audit: 'Audit log', all_tasks: 'Všetky úlohy', projects: 'Projekty', calendar: 'Kalendár', done: 'Hotové', stats: 'Štatistiky', settings: 'Nastavenia', project: 'Projekt', login: 'Prihlásenie', register: 'Registrácia', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Pridať projekt', today_overview: 'PREHĽAD DŇA', language: 'Jazyk', language_help: 'Vyber jazyk rozhrania.', appearance: 'Vzhľad', appearance_help: 'Vyber, ako sa má Tasko zobrazovať.', theme: 'Farebný režim', system: 'Automaticky podľa zariadenia', light: 'Svetlý', dark: 'Tmavý', notifications: 'Upozornenia', no_notifications: 'Nemáš úlohy na dnes ani po termíne.', today: 'Dnes', overdue: 'Po termíne', close: 'Zavrieť', open_tasks: 'Otvorené úlohy', completed_tasks: 'Hotové úlohy', due_today: 'Termín dnes', overdue_count: '{count} upozornení', language_saved: 'Jazyk rozhrania bol zmenený.', theme_saved: 'Téma sa zmenila, ale voľbu sa nepodarilo uložiť.', calendar_subtitle: 'Termíny a úlohy podľa dní.', calendar_tasks: 'Kalendár úloh', selected_day: 'Vybraný deň', calendar_load_error: 'Kalendár sa nepodarilo načítať.', stats_subtitle: 'Prehľad dokončených úloh a priebehu projektov.', all_tasks_count: 'Všetky úlohy', open_tasks_count: 'Otvorené úlohy', done_tasks_count: 'Dokončené úlohy', project_progress: 'Priebeh projektov', completed_of: '{completed} z {total} hotových', project_progress_for: 'Priebeh projektu {name}', no_projects: 'Zatiaľ nemáš projekty.', no_tasks_this_day: 'Na tento deň nie sú naplánované žiadne úlohy.', no_tasks_loaded: 'Úlohy kalendára sa nepodarilo načítať.', day_task_count_one: 'úloha', day_task_count_other: 'úloh', fc_prev: 'Predchádzajúci mesiac', fc_next: 'Nasledujúci mesiac', fc_today: 'Dnes', fc_month: 'Mesiac', fc_week: 'Týždeň', fc_day: 'Deň', fc_list: 'Zoznam', fc_all_day: 'Celý deň', fc_more: 'ďalšie', fc_no_events: 'Žiadne úlohy' },
             cs: { audit: 'Auditní protokol', all_tasks: 'Všechny úkoly', projects: 'Projekty', calendar: 'Kalendář', done: 'Hotové', stats: 'Statistiky', settings: 'Nastavení', project: 'Projekt', login: 'Přihlášení', register: 'Registrace', menu: 'Menu', my_projects: 'Moje projekty', add_project: 'Přidat projekt', today_overview: 'PŘEHLED DNE', language: 'Jazyk', language_help: 'Vyberte jazyk rozhraní.', appearance: 'Vzhled', appearance_help: 'Vyberte, jak se má Tasko zobrazovat.', theme: 'Barevný režim', system: 'Automaticky podle zařízení', light: 'Světlý', dark: 'Tmavý', notifications: 'Upozornění', no_notifications: 'Nemáte úkoly na dnes ani po termínu.', today: 'Dnes', overdue: 'Po termínu', close: 'Zavřít', open_tasks: 'Otevřené úkoly', completed_tasks: 'Hotové úkoly', due_today: 'Termín dnes', overdue_count: '{count} upozornění', language_saved: 'Jazyk rozhraní byl změněn.', theme_saved: 'Téma se změnila, ale volbu se nepodařilo uložit.', calendar_subtitle: 'Termíny a úkoly podle dnů.', calendar_tasks: 'Kalendář úkolů', selected_day: 'Vybraný den', calendar_load_error: 'Kalendář se nepodařilo načíst.', stats_subtitle: 'Přehled dokončených úkolů a průběhu projektů.', all_tasks_count: 'Všechny úkoly', open_tasks_count: 'Otevřené úkoly', done_tasks_count: 'Dokončené úkoly', project_progress: 'Průběh projektů', completed_of: '{completed} z {total} hotových', project_progress_for: 'Průběh projektu {name}', no_projects: 'Zatím nemáte žádné projekty.', no_tasks_this_day: 'Na tento den nejsou naplánovány žádné úkoly.', no_tasks_loaded: 'Úkoly kalendáře se nepodařilo načíst.', day_task_count_one: 'úkol', day_task_count_other: 'úkolů', fc_prev: 'Předchozí měsíc', fc_next: 'Následující měsíc', fc_today: 'Dnes', fc_month: 'Měsíc', fc_week: 'Týden', fc_day: 'Den', fc_list: 'Seznam', fc_all_day: 'Celý den', fc_more: 'další', fc_no_events: 'Žádné úkoly' }
         },
         /* Základné popisky mimo dátových šablón sa menia spolu s jazykovým nastavením. */
@@ -310,7 +310,7 @@
                 else if (route.name === 'projects') { projectManager.page = 1; projectManager.pageItems = null; view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Projekty</h1><p class="page-subtitle">Všetky tvoje projekty a ich priebeh na jednom mieste.</p></div></div><div id="project-limit-notice" class="project-limit-notice" hidden></div><div id="project-list" class="project-grid" aria-live="polite">${Array.from({ length: 12 }, () => '<div class="project-skeleton" aria-hidden="true"></div>').join('')}</div><nav class="pagination-controls" id="project-pagination" aria-label="Stránkovanie projektov"><button class="button button-quiet" id="project-previous" type="button">Predchádzajúca</button><span id="project-page-label" aria-live="polite"></span><button class="button button-quiet" id="project-next" type="button">Ďalšia</button></nav><div class="project-create-row"><button class="button button-primary project-create-button" type="button" data-action="project-open">＋ Nový projekt</button></div>`; }
                 else if (route.name === 'project') view.innerHTML = `<div id="project-detail-view" class="project-detail-view"><div class="project-skeleton"></div></div>`;
                 // Globálny audit používa rovnaké skeletony ako projektová história a ponúka filtre nad celým účtom.
-                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label class="audit-search-filter"><span>Hľadať</span><input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite">${Array.from({ length: 10 }, () => '<li class="project-audit-skeleton" aria-hidden="true"></li>').join('')}</ol><nav class="pagination-controls" id="audit-pagination" aria-label="Stránkovanie auditu"><button class="button button-quiet" id="audit-previous" type="button">Predchádzajúca</button><span id="audit-page-label" aria-live="polite"></span><button class="button button-quiet" id="audit-next" type="button">Ďalšia</button></nav></section>`;
+                else if (route.name === 'audit') view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">Audit</h1><p class="page-subtitle">Záznam zmien v účte a dostupných projektoch.</p></div></div><section class="settings-card audit-card" aria-label="Audit logu"><form class="audit-filters" id="audit-filters"><label class="audit-search-filter"><span>Hľadať</span><input type="search" name="q" maxlength="100" placeholder="Meno, aktivita, IP alebo zmena"></label><label for="audit-type">Typ<select id="audit-type" name="type"><option value="">Všetky typy</option><option value="account">Účet</option><option value="project">Projekt</option><option value="task">Úloha</option><option value="comment">Komentár</option><option value="invitation">Pozvánka</option><option value="membership">Členstvo</option></select></label><label for="audit-from">Od<input id="audit-from" type="date" name="from"></label><label for="audit-to">Do<input id="audit-to" type="date" name="to"></label></form><ol class="project-audit-list global-audit-list" id="audit-list" aria-live="polite">${Array.from({ length: 10 }, () => '<li class="project-audit-skeleton" aria-hidden="true"></li>').join('')}</ol><nav class="pagination-controls audit-pagination" id="audit-pagination" aria-label="Stránkovanie auditu"><button class="button button-quiet" id="audit-previous" type="button">Predchádzajúca</button><span id="audit-page-label" aria-live="polite"></span><button class="button button-quiet" id="audit-next" type="button">Ďalšia</button></nav></section>`;
                 else if (route.name === 'invitation') view.innerHTML = `<section class="invitation-accept-card" aria-labelledby="invitation-title"><p class="eyebrow">TASKO</p><h1 id="invitation-title">Pozvánka do projektu</h1><p id="invitation-message">Skontroluj účet a potvrď pozvánku.</p><div class="panel-actions"><button class="button button-quiet" type="button" data-action="invitation-decline">Odmietnuť</button><span class="action-spacer"></span><button class="button button-primary" type="button" data-action="invitation-accept">Prijať pozvánku</button></div></section>`;
                 else if (route.name === 'settings') {
                     view.innerHTML = `<div class="page-heading"><div><p class="eyebrow">TASKO</p><h1 id="page-title">${title}</h1></div></div><section class="settings-card" aria-labelledby="language-heading"><h2 id="language-heading">${i18n.t('language')}</h2><p>${i18n.t('language_help')}</p><label for="language-preference">${i18n.t('language')}</label><select id="language-preference"><option value="sk">Slovenčina</option><option value="cs">Čeština</option></select></section><section class="settings-card" aria-labelledby="appearance-heading"><h2 id="appearance-heading">${i18n.t('appearance')}</h2><p>${i18n.t('appearance_help')}</p><label for="theme-preference">${i18n.t('theme')}</label><select id="theme-preference"><option value="system">${i18n.t('system')}</option><option value="light">${i18n.t('light')}</option><option value="dark">${i18n.t('dark')}</option></select></section>`;
@@ -2334,16 +2334,15 @@
             const previous = document.getElementById('audit-previous');
             const next = document.getElementById('audit-next');
             const pageLabel = document.getElementById('audit-page-label');
+            const pagination = document.getElementById('audit-pagination');
             if (!form || !list || !previous || !next || !pageLabel) return;
             document.getElementById('audit-pagination')?.setAttribute('aria-label', i18n.language === 'cs' ? 'Stránkování auditu' : 'Stránkovanie auditu');
-            previous.hidden = true;
-            next.textContent = i18n.language === 'cs' ? 'Načíst další záznamy' : 'Načítať ďalšie záznamy';
+            previous.textContent = i18n.language === 'cs' ? 'P\u0159edchoz\u00ed' : 'Predch\u00e1dzaj\u00faca';
+            next.textContent = i18n.language === 'cs' ? 'Dal\u0161\u00ed' : '\u010eal\u0161ia';
             let currentPage = 1;
             let totalPages = 1;
             let debounce = null;
             let requestSequence = 0;
-            let loadingMore = false;
-            let auditObserver = null;
             const activityLabels = {
                 account_created: ['Vytvorený účet', 'Vytvořen účet'], profile_updated: ['Upravený profil', 'Upraven profil'],
                 account_login: ['Prihlásenie', 'Přihlášení'], account_logout: ['Odhlásenie', 'Odhlášení'],
@@ -2374,53 +2373,65 @@
                 const variants = fieldLabels[field];
                 return variants ? variants[i18n.language === 'cs' ? 1 : 0] : field;
             };
-            const read = async (requestedPage = 1, append = false) => {
-                if (append && (loadingMore || requestedPage > totalPages)) return;
-                loadingMore = append;
+            // Pri prepnut\u00ed sa zobraz\u00ed iba vybran\u00e1 strana a okolit\u00e9 tri strany na ka\u017edej strane.
+            const renderPagination = () => {
+                pagination.querySelectorAll('[data-audit-page]').forEach((button) => button.remove());
+                const first = Math.max(1, currentPage - 3);
+                const last = Math.min(totalPages, currentPage + 3);
+                for (let page = first; page <= last; page += 1) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = page === currentPage ? 'button button-primary' : 'button button-quiet';
+                    button.dataset.auditPage = String(page);
+                    button.textContent = String(page);
+                    button.setAttribute('aria-label', `${i18n.language === 'cs' ? 'Strana' : 'Strana'} ${page}`);
+                    if (page === currentPage) button.setAttribute('aria-current', 'page');
+                    button.addEventListener('click', () => read(page));
+                    pagination.insertBefore(button, pageLabel);
+                }
+                previous.disabled = currentPage <= 1;
+                next.disabled = currentPage >= totalPages;
+                pageLabel.textContent = `${currentPage} / ${totalPages}`;
+                pagination.hidden = totalPages <= 1;
+            };
+            const read = async (requestedPage = 1) => {
                 const currentRequest = ++requestSequence;
                 const params = new URLSearchParams(new FormData(form));
                 params.set('page', String(requestedPage));
-                if (!append) list.replaceChildren();
-                for (let index = 0; index < (append ? 2 : 10); index += 1) { const skeleton = document.createElement('li'); skeleton.className = 'project-audit-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
+                list.replaceChildren();
+                for (let index = 0; index < 10; index += 1) { const skeleton = document.createElement('li'); skeleton.className = 'project-audit-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); list.append(skeleton); }
                 try {
                     const page = await api.request('GET', `/api/audit?${params}`);
                     if (currentRequest !== requestSequence || routeSequence !== state.routeSequence) return;
-                    list.querySelectorAll('.project-audit-skeleton').forEach((skeleton) => skeleton.remove());
+                    list.replaceChildren();
                     const items = Array.isArray(page?.items) ? page.items : [];
-                    if (!items.length && !append) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'Pro vybraný filtr nebyly nalezeny žádné záznamy.' : 'Pre vybraný filter sa nenašli žiadne záznamy.'; list.append(empty); }
+                    if (!items.length) { const empty = document.createElement('li'); empty.className = 'project-empty'; empty.textContent = i18n.language === 'cs' ? 'Pro vybran\u00fd filtr nebyly nalezeny \u017e\u00e1dn\u00e9 z\u00e1znamy.' : 'Pre vybran\u00fd filter sa nena\u0161li \u017eiadne z\u00e1znamy.'; list.append(empty); }
                     items.forEach((item) => {
                         const row = document.createElement('li');
                         const stamp = new Date(item.created_at).toLocaleString(i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK');
-                        const actor = item.actor_name || (i18n.language === 'cs' ? 'Nedostupný účet' : 'Nedostupný účet');
-                        const ip = item.ip_address || (i18n.language === 'cs' ? 'IP nezaznamenána' : 'IP nezaznamenaná');
-                        const meta = document.createElement('span'); meta.textContent = `${stamp} · ${actor} · (${ip})`;
+                        const actor = item.actor_name || (i18n.language === 'cs' ? 'Nedostupn\u00fd \u00fa\u010det' : 'Nedostupn\u00fd \u00fa\u010det');
+                        const ip = item.ip_address || (i18n.language === 'cs' ? 'IP nezaznamen\u00e1na' : 'IP nezaznamenan\u00e1');
+                        const meta = document.createElement('span'); meta.textContent = `${stamp} \u00b7 ${actor} \u00b7 (${ip})`;
                         const action = document.createElement('strong'); action.textContent = (activityLabels[item.event_type] || [item.event_type, item.event_type])[i18n.language === 'cs' ? 1 : 0];
                         row.append(meta, action);
                         const changes = item.details?.changes;
-                        const formatValue = (value) => typeof value === 'boolean' ? (value ? (i18n.language === 'cs' ? 'Ano' : 'Áno') : (i18n.language === 'cs' ? 'Ne' : 'Nie')) : (value && typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—'));
-                        if (changes && typeof changes === 'object') { const summary = document.createElement('span'); summary.textContent = Object.entries(changes).map(([field, values]) => `${translatedField(field, item.entity_type)}: ${formatValue(values?.old)} → ${formatValue(values?.new)}`).join(' · '); row.append(summary); }
-                        else if (item.details?.snapshot) { const summary = document.createElement('span'); summary.textContent = Object.entries(item.details.snapshot).filter(([field]) => field !== 'reason').map(([field, value]) => `${translatedField(field, item.entity_type)}: ${formatValue(value)}`).join(' · '); if (summary.textContent) row.append(summary); }
+                        const formatValue = (value) => typeof value === 'boolean' ? (value ? (i18n.language === 'cs' ? 'Ano' : '\u00c1no') : (i18n.language === 'cs' ? 'Ne' : 'Nie')) : (value && typeof value === 'object' ? JSON.stringify(value) : String(value ?? '\u2014'));
+                        if (changes && typeof changes === 'object') { const summary = document.createElement('span'); summary.textContent = Object.entries(changes).map(([field, values]) => `${translatedField(field, item.entity_type)}: ${formatValue(values?.old)} \u2192 ${formatValue(values?.new)}`).join(' \u00b7 '); row.append(summary); }
+                        else if (item.details?.snapshot) { const summary = document.createElement('span'); summary.textContent = Object.entries(item.details.snapshot).filter(([field]) => field !== 'reason').map(([field, value]) => `${translatedField(field, item.entity_type)}: ${formatValue(value)}`).join(' \u00b7 '); if (summary.textContent) row.append(summary); }
                         list.append(row);
                     });
                     currentPage = Number(page?.page) || requestedPage;
                     totalPages = Number(page?.total_pages) || 1;
-                    pageLabel.textContent = `Strana ${currentPage} / ${totalPages}`;
-                    next.disabled = currentPage >= totalPages;
-                    next.textContent = currentPage < totalPages ? (i18n.language === 'cs' ? 'Na\u010d\u00edst dal\u0161\u00ed z\u00e1znamy' : 'Na\u010d\u00edta\u0165 \u010fal\u0161ie z\u00e1znamy') : (i18n.language === 'cs' ? 'V\u0161echny z\u00e1znamy jsou na\u010dteny' : 'V\u0161etky z\u00e1znamy s\u00fa na\u010d\u00edtan\u00e9');
-                    pagination.hidden = currentPage === 1 && totalPages === 1;
-                    // Pozorovate\u013e automaticky na\u010d\u00edta \u010fal\u0161iu desiatku pri pribl\u00ed\u017een\u00ed ku koncu zoznamu.
-                    if (!auditObserver && 'IntersectionObserver' in window) {
-                        auditObserver = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting) && currentPage < totalPages) read(currentPage + 1, true); }, { rootMargin: '240px' });
-                        auditObserver.observe(next);
-                    }
+                    renderPagination();
                 } catch (error) {
                     if (currentRequest !== requestSequence) return;
-                    list.querySelectorAll('.project-audit-skeleton').forEach((skeleton) => skeleton.remove()); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message ? i18n.text(error.message) : (i18n.language === 'cs' ? 'Audit se nepodařilo načíst.' : 'Audit sa nepodarilo načítať.'); list.append(failure);
-                } finally { loadingMore = false; }
+                    list.replaceChildren(); const failure = document.createElement('li'); failure.className = 'project-empty'; failure.textContent = error.message ? i18n.text(error.message) : (i18n.language === 'cs' ? 'Audit se nepoda\u0159ilo na\u010d\u00edst.' : 'Audit sa nepodarilo na\u010d\u00edta\u0165.'); list.append(failure);
+                }
             };
             form.addEventListener('input', () => { window.clearTimeout(debounce); debounce = window.setTimeout(() => read(1), 250); });
             form.addEventListener('change', () => read(1));
-            next.addEventListener('click', () => read(currentPage + 1, true));
+            previous.addEventListener('click', () => read(Math.max(1, currentPage - 1)));
+            next.addEventListener('click', () => read(Math.min(totalPages, currentPage + 1)));
             await read();
         },
         async loadTasks(routeSequence) {

@@ -113,6 +113,11 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .audit-filters { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(130px, 1fr) repeat(2, minmax(140px, 1fr)); gap: 24px; }
 .audit-filters label { display: grid; gap: 0; color: var(--muted); font-size: 13px; }
 .audit-filters .audit-search-filter { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.audit-search-filter > span { display: block; margin-bottom: 8px; }
+.audit-filters .audit-search-filter > input { width: 100%; margin-top: 0; }
+.audit-pagination { width: 100%; flex-wrap: wrap; gap: 8px; }
+.audit-pagination .button { min-width: 40px; min-height: 40px; padding: 6px 10px; }
+.audit-pagination > span { min-width: auto; }
 .audit-filters label > input, .audit-filters label > .styled-select, .audit-filters label > .date-picker { margin-top: 12px; }
 .audit-filters input, .audit-filters select { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-solid); }
 .global-audit-list > li:not(.project-empty) { overflow-wrap: anywhere; }
