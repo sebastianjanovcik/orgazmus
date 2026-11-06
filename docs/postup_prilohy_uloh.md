@@ -62,7 +62,7 @@ Mazanie musí overiť právo pred zásahom a bezpečne koordinovať DB a disk. Z
 
 ### 6. Doplniť používateľské rozhranie
 
-Do detailu úlohy pridať výber súboru, zoznam príloh s názvom/typom/veľkosťou, stav nahrávania, úspešné dokončenie a konkrétne chyby. Zobraziť len akcie zodpovedajúce oprávneniam API. Ovládanie sprístupniť klávesnicou a mobilu; počas načítania zobraziť skeleton zodpovedajúci zoznamu príloh. Nové viditeľné texty dodať po slovensky aj česky.
+Do detailu úlohy pridať viditeľnú drop zónu na pridávanie súborov metódou drag and drop. Zónu možno aktivovať aj kliknutím alebo klávesnicou; otvorí sa rovnaký systémový výber súborov, aby pridávanie fungovalo aj bez myši a na dotykových zariadeniach. Podporiť výber aj pretiahnutie viacerých súborov naraz: rozhranie ich zaradí do frontu a každý odošle samostatnou požiadavkou, keďže endpoint prijíma jeden súbor. Počas pretiahnutia nad zónou zobraziť jej aktívny stav; po výbere ukázať názvy súborov, priebeh a výsledok pri každom súbore, umožniť zrušiť ešte nezačaté nahrávanie a pri chybe zobraziť zrozumiteľnú príčinu. Zobraziť aj zoznam príloh s názvom/typom/veľkosťou a iba akcie zodpovedajúce oprávneniam API. Počas načítania zoznamu zobraziť zodpovedajúci skeleton. Nové viditeľné texty vrátane pokynov drop zóny dodať po slovensky aj česky.
 
 **Výstup:** prístupný tok pridania, stiahnutia a odstránenia súboru v detaile úlohy.
 
@@ -80,5 +80,5 @@ Overiť povolený súbor aj odmietnutie zakázaného typu, falšovanej prípony/
 - Limit 32 MB na súbor a 1 GB súhrnne na úlohu je vynútený na aplikačnej aj hostingovej vrstve a opísaný v kontrakte.
 - Pridanie prílohy vyžaduje súčasne právo `can_add_tasks` aj `can_add_comments`.
 - Zmazanie prílohy aj nadradenej úlohy nenecháva súbory bez metadát ani metadáta bez súborov bez zdokumentovaného mechanizmu obnovy.
-- Rozhranie funguje klávesnicou a na mobilnom zobrazení; nové texty sú dostupné v slovenčine a češtine.
+- Pridávanie súborov funguje pretiahnutím aj cez prístupný výber súborov; rozhranie funguje klávesnicou a na mobilnom zobrazení a nové texty sú dostupné v slovenčine aj češtine.
 - PHP syntax, API tok a používateľský tok sú overené podľa projektových pravidiel; neoverené správanie je výslovne zaznamenané.
