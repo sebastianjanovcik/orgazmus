@@ -222,7 +222,9 @@ Objekt `attachment` obsahuje verejné ID, pôvodný názov iba na zobrazenie, MI
 
 ```json
 {"id":501,"name":"navrh.pdf","mime_type":"application/pdf","size":245760,"author":{"id":1,"name":"Jana Nová"},"created_at":"2026-11-06T12:00:00Z"}
-``` Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
+```
+
+Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
 
 | Metóda a cesta | Vstup | Úspech | Osobitné chyby |
 | --- | --- | --- | --- |
