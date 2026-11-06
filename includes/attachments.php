@@ -2,17 +2,18 @@
 declare(strict_types=1);
 
 /** Vráti súkromný koreň príloh a odmietne konfiguráciu smerujúcu do webrootu. */
-function tasko_attachment_storage_directory(): string
+function tasko_attachment_storage_directory(bool $create = false): string
 {
     $config = require __DIR__ . '/../config/config.php';
     $configured = $config['attachments']['directory'] ?? dirname(__DIR__) . '/var/attachments';
     if (!is_string($configured) || $configured === '') {
         throw new TaskoHttpException(500, 'storage_error', 'Súkromné úložisko príloh nie je nakonfigurované.');
     }
-    if (!is_dir($configured) && !@mkdir($configured, 0700, true) && !is_dir($configured)) {
+    if ($create && !is_dir($configured) && !@mkdir($configured, 0700, true) && !is_dir($configured)) {
         throw new TaskoHttpException(500, 'storage_error', 'Súkromné úložisko príloh nie je dostupné.');
     }
-    @chmod($configured, 0700);
+    if (!is_dir($configured)) throw new TaskoHttpException(500, 'storage_error', 'Súkromné úložisko príloh nie je dostupné.');
+    if ($create) @chmod($configured, 0700);
     $directory = realpath($configured);
     $public = realpath(__DIR__ . '/../public');
     if ($directory === false || $public === false || str_starts_with(strtolower($directory . DIRECTORY_SEPARATOR), strtolower($public . DIRECTORY_SEPARATOR))) {
@@ -68,7 +69,9 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
     }
     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
         $image = @getimagesize($path);
-        if (!is_array($image) || ($image['mime'] ?? null) !== $allowed[$extension] || $detected !== $allowed[$extension]) return null;
+        // Dekódovanie má pevný rozmerový strop, aby komprimovaný obrázok nemohol vyčerpať pamäť PHP.
+        if (!is_array($image) || ($image['mime'] ?? null) !== $allowed[$extension] || $detected !== $allowed[$extension]
+            || (int) $image[0] > 8000 || (int) $image[1] > 8000 || (int) $image[0] * (int) $image[1] > 12_000_000) return null;
         if (!function_exists('imagecreatefromstring')) return null;
         $decoded = @imagecreatefromstring((string) file_get_contents($path));
         if ($decoded === false) return null;
@@ -83,9 +86,21 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
         $required = match ($extension) {
             'docx' => 'word/document.xml', 'xlsx' => 'xl/workbook.xml', 'pptx' => 'ppt/presentation.xml',
         };
-        $valid = $zip->locateName('[Content_Types].xml') !== false
+        $contentTypes = $zip->getFromName('[Content_Types].xml');
+        $expectedType = match ($extension) {
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml',
+        };
+        $hasMacro = false;
+        for ($index = 0; $index < $zip->numFiles; $index++) {
+            $entryName = $zip->getNameIndex($index);
+            if (is_string($entryName) && preg_match('/(?:^|\/)vbaProject\.bin$/i', $entryName)) $hasMacro = true;
+        }
+        $valid = is_string($contentTypes)
+            && str_contains($contentTypes, $expectedType)
             && $zip->locateName($required) !== false
-            && $zip->locateName('vbaProject.bin') === false;
+            && !$hasMacro;
         $zip->close();
         return $valid ? $allowed[$extension] : null;
     }
@@ -157,9 +172,10 @@ function tasko_attachment_create(PDO $pdo, int $taskId, array $user): array
     $mimeType = tasko_attachment_detect_mime($path, $extension);
     if ($mimeType === null) throw new TaskoHttpException(422, 'invalid_file_type', 'Typ súboru nie je povolený alebo obsah nezodpovedá prípone.');
 
-    $storageDirectory = tasko_attachment_storage_directory();
+    $storageDirectory = tasko_attachment_storage_directory(true);
     $pdo->beginTransaction();
     $storagePath = null;
+    $storageKey = null;
     try {
         // Zámok nadradenej úlohy serializuje uploady, aby súbežné požiadavky neobišli 1 GB limit.
         $taskLock = $pdo->prepare('SELECT id FROM tasks WHERE id = :task_id FOR UPDATE');
@@ -187,7 +203,13 @@ function tasko_attachment_create(PDO $pdo, int $taskId, array $user): array
         $pdo->commit();
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        if ($storagePath !== null && is_file($storagePath)) @unlink($storagePath);
+        if ($storagePath !== null && is_file($storagePath) && !@unlink($storagePath) && $storageKey !== null) {
+            try {
+                tasko_attachment_enqueue_key($pdo, $storageKey);
+            } catch (Throwable $cleanupError) {
+                error_log('Tasko: nepodarilo sa zaradiť osirelý upload na upratanie.');
+            }
+        }
         throw $error;
     }
 
@@ -196,4 +218,138 @@ function tasko_attachment_create(PDO $pdo, int $taskId, array $user): array
     $row = $query->fetch();
     if (!is_array($row)) throw new TaskoHttpException(500, 'storage_error', 'Metadáta prílohy sa nepodarilo načítať.');
     return tasko_attachment_data($row);
+}
+
+/** Zaradí súbory úlohy do outboxu v tej istej transakcii ako jej odstránenie. */
+function tasko_attachment_queue_task_cleanup(PDO $pdo, int $taskId): void
+{
+    $query = $pdo->prepare(
+        'INSERT INTO task_attachment_cleanup (storage_key)
+         SELECT storage_key FROM task_attachments WHERE task_id = :task_id
+         ON DUPLICATE KEY UPDATE queued_at = CURRENT_TIMESTAMP'
+    );
+    $query->execute(['task_id' => $taskId]);
+}
+
+/** Zaradí všetky prílohy projektu; cudzie kľúče následne odstránia ich metadáta. */
+function tasko_attachment_queue_project_cleanup(PDO $pdo, int $projectId): void
+{
+    $query = $pdo->prepare(
+        'INSERT INTO task_attachment_cleanup (storage_key)
+         SELECT a.storage_key FROM task_attachments a INNER JOIN tasks t ON t.id = a.task_id
+         WHERE t.project_id = :project_id
+         ON DUPLICATE KEY UPDATE queued_at = CURRENT_TIMESTAMP'
+    );
+    $query->execute(['project_id' => $projectId]);
+}
+
+/** Zaradí prílohy dokončených úloh aktuálneho vlastníka pred hromadným zmazaním. */
+function tasko_attachment_queue_completed_cleanup(PDO $pdo, int $userId): void
+{
+    $query = $pdo->prepare(
+        'INSERT INTO task_attachment_cleanup (storage_key)
+         SELECT a.storage_key FROM task_attachments a
+         INNER JOIN tasks t ON t.id = a.task_id INNER JOIN projects p ON p.id = t.project_id
+         WHERE p.user_id = :user_id AND t.is_done = 1
+         ON DUPLICATE KEY UPDATE queued_at = CURRENT_TIMESTAMP'
+    );
+    $query->execute(['user_id' => $userId]);
+}
+
+/** Naplánuje vymazanie konkrétneho objektu po neúspešnom zápise metadát. */
+function tasko_attachment_enqueue_key(PDO $pdo, string $storageKey): void
+{
+    if (!preg_match('/^[a-f0-9]{64}$/D', $storageKey)) return;
+    $query = $pdo->prepare(
+        'INSERT INTO task_attachment_cleanup (storage_key) VALUES (:storage_key)
+         ON DUPLICATE KEY UPDATE queued_at = CURRENT_TIMESTAMP'
+    );
+    $query->execute(['storage_key' => $storageKey]);
+}
+
+/** Opakovateľne odstráni súbory z outboxu; pri chybe zachová záznam na ďalší pokus. */
+function tasko_attachment_process_cleanup(PDO $pdo, int $limit = 50): int
+{
+    $limit = max(1, min($limit, 500));
+    $rows = $pdo->query('SELECT storage_key FROM task_attachment_cleanup ORDER BY queued_at LIMIT ' . $limit)->fetchAll();
+    if ($rows === []) return 0;
+    try {
+        $directory = tasko_attachment_storage_directory();
+    } catch (Throwable $error) {
+        $retry = $pdo->prepare('UPDATE task_attachment_cleanup SET attempts = attempts + 1 WHERE storage_key = :storage_key');
+        foreach ($rows as $row) $retry->execute(['storage_key' => $row['storage_key']]);
+        error_log('Tasko: úložisko príloh nie je dostupné; čistenie ostáva vo fronte.');
+        return 0;
+    }
+    $removed = 0;
+    $delete = $pdo->prepare('DELETE FROM task_attachment_cleanup WHERE storage_key = :storage_key');
+    $retry = $pdo->prepare('UPDATE task_attachment_cleanup SET attempts = attempts + 1 WHERE storage_key = :storage_key');
+    foreach ($rows as $row) {
+        $key = (string) $row['storage_key'];
+        if (!preg_match('/^[a-f0-9]{64}$/D', $key)) {
+            $retry->execute(['storage_key' => $key]);
+            continue;
+        }
+        $path = $directory . DIRECTORY_SEPARATOR . $key;
+        if ((file_exists($path) || is_link($path)) && !@unlink($path)) {
+            $retry->execute(['storage_key' => $key]);
+            error_log('Tasko: fyzické odstránenie prílohy zlyhalo; opakuje sa neskôr.');
+            continue;
+        }
+        $delete->execute(['storage_key' => $key]);
+        $removed += $delete->rowCount();
+    }
+    return $removed;
+}
+
+/** Súkromne odošle súbor až po kontrole väzby ID prílohy na úlohu. */
+function tasko_attachment_download(PDO $pdo, int $taskId, int $attachmentId): never
+{
+    $query = $pdo->prepare(
+        'SELECT storage_key, original_name, mime_type, byte_size FROM task_attachments
+         WHERE id = :attachment_id AND task_id = :task_id'
+    );
+    $query->execute(['attachment_id' => $attachmentId, 'task_id' => $taskId]);
+    $row = $query->fetch();
+    if (!is_array($row)) throw new TaskoHttpException(404, 'not_found', 'Príloha sa nenašla.');
+    $key = (string) $row['storage_key'];
+    if (!preg_match('/^[a-f0-9]{64}$/D', $key)) throw new TaskoHttpException(500, 'storage_error', 'Súbor v súkromnom úložisku nie je dostupný.');
+    $path = tasko_attachment_storage_directory() . DIRECTORY_SEPARATOR . $key;
+    if (!is_file($path) || !is_readable($path) || filesize($path) !== (int) $row['byte_size']) {
+        throw new TaskoHttpException(500, 'storage_error', 'Súbor v súkromnom úložisku nie je dostupný.');
+    }
+    $name = (string) $row['original_name'];
+    $fallback = preg_replace('/[^A-Za-z0-9._-]/', '_', $name) ?: 'attachment';
+    header('Content-Type: ' . (string) $row['mime_type']);
+    header('Content-Length: ' . (int) $row['byte_size']);
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: private, no-store');
+    header('Content-Disposition: attachment; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($name));
+    readfile($path);
+    exit;
+}
+
+/** Odstráni metadáta a zapíše do outboxu; fyzické zmazanie sa bezpečne opakuje. */
+function tasko_attachment_delete(PDO $pdo, int $taskId, int $attachmentId): void
+{
+    $pdo->beginTransaction();
+    try {
+        $task = $pdo->prepare('SELECT id FROM tasks WHERE id = :task_id FOR UPDATE');
+        $task->execute(['task_id' => $taskId]);
+        if ($task->fetchColumn() === false) throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        $attachment = $pdo->prepare(
+            'SELECT storage_key FROM task_attachments WHERE id = :attachment_id AND task_id = :task_id FOR UPDATE'
+        );
+        $attachment->execute(['attachment_id' => $attachmentId, 'task_id' => $taskId]);
+        $key = $attachment->fetchColumn();
+        if (!is_string($key)) throw new TaskoHttpException(404, 'not_found', 'Príloha sa nenašla.');
+        tasko_attachment_enqueue_key($pdo, $key);
+        $pdo->prepare('DELETE FROM task_attachments WHERE id = :attachment_id AND task_id = :task_id')
+            ->execute(['attachment_id' => $attachmentId, 'task_id' => $taskId]);
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $error;
+    }
+    tasko_attachment_process_cleanup($pdo, 10);
 }

@@ -31,6 +31,11 @@ prístupovými právami, dostupným priestorom podľa prevádzkového limitu a
 zálohovaním; PHP musí mať `upload_max_filesize=32M` a `post_max_size` aspoň
 `34M`.
 
+Pri zlyhaní fyzického mazania zostáva požiadavka v `task_attachment_cleanup`.
+Naplánuj opakované spustenie `php db/cleanup_task_attachments.php` (napríklad
+cron každých 15 minút); rovnaký worker sa spúšťa aj po API mazaní. Záznam sa
+odstráni z frontu až po potvrdenom zmazaní súboru alebo ak súbor už neexistuje.
+
 Seed možno spustiť opakovane: obnoví známe ukážkové záznamy bez zmazania
 ostatných dát. Pri každom spustení obnoví aj heslá oboch demo účtov, preto si
 nové náhodné heslá vypísané v termináli ulož mimo repozitára. Seed vkladá

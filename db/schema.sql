@@ -181,6 +181,15 @@ CREATE TABLE IF NOT EXISTS task_attachments (
     CONSTRAINT chk_task_attachments_size CHECK (byte_size BETWEEN 1 AND 33554432)
 ) ENGINE=InnoDB;
 
+-- Mazacie požiadavky pretrvajú reštart alebo dočasný výpadok disku a dajú sa opakovať.
+CREATE TABLE IF NOT EXISTS task_attachment_cleanup (
+    storage_key CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    queued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (storage_key),
+    KEY idx_task_attachment_cleanup_queued (queued_at)
+) ENGINE=InnoDB;
+
 -- Samostatný prístup k úlohe neudeľuje členstvo v projekte; práva sa kontrolujú pri každom čítaní a zápise.
 CREATE TABLE IF NOT EXISTS task_shares (
     task_id BIGINT UNSIGNED NOT NULL,

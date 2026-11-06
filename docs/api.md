@@ -231,9 +231,11 @@ Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`,
 | `GET /api/tasks/{id}/attachments` | — | `200`, `data:{items:attachment[]}` | `403 forbidden`, `404 not_found` |
 | `POST /api/tasks/{id}/attachments` | `multipart/form-data`, presne jedno pole `file` | `201`, `data:attachment` | `403 forbidden`, `404 not_found`, `413 file_too_large` / `task_attachment_limit`, `415 unsupported_media_type`, `422 upload_required` / `invalid_file_type` / `validation_failed`, `500 storage_error` |
 | `GET /api/tasks/{id}/attachments/{attachment_id}` | — | `200` binárny obsah s `Content-Disposition: attachment`, `Content-Length`, overeným `Content-Type` a `X-Content-Type-Options: nosniff` | `403 forbidden`, `404 not_found`, `500 storage_error` |
-| `DELETE /api/tasks/{id}/attachments/{attachment_id}` | — | `204` bez tela | `403 forbidden`, `404 not_found`, `500 storage_error` |
+| `DELETE /api/tasks/{id}/attachments/{attachment_id}` | — | `204` bez tela | `403 forbidden`, `404 not_found`, `500 server_error` pri zlyhaní DB |
 
 Každá cesta vyžaduje prihlásenie a nové overenie prístupu k úlohe. Zoznam a stiahnutie vyžadujú právo čítať úlohu. Nahratie vyžaduje súčasne projektové `can_add_tasks` a právo k úlohe `can_add_comments`; samostatné zdieľanie úlohy bez príslušného projektového členstva preto samo osebe nahratie nepovoľuje. Odstránenie vyžaduje právo odstrániť nadradenú úlohu; autor prílohy nemá osobitnú výnimku. Zápisy kontrolujú rovnaký pôvod (Origin) ako ostatné API zápisy.
+
+Pri odstránení prílohy alebo nadradenej úlohy sa interný kľúč najskôr zapíše do transakčného outboxu. Fyzické mazanie sa opakuje po API operácii a cez `php db/cleanup_task_attachments.php`; pri dočasnej chybe disku zostáva položka vo fronte.
 
 Nahratie odosiela vždy jeden súbor; klient môže zaradiť viac súborov do frontu a odoslať ich samostatne. Názov klienta sa normalizuje na zobrazovaný názov a nikdy sa nepoužije ako cesta. Binárny úspech sťahovania je jediná výnimka zo JSON obálky; chyby aj pri týchto endpointoch majú štandardný tvar `error`.
 ## Postman mock

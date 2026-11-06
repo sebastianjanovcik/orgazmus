@@ -370,6 +370,24 @@ try {
         tasko_json_response(201, tasko_attachment_create($pdo, $taskId, $user));
     }
 
+    if (preg_match('#^/api/tasks/([^/]+)/attachments/([^/]+)$#D', $route, $attachmentRoute) === 1 && in_array($method, ['GET', 'DELETE'], true)) {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($attachmentRoute[1]) || !tasko_validate_id($attachmentRoute[2])) {
+            throw new TaskoHttpException(404, 'not_found', 'Príloha sa nenašla.');
+        }
+        $taskId = (int) $attachmentRoute[1];
+        $attachmentId = (int) $attachmentRoute[2];
+        $pdo = tasko_db();
+        if ($method === 'GET') {
+            tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'view');
+            tasko_attachment_download($pdo, $taskId, $attachmentId);
+        }
+        tasko_require_same_origin();
+        tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'delete');
+        tasko_attachment_delete($pdo, $taskId, $attachmentId);
+        tasko_json_response(204);
+    }
+
     // Globálny audit spája vlastné udalosti účtu s udalosťami projektov, ktoré používateľ ešte smie zobraziť.
     if ($route === '/api/audit' && $method === 'GET') {
         $user = tasko_authenticated_user();
@@ -1004,6 +1022,7 @@ try {
                 foreach ($taskSnapshots as $taskSnapshot) tasko_record_audit_event($pdo, $projectId, 'task', (int) $taskSnapshot['id'], $userId, 'task_deleted', ['snapshot' => ['title' => $taskSnapshot['title'], 'description' => $taskSnapshot['description'], 'priority' => (int) $taskSnapshot['priority'], 'due_date' => $taskSnapshot['due_date'], 'is_done' => (bool) $taskSnapshot['is_done'], 'reason' => 'project_deleted']]);
                 foreach ($commentSnapshots as $commentSnapshot) tasko_record_audit_event($pdo, $projectId, 'comment', (int) $commentSnapshot['id'], $userId, 'comment_deleted', ['snapshot' => ['task_id' => (int) $commentSnapshot['task_id'], 'parent_id' => $commentSnapshot['parent_id'] === null ? null : (int) $commentSnapshot['parent_id'], 'body' => $commentSnapshot['body'], 'reason' => 'project_deleted']]);
                 tasko_record_audit_event($pdo, $projectId, 'project', $projectId, $userId, 'project_deleted', ['snapshot' => ['name' => $lockedProject['name'], 'description' => $lockedProject['description'], 'icon' => $lockedProject['icon'], 'color' => $lockedProject['color'], 'task_count' => count($taskSnapshots), 'comment_count' => count($commentSnapshots)]]);
+                tasko_attachment_queue_project_cleanup($pdo, $projectId);
                 $delete = $pdo->prepare('DELETE FROM projects WHERE id = :id');
                 $delete->execute(['id' => $projectId]);
                 $pdo->commit();
@@ -1011,6 +1030,7 @@ try {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 throw $error;
             }
+            tasko_attachment_process_cleanup($pdo);
             tasko_json_response(204);
         }
     }
@@ -1293,6 +1313,7 @@ try {
         );
         $completed->execute(['user_id' => (int) $user['id']]);
         $snapshots = $completed->fetchAll();
+        tasko_attachment_queue_completed_cleanup($pdo, (int) $user['id']);
         $comments = $pdo->prepare(
             'SELECT c.id, c.task_id, c.parent_id, c.body, t.project_id
              FROM comments c INNER JOIN tasks t ON t.id = c.task_id INNER JOIN projects p ON p.id = t.project_id
@@ -1310,6 +1331,7 @@ try {
         foreach ($snapshots as $snapshot) tasko_record_audit_event($pdo, (int) $snapshot['project_id'], 'task', (int) $snapshot['id'], (int) $user['id'], 'task_deleted', ['snapshot' => ['title' => $snapshot['title'], 'description' => $snapshot['description'], 'priority' => (int) $snapshot['priority'], 'due_date' => $snapshot['due_date'], 'is_done' => true, 'reason' => 'bulk_completed_cleanup']]);
         $pdo->commit();
         } catch (Throwable $error) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $error; }
+        tasko_attachment_process_cleanup($pdo);
         tasko_json_response(200, ['deleted' => $delete->rowCount()]);
     }
 
@@ -1484,12 +1506,14 @@ try {
             tasko_require_task_right($pdo, $taskId, (int) $user['id'], 'delete');
             $pdo->beginTransaction();
             $pdo->prepare('SELECT id FROM tasks WHERE id = :task_id FOR UPDATE')->execute(['task_id' => $taskId]);
+            tasko_attachment_queue_task_cleanup($pdo, $taskId);
             $taskComments = $pdo->prepare('SELECT id, parent_id, body FROM comments WHERE task_id = :task_id');
             $taskComments->execute(['task_id' => $taskId]);
             foreach ($taskComments->fetchAll() as $commentSnapshot) tasko_record_audit_event($pdo, (int) $current['project_id'], 'comment', (int) $commentSnapshot['id'], (int) $user['id'], 'comment_deleted', ['snapshot' => ['task_id' => $taskId, 'parent_id' => $commentSnapshot['parent_id'] === null ? null : (int) $commentSnapshot['parent_id'], 'body' => $commentSnapshot['body'], 'reason' => 'task_deleted']]);
             tasko_record_audit_event($pdo, (int) $current['project_id'], 'task', $taskId, (int) $user['id'], 'task_deleted', ['snapshot' => ['title' => $current['title'], 'description' => $current['description'], 'priority' => $current['priority'], 'due_date' => $current['due_date'], 'is_done' => $current['is_done']]]);
             $pdo->prepare('DELETE FROM tasks WHERE id = :task_id')->execute(['task_id' => $taskId]);
             $pdo->commit();
+            tasko_attachment_process_cleanup($pdo);
             tasko_json_response(204);
         }
 
