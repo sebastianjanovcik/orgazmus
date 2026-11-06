@@ -137,8 +137,10 @@ aktuálneho používateľa a vráti napríklad `{"data":{"deleted":3}}`.
 | `404` | `not_found` | Zdroj neexistuje alebo ho používateľ nevlastní. |
 | `405` | `method_not_allowed` | Metóda nie je na ceste podporovaná. |
 | `409` | `email_taken`, `name_taken`, `last_project` | Duplicitná hodnota alebo pokus zmazať posledný projekt. |
-| `415` | `unsupported_media_type` | Chýba alebo je nesprávny `Content-Type: application/json`. |
-| `422` | `validation_failed`, `comment_too_deep` | Vstup nespĺňa pravidlá alebo odpoveď prekračuje hĺbku komentárov. |
+| `413` | `file_too_large`, `task_attachment_limit`, `payload_too_large` | Súbor, súčet príloh úlohy alebo telo požiadavky prekračuje limit. |
+| `415` | `unsupported_media_type` | Chýba alebo je nesprávny typ obsahu požiadavky. |
+| `422` | `validation_failed`, `comment_too_deep`, `upload_required`, `invalid_file_type` | Vstup nespĺňa pravidlá alebo súbor chýba či nemá povolený typ. |
+| `500` | `storage_error` | Súkromné úložisko alebo zápis metadát nie je dostupný. |
 
 Príklad chyby validácie:
 
@@ -214,6 +216,24 @@ Samostatný prístup povoľuje iba úlohu a jej komentáre. Neudeľuje prístup 
 
 K `403` pridávajú spoločné odpovede tieto kódy: `forbidden`, `invitation_account_mismatch`, `owner_transfer_required`; `409`: `membership_exists`, `invitation_pending`, `invitation_not_pending`, `transfer_conflict`, `reaction_exists`, `share_exists`; `410`: `invitation_expired`. Všetky validačné chyby používajú existujúci obal a `fields` objekt.
 
+## Prílohy k úlohám
+
+Objekt `attachment` obsahuje verejné ID, pôvodný názov iba na zobrazenie, MIME typ overený serverom, veľkosť v bajtoch, autora a čas vytvorenia. Nikdy neobsahuje interný kľúč ani cestu úložiska.
+
+```json
+{"id":501,"name":"navrh.pdf","mime_type":"application/pdf","size":245760,"author":{"id":1,"name":"Jana Nová"},"created_at":"2026-11-06T12:00:00Z"}
+``` Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
+
+| Metóda a cesta | Vstup | Úspech | Osobitné chyby |
+| --- | --- | --- | --- |
+| `GET /api/tasks/{id}/attachments` | — | `200`, `data:{items:attachment[]}` | `403 forbidden`, `404 not_found` |
+| `POST /api/tasks/{id}/attachments` | `multipart/form-data`, presne jedno pole `file` | `201`, `data:attachment` | `403 forbidden`, `404 not_found`, `413 file_too_large` / `task_attachment_limit`, `415 unsupported_media_type`, `422 upload_required` / `invalid_file_type` / `validation_failed`, `500 storage_error` |
+| `GET /api/tasks/{id}/attachments/{attachment_id}` | — | `200` binárny obsah s `Content-Disposition: attachment`, `Content-Length`, overeným `Content-Type` a `X-Content-Type-Options: nosniff` | `403 forbidden`, `404 not_found`, `500 storage_error` |
+| `DELETE /api/tasks/{id}/attachments/{attachment_id}` | — | `204` bez tela | `403 forbidden`, `404 not_found`, `500 storage_error` |
+
+Každá cesta vyžaduje prihlásenie a nové overenie prístupu k úlohe. Zoznam a stiahnutie vyžadujú právo čítať úlohu. Nahratie vyžaduje súčasne projektové `can_add_tasks` a právo k úlohe `can_add_comments`; samostatné zdieľanie úlohy bez príslušného projektového členstva preto samo osebe nahratie nepovoľuje. Odstránenie vyžaduje právo odstrániť nadradenú úlohu; autor prílohy nemá osobitnú výnimku. Zápisy kontrolujú rovnaký pôvod (Origin) ako ostatné API zápisy.
+
+Nahratie odosiela vždy jeden súbor; klient môže zaradiť viac súborov do frontu a odoslať ich samostatne. Názov klienta sa normalizuje na zobrazovaný názov a nikdy sa nepoužije ako cesta. Binárny úspech sťahovania je jediná výnimka zo JSON obálky; chyby aj pri týchto endpointoch majú štandardný tvar `error`.
 ## Postman mock
 
 Mock je statický: prehráva uložené príklady a neukladá zmeny ani session.
