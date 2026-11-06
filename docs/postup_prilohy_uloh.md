@@ -6,7 +6,7 @@ Tento dokument rozdeľuje zavedenie príloh na samostatné, overiteľné kroky. 
 
 Používateľ môže k úlohe nahrať jeden alebo viac súborov, zobraziť ich zoznam, stiahnuť ich a odstrániť v súlade s prístupom k danej úlohe. Súbory sa ukladajú súkromne na serveri; databáza obsahuje iba ich metadáta a interný identifikátor uloženia. Prílohy sa nesprístupnia cez verejnú URL ani cez odhadnuteľný názov súboru.
 
-Prvá verzia má podporovať bežné dokumenty a obrázky potrebné pre úlohy. Povolené prípony, MIME typy, maximálnu veľkosť súboru, maximálny počet súborov na úlohu a prípadný celkový limit používateľa treba určiť podľa cieľového hostingu pred implementáciou. Neodvodzovať typ iba z názvu alebo hlavičky od klienta. Súčasťou rozsahu nie je antivírusové skenovanie, náhľady, verzovanie ani externé úložisko; ak ich hosting alebo produkt bude vyžadovať, doplnia sa ako samostatné rozhodnutia.
+Prvá verzia podporuje dokumenty Word, PDF, obrázky, Excel a PowerPoint. Jeden súbor môže mať najviac **32 MB** a súčet príloh jednej úlohy najviac **1 GB**. Presný zoznam povolených prípon a zodpovedajúcich MIME typov treba uzavrieť v allowliste pred implementáciou. Neodvodzovať typ iba z názvu alebo hlavičky od klienta. Súčasťou rozsahu nie je antivírusové skenovanie, náhľady, verzovanie ani externé úložisko; ak ich hosting alebo produkt bude vyžadovať, doplnia sa ako samostatné rozhodnutia.
 
 ## Predpoklady
 
@@ -19,7 +19,7 @@ Prvá verzia má podporovať bežné dokumenty a obrázky potrebné pre úlohy. 
 
 ### 1. Uzavrieť produktové a prevádzkové pravidlá
 
-Rozhodnúť a zdokumentovať povolené typy, limity počtu a veľkosti, oprávnenia na pridanie/odstránenie, správanie pri zmazaní úlohy a umiestnenie úložiska. Potvrdiť limity PHP/web servera a plán zálohovania súborov. Prístup a operácie majú kopírovať pravidlá úlohy: zobraziť/stiahnuť môže používateľ s právom čítať úlohu; pridať/zmazať môže používateľ s právom upravovať ju (prípadné osobitné pravidlo pre autora prílohy výslovne rozhodnúť).
+Potvrdiť presné prípony a MIME typy v kategóriách Word, PDF, obrázky, Excel a PowerPoint, hostingové limity PHP/web servera a plán zálohovania. Platí limit 32 MB na jeden súbor a 1 GB súhrnne na jednu úlohu; samostatný limit počtu súborov nie je stanovený. Zobraziť/stiahnuť môže používateľ s právom čítať úlohu. Pridať prílohu môže používateľ, ktorý má súčasne právo pridávať úlohy v projekte (`can_add_tasks`) aj právo pridávať komentáre k úlohe (`can_add_comments`); pri zdieľanej úlohe overiť obe práva podľa platného projektového členstva a zdieľania. Odstránenie prílohy zostáva viazané na právo upravovať úlohu, prípadnú výnimku pre autora treba výslovne rozhodnúť.
 
 **Výstup:** uzavretá tabuľka limitov a oprávnení, bez neurčených bezpečnostných predvolených hodnôt.
 
@@ -32,7 +32,7 @@ V `docs/api.md` opísať objekt `attachment` (identifikátor, názov zobrazenia,
 - `GET /api/tasks/{id}/attachments/{attachment_id}` – bezpečné stiahnutie po overení väzby aj prístupu;
 - `DELETE /api/tasks/{id}/attachments/{attachment_id}` – odstránenie po overení oprávnenia.
 
-Zadefinovať stavové kódy a chyby pre neplatný typ, prekročenú veľkosť/počet, chýbajúci súbor, nedostupnú úlohu/prílohu, nedostatočné oprávnenie a zlyhanie úložiska. Názov súboru z klienta je iba zobrazovaný údaj, nikdy cesta. Mock doplniť iba vtedy, ak frontendový tok ešte používa Postman mock.
+Zadefinovať stavové kódy a chyby pre neplatný typ, prekročenie 32 MB na súbor alebo 1 GB súhrnne na úlohu, chýbajúci súbor, nedostupnú úlohu/prílohu, nedostatočné oprávnenie a zlyhanie úložiska. Názov súboru z klienta je iba zobrazovaný údaj, nikdy cesta. Mock doplniť iba vtedy, ak frontendový tok ešte používa Postman mock.
 
 **Výstup:** kontrakt, ktorý jednoznačne opisuje požiadavky aj odpovede a nevracia internú cestu k súboru.
 
@@ -46,7 +46,7 @@ Vytvoriť tabuľku `task_attachments` s cudzím kľúčom na úlohu, autorom, be
 
 ### 4. Implementovať backendový tok nahratia
 
-Pridať validáciu `multipart/form-data`: kontrolovať chybu uploadu, skutočnú veľkosť, povolený typ podľa obsahu (napr. `finfo`), príponu podľa allowlistu a bezpečné dekódovanie obrazových typov, ak sú povolené. Odmietnuť nezhodu typu/prípony, nulový súbor, prekročené limity a nečakané polia. Uplatniť existujúcu ochranu CSRF/origin a oprávnenie k úlohe.
+Pridať validáciu `multipart/form-data`: kontrolovať chybu uploadu, skutočnú veľkosť, povolený typ podľa obsahu (napr. `finfo`), príponu podľa allowlistu a bezpečné dekódovanie obrazových typov. Odmietnuť nezhodu typu/prípony, nulový súbor, súbor väčší než 32 MB, súčet príloh úlohy nad 1 GB a nečakané polia. Uplatniť existujúcu ochranu CSRF/origin a vyžadovať súčasne `can_add_tasks` pre projekt aj `can_add_comments` pre úlohu.
 
 Zápis súboru a metadát spracovať tak, aby čiastočný neúspech nezanechal osirelý súbor ani neplatný riadok: pri chybe DB odstrániť už zapísaný súbor; pri chybe disku nevytvárať metadáta. Použiť parametrizované SQL a nevystavovať lokálnu cestu ani diagnostiku servera klientovi.
 
@@ -77,7 +77,8 @@ Overiť povolený súbor aj odmietnutie zakázaného typu, falšovanej prípony/
 - Príloha je dostupná iba po autorizovanom API toku; priama verejná URL neexistuje.
 - Server kontroluje oprávnenie ku každej operácii aj väzbu prílohy na úlohu.
 - Názvy a MIME typy od klienta sa považujú za nedôveryhodné; fyzické názvy sú náhodné.
-- Limity sú vynútené na aplikačnej aj hostingovej vrstve a opísané v kontrakte.
+- Limit 32 MB na súbor a 1 GB súhrnne na úlohu je vynútený na aplikačnej aj hostingovej vrstve a opísaný v kontrakte.
+- Pridanie prílohy vyžaduje súčasne právo `can_add_tasks` aj `can_add_comments`.
 - Zmazanie prílohy aj nadradenej úlohy nenecháva súbory bez metadát ani metadáta bez súborov bez zdokumentovaného mechanizmu obnovy.
 - Rozhranie funguje klávesnicou a na mobilnom zobrazení; nové texty sú dostupné v slovenčine a češtine.
 - PHP syntax, API tok a používateľský tok sú overené podľa projektových pravidiel; neoverené správanie je výslovne zaznamenané.
