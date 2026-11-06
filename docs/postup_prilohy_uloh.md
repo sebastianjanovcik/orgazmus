@@ -19,7 +19,11 @@ Prvá verzia podporuje dokumenty Word, PDF, obrázky, Excel a PowerPoint. Jeden 
 
 ### 1. Uzavrieť produktové a prevádzkové pravidlá
 
-Potvrdiť presné prípony a MIME typy v kategóriách Word, PDF, obrázky, Excel a PowerPoint, hostingové limity PHP/web servera a plán zálohovania. Platí limit 32 MB na jeden súbor a 1 GB súhrnne na jednu úlohu; samostatný limit počtu súborov nie je stanovený. Zobraziť/stiahnuť môže používateľ s právom čítať úlohu. Pridať prílohu môže používateľ, ktorý má súčasne právo pridávať úlohy v projekte (`can_add_tasks`) aj právo pridávať komentáre k úlohe (`can_add_comments`); pri zdieľanej úlohe overiť obe práva podľa platného projektového členstva a zdieľania. Odstránenie prílohy zostáva viazané na právo upravovať úlohu, prípadnú výnimku pre autora treba výslovne rozhodnúť.
+Platí limit 32 MB (33 554 432 bajtov) na súbor a 1 GB (1 073 741 824 bajtov) súhrnne na jednu úlohu; samostatný limit počtu súborov nie je stanovený. Allowlist povoľuje: `.doc` (`application/msword`), `.docx` (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`), `.pdf` (`application/pdf`), `.jpg`/`.jpeg` (`image/jpeg`), `.png` (`image/png`), `.gif` (`image/gif`), `.webp` (`image/webp`), `.xls` (`application/vnd.ms-excel`), `.xlsx` (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`), `.ppt` (`application/vnd.ms-powerpoint`) a `.pptx` (`application/vnd.openxmlformats-officedocument.presentationml.presentation`). Formáty s makrami, SVG, archívy a CSV nie sú povolené. Server kontroluje zhodu prípony s typom zisteným z obsahu; obrázky musí vedieť bezpečne dekódovať.
+
+Zobraziť a stiahnuť môže používateľ s právom čítať úlohu. Pridať prílohu môže používateľ, ktorý má súčasne `can_add_tasks` v projekte aj `can_add_comments` k úlohe; pri zdieľanej úlohe sa práva vyhodnotia podľa členstva a zdieľania a musia byť splnené obe podmienky. Odstránenie vyžaduje rovnaké právo ako odstránenie nadradenej úlohy; autor prílohy nemá osobitnú výnimku.
+
+Nasadenie musí nastaviť PHP `upload_max_filesize` aspoň na `32M`, `post_max_size` aspoň na `34M` a zapisovateľné súkromné úložisko mimo `public/`. Konkrétny limit diskovej kvóty a zálohovanie sa riadia hostingom a musia byť pred nasadením potvrdené; lokálne prostredie ich nevie zaručiť.
 
 **Výstup:** uzavretá tabuľka limitov a oprávnení, bez neurčených bezpečnostných predvolených hodnôt.
 
