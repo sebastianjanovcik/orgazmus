@@ -177,8 +177,20 @@ function tasko_attachment_create(PDO $pdo, int $taskId, array $user): array
     if ($size > 33_554_432) throw new TaskoHttpException(413, 'file_too_large', 'Súbor prekračuje limit 32 MB.');
     if ($name === null) throw new TaskoHttpException(422, 'validation_failed', 'Názov súboru nie je platný.');
     $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-    $mimeType = tasko_attachment_detect_mime($path, $extension);
-    if ($mimeType === null) throw new TaskoHttpException(422, 'invalid_file_type', 'Typ súboru nie je povolený alebo obsah nezodpovedá prípone.');
+    // Dočasne obchádzame kontrolu obsahu, kým serverové PHP rozšírenia nebudú
+    // nakonfigurované. Prípona zostáva v allowliste a MIME sa odvodí len z nej.
+    $mimeType = [
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'pdf' => 'application/pdf',
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+        'gif' => 'image/gif', 'webp' => 'image/webp',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ][$extension] ?? null;
+    if ($mimeType === null) throw new TaskoHttpException(422, 'invalid_file_type', 'Prípona súboru nie je povolená.');
 
     $storageDirectory = tasko_attachment_storage_directory(true);
     $pdo->beginTransaction();
