@@ -2422,7 +2422,8 @@
             taskList.hasMore = false;
             taskList.loading();
             const [tasksResult, projectsResult] = await Promise.allSettled([
-                api.request('GET', `/api/tasks?limit=30&visibility=${encodeURIComponent(state.taskFilter)}`),
+                // Zoznam používa stránky po desiatich; posúvanie načíta ďalšiu stránku cez kurzor API.
+                api.request('GET', `/api/tasks?limit=10&visibility=${encodeURIComponent(state.taskFilter)}`),
                 api.request('GET', '/api/projects')
             ]);
             if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
@@ -2455,10 +2456,11 @@
             const sentinel = document.querySelector('.task-scroll-sentinel');
             if (sentinel) {
                 sentinel.replaceChildren();
-                for (let index = 0; index < 3; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); sentinel.append(skeleton); }
+                // Počet náhradných kariet zodpovedá menšej dávke, aby načítavanie nepôsobilo ako veľký blok.
+                for (let index = 0; index < 2; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); sentinel.append(skeleton); }
             }
             try {
-                const page = await api.request('GET', `/api/tasks?limit=30&before_id=${encodeURIComponent(taskList.nextBeforeId)}&visibility=${encodeURIComponent(state.taskFilter)}`);
+                const page = await api.request('GET', `/api/tasks?limit=10&before_id=${encodeURIComponent(taskList.nextBeforeId)}&visibility=${encodeURIComponent(state.taskFilter)}`);
                 if (routeSequence !== state.routeSequence || pageSequence !== taskList.pageSequence) return;
                 const currentIds = new Set(state.tasks.map((task) => Number(task.id)));
                 const incoming = Array.isArray(page?.items) ? page.items : [];
