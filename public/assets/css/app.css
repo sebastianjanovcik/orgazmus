@@ -117,7 +117,7 @@ select option { color: var(--ink); background: var(--surface-solid); }
 .audit-filters .audit-search-filter > input { width: 100%; margin-top: 0; }
 .audit-pagination { width: 100%; flex-wrap: wrap; gap: 8px; }
 .audit-pagination .button { min-width: 40px; min-height: 40px; padding: 6px 10px; }
-/* Aktu?lna strana pou??va akcent, ostatn? ??sla zost?vaj? tlmen? a ?ahko porovnate?n?. */
+/* Aktualna strana pouziva akcent; ostatne cisla zostavaju tlmene a citatelne. */
 .audit-pagination .button:not([aria-current="page"]) { border-color: var(--line); color: var(--ink); background: var(--surface); }
 .audit-pagination .button[aria-current="page"] { border-color: var(--accent); color: var(--accent-contrast); background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); font-weight: 800; }
 .audit-pagination > span { min-width: auto; }
