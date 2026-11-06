@@ -77,7 +77,7 @@ Hĺbka sa odvodzuje na serveri; klient ju neposiela. Zoznam sa zoradí podľa
 | `GET /api/projects/{id}` | Áno, vlastník | — | `200`, `data: project` | `404 not_found` |
 | `PATCH /api/projects/{id}` | Áno, vlastník | Aspoň jedno z `name`, `description`, `icon` | `200`, `data: project` | `404 not_found`, `409 name_taken`, `422 validation_failed` |
 | `DELETE /api/projects/{id}` | Áno, vlastník | — | `204` bez tela | `404 not_found`, `409 last_project` |
-| `GET /api/tasks` | Áno | Query: `project_id`, `date`, `from`, `to`, `done` | `200`, `data: task[]` | `400 bad_request` |
+| `GET /api/tasks` | Áno | Query: `project_id`, `date`, `from`, `to`, `done`, `visibility`, `limit` a kurzor | `200`, zoznam `data: task[]` alebo stránkovaná odpoveď | `400 bad_request` |
 | `POST /api/tasks` | Áno | `title`, `description`, `project_id`, `priority`, `due_date` | `201`, `data: task` | `404 not_found`, `422 validation_failed` |
 | `GET /api/tasks/{id}` | Áno, vlastník | — | `200`, `data: task` | `404 not_found` |
 | `PATCH /api/tasks/{id}` | Áno, vlastník | Zmeniteľné polia úlohy; bez `is_done` | `200`, `data: task` | `404 not_found`, `422 validation_failed` |
@@ -89,12 +89,11 @@ Hĺbka sa odvodzuje na serveri; klient ju neposiela. Zoznam sa zoradí podľa
 | `POST /api/tasks/{id}/comments` | Áno, Premium | `body`, `parent_id` (voliteľné/null) | `201`, `data: comment` | `403 premium_required`, `404 not_found`, `422 validation_failed` alebo `comment_too_deep` |
 | `DELETE /api/comments/{id}` | Áno, Premium autor | — | `204` bez tela | `403 premium_required` / `forbidden`, `404 not_found` |
 
-Pri `GET /api/tasks` možno použiť filtre samostatne alebo kombinovať:
-`project_id` je ID projektu, `date` vyberie presný deň a má prednosť pred
-rozsahom, `from` a `to` tvoria rozsah vrátane hraníc (každá hranica je
-voliteľná) a `done` prijíma `0` alebo `1`. Pri neplatnom formáte filtra sa
-vráti `400 bad_request`; neplatný filter sa nikdy potichu neignoruje.
-Výsledky sa zoradia podľa stavu, termínu, priority zostupne a ID.
+Pri `GET /api/tasks` možno použiť filtre samostatne alebo kombinovať: `project_id` je ID projektu, `date` vyberie presný deň a má prednosť pred rozsahom, `from` a `to` tvoria rozsah vrátane hraníc, `done` prijíma `0` alebo `1` a `visibility` vyberá `all`, `mine` alebo `shared`.
+
+Pri `limit` sa vracia najviac požadovaný počet záznamov. Stránkovanie otvorených úloh používa zoradenie podľa termínu vzostupne, priority zostupne a ID vzostupne; pokračovanie použije trojicu `after_due_date`, `after_priority`, `after_id`. Odpoveď obsahuje `items`, `next_cursor` a súhrn `summary` s počtami všetkých dostupných úloh, otvorených, hotových a po termíne. Počty sa neobmedzujú na vrátenú stranu. Pri `done=1` zostáva kurzor `before_id`.
+
+Pri neplatnom formáte filtra sa vráti `400 bad_request`; neplatný filter sa nikdy potichu neignoruje. Nestránkovaný výsledok je zoradený podľa stavu, termínu, priority zostupne a ID.
 
 Zmena stavu úlohy prebieha iba cez `/complete` a `/uncomplete`; `PATCH`
 `is_done` nepovoľuje. `DELETE /api/tasks/completed` zmaže len hotové úlohy

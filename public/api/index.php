@@ -1236,6 +1236,19 @@ try {
             $limit = (int) $filters['limit'];
             $hasMore = count($tasks) > $limit;
             if ($hasMore) array_pop($tasks);
+            if (($filters['done'] ?? null) === '0') {
+                $lastTask = $hasMore && $tasks !== [] ? end($tasks) : null;
+                $cursor = $lastTask === null ? null : [
+                    'due_date' => $lastTask['due_date'],
+                    'priority' => $lastTask['priority'],
+                    'id' => $lastTask['id'],
+                ];
+                tasko_json_response(200, [
+                    'items' => $tasks,
+                    'next_cursor' => $cursor,
+                    'summary' => tasko_tasks_summary(tasko_db(), (int) $user['id'], $filters),
+                ]);
+            }
             tasko_json_response(200, ['items' => $tasks, 'next_before_id' => $hasMore && $tasks !== [] ? end($tasks)['id'] : null]);
         }
         tasko_json_response(200, $tasks);

@@ -1065,10 +1065,11 @@
     const taskList = {
         requestSequence: 0,
         pageSequence: 0,
-        nextBeforeId: null,
+        nextCursor: null,
         hasMore: false,
         loadingMore: false,
         scrollObserver: null,
+        summary: null,
         pendingCompletions: new Set(),
         /** Prepínač sa opakuje v každom zozname úloh a zachováva voľbu medzi sekciami. */
         filtered(tasks) {
@@ -1113,10 +1114,11 @@
             const [year, month, day] = value.split('-').map(Number);
             const date = new Date(year, month - 1, day);
             if (Number.isNaN(date.getTime())) return value;
-            if (value === components.today()) return 'Dnes';
             const locale = i18n.language === 'cs' ? 'cs-CZ' : 'sk-SK';
-            if (value < components.today()) return `${i18n.text('Po termíne')} · ${date.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}`;
-            return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+            const dateWithYear = date.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+            if (value === components.today()) return `${i18n.text('Dnes')} · ${dateWithYear}`;
+            if (value < components.today()) return `${i18n.text('Po termíne')} · ${dateWithYear}`;
+            return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
         },
         makeCard(task, projects) {
             /* Text používateľa vkladáme cez textContent a elementy, aby sa názov nikdy nespustil ako HTML. */
@@ -1184,13 +1186,18 @@
             due.className = 'task-date';
             due.dateTime = task.due_date || '';
             due.textContent = this.dateLabel(task.due_date);
-            if (task.due_date && task.due_date < components.today() && !task.is_done) due.setAttribute('aria-label', `Po termíne: ${this.dateLabel(task.due_date)}`);
+            if (task.due_date && task.due_date < components.today() && !task.is_done) due.setAttribute('aria-label', this.dateLabel(task.due_date));
             card.append(check, main, due);
             return card;
         },
         render(tasks, projects) {
             tasks = this.filtered(tasks);
-            const open = tasks.filter((task) => !task.is_done);
+            // Otvorené karty zoradíme podľa najbližšieho termínu a pri rovnakom dni podľa priority.
+            const open = tasks.filter((task) => !task.is_done).sort((a, b) =>
+                String(a.due_date || '').localeCompare(String(b.due_date || '')) ||
+                (Number(b.priority) || 0) - (Number(a.priority) || 0) ||
+                Number(a.id) - Number(b.id)
+            );
             const done = tasks.filter((task) => task.is_done);
             const openList = document.getElementById('task-open-list');
             const doneList = document.getElementById('task-done-list');
@@ -1201,8 +1208,8 @@
             done.forEach((task) => doneList.append(this.makeCard(task, projects)));
             this.emptyState(openList, open.length, 'Nemáš otvorené úlohy.', 'task-open-empty');
             this.emptyState(doneList, done.length, 'Zatiaľ nemáš hotové úlohy.', 'task-done-empty');
-            // Sentinel pod hotovými úlohami spustí ďalšiu dávku bez zmeny kurzora pri úpravách úlohy.
-            const section = doneList.closest('.task-section');
+            // Načítavanie sleduje koniec otvorených úloh, aby dlhý zoznam hotových neblokoval ďalšiu dávku.
+            const section = openList.closest('.task-section');
             if (section) {
                 let sentinel = section.querySelector('.task-scroll-sentinel');
                 if (!sentinel) { sentinel = document.createElement('div'); sentinel.className = 'task-scroll-sentinel'; sentinel.setAttribute('aria-hidden', 'true'); section.append(sentinel); }
@@ -1212,14 +1219,15 @@
             i18n.apply(document.getElementById('view'));
         },
         updateCounts(tasks) {
-            const open = tasks.filter((task) => !task.is_done);
-            const done = tasks.filter((task) => task.is_done);
+            const open = this.summary?.open ?? tasks.filter((task) => !task.is_done).length;
+            const done = this.summary?.done ?? tasks.filter((task) => task.is_done).length;
+            const overdue = this.summary?.overdue ?? tasks.filter((task) => !task.is_done && task.due_date && task.due_date < components.today()).length;
             const counts = {
-                'open-task-count': String(open.length),
-                'overdue-task-count': String(open.filter((task) => task.due_date && task.due_date < components.today()).length),
-                'completed-task-count': String(done.length),
-                'open-section-count': i18n.taskCount(open.length),
-                'done-section-count': i18n.taskCount(done.length)
+                'open-task-count': String(open),
+                'overdue-task-count': String(overdue),
+                'completed-task-count': String(done),
+                'open-section-count': i18n.taskCount(open),
+                'done-section-count': i18n.taskCount(done)
             };
             // Projektový detail tieto počítadlá nemá; aktualizujeme iba prvky prítomné v aktuálnom pohľade.
             Object.entries(counts).forEach(([id, value]) => {
@@ -1242,10 +1250,19 @@
             const previousState = Boolean(task.is_done);
             const nextState = !previousState;
             const taskId = String(task.id);
+            const updateMainSummary = router.current().name === 'tasks' && this.summary !== null;
+            const previousSummary = updateMainSummary ? { ...this.summary } : null;
             this.pendingCompletions.add(taskId);
             button.disabled = true;
             // Aktualizácia karty a počtov je okamžitá; jej pozícia zostane rovnaká až do ďalšieho načítania.
             this.setCardDone(card, button, task, nextState);
+            // Súhrn pokrýva aj nenačítané strany, preto ho pri zmene upravíme nezávisle od kariet v pamäti.
+            if (updateMainSummary) {
+                const overdueTask = task.due_date && task.due_date < components.today();
+                this.summary.open += nextState ? -1 : 1;
+                this.summary.done += nextState ? 1 : -1;
+                if (overdueTask) this.summary.overdue += nextState ? -1 : 1;
+            }
             this.updateCounts(state.tasks);
 
             api.request('POST', `/api/tasks/${encodeURIComponent(taskId)}/${nextState ? 'complete' : 'uncomplete'}`)
@@ -1266,6 +1283,7 @@
                 })
                 .catch((error) => {
                     this.setCardDone(card, button, task, previousState);
+                    if (previousSummary) this.summary = previousSummary;
                     this.updateCounts(state.tasks);
                     ui.showToast(error.message || 'Stav úlohy sa nepodarilo uložiť.', 'error');
                 })
@@ -1286,7 +1304,7 @@
             ['task-open-list', 'task-done-list'].forEach((id) => {
                 const container = document.getElementById(id);
                 if (!container) return;
-                const count = id === 'task-open-list' ? 3 : 1;
+                const count = 10;
                 container.replaceChildren(...Array.from({ length: count }, () => {
                     const row = document.createElement('div');
                     row.className = 'task-skeleton';
@@ -2186,7 +2204,7 @@
             }
             target.querySelector('.page-heading').append(taskList.filterControl());
             try {
-                // Projekty sú dostupné už vo fáze B5, aj keď API úloh ešte nie je hotové.
+                // Statistiky pouzivaju vsetky dostupne ulohy z neobmedzenej API odpovede.
                 const [tasksResult, projectsResult] = await Promise.allSettled([
                     api.request('GET', '/api/tasks'),
                     api.request('GET', '/api/projects')
@@ -2438,12 +2456,14 @@
             const requestSequence = ++taskList.requestSequence;
             taskList.pageSequence += 1;
             taskList.loadingMore = false;
-            taskList.nextBeforeId = null;
+            taskList.nextCursor = null;
             taskList.hasMore = false;
+            taskList.summary = null;
             taskList.loading();
-            const [tasksResult, projectsResult] = await Promise.allSettled([
-                // Zoznam používa stránky po desiatich; posúvanie načíta ďalšiu stránku cez kurzor API.
-                api.request('GET', `/api/tasks?limit=10&visibility=${encodeURIComponent(state.taskFilter)}`),
+            const [tasksResult, doneResult, projectsResult] = await Promise.allSettled([
+                // Otvorená stránka nezaberá miesto dokončenými úlohami a obsahuje prehľadný kurzor zoradenia.
+                api.request('GET', `/api/tasks?limit=10&done=0&visibility=${encodeURIComponent(state.taskFilter)}`),
+                api.request('GET', `/api/tasks?limit=10&done=1&visibility=${encodeURIComponent(state.taskFilter)}`),
                 api.request('GET', '/api/projects')
             ]);
             if (requestSequence !== taskList.requestSequence || routeSequence !== state.routeSequence) return;
@@ -2455,9 +2475,13 @@
                 taskList.error(tasksResult.reason);
                 return;
             }
-            state.tasks = Array.isArray(tasksResult.value?.items) ? tasksResult.value.items : [];
-            taskList.nextBeforeId = tasksResult.value?.next_before_id ?? null;
-            taskList.hasMore = taskList.nextBeforeId !== null;
+            const openTasks = Array.isArray(tasksResult.value?.items) ? tasksResult.value.items : [];
+            const doneTasks = doneResult.status === 'fulfilled' && Array.isArray(doneResult.value?.items) ? doneResult.value.items : [];
+            state.tasks = openTasks.concat(doneTasks);
+            taskList.summary = tasksResult.value?.summary ?? null;
+            taskList.nextCursor = tasksResult.value?.next_cursor ?? null;
+            taskList.hasMore = taskList.nextCursor !== null;
+            if (doneResult.status === 'rejected') ui.showToast(doneResult.reason?.message || i18n.t('no_tasks_loaded'), 'error');
             notifications.update();
             taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
             if (!taskList.scrollObserver && 'IntersectionObserver' in window) {
@@ -2469,7 +2493,7 @@
             }
         },
         async loadMoreTasks(routeSequence) {
-            if (!taskList.hasMore || taskList.loadingMore || !taskList.nextBeforeId || routeSequence !== state.routeSequence) return;
+            if (!taskList.hasMore || taskList.loadingMore || !taskList.nextCursor || routeSequence !== state.routeSequence) return;
             const pageSequence = taskList.pageSequence;
             taskList.loadingMore = true;
             let failed = false;
@@ -2477,16 +2501,22 @@
             if (sentinel) {
                 sentinel.replaceChildren();
                 // Počet náhradných kariet zodpovedá menšej dávke, aby načítavanie nepôsobilo ako veľký blok.
-                for (let index = 0; index < 2; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); sentinel.append(skeleton); }
+                for (let index = 0; index < 10; index += 1) { const skeleton = document.createElement('div'); skeleton.className = 'task-skeleton'; skeleton.setAttribute('aria-hidden', 'true'); sentinel.append(skeleton); }
             }
             try {
-                const page = await api.request('GET', `/api/tasks?limit=10&before_id=${encodeURIComponent(taskList.nextBeforeId)}&visibility=${encodeURIComponent(state.taskFilter)}`);
+                const cursor = taskList.nextCursor;
+                const params = new URLSearchParams({
+                    limit: '10', done: '0', visibility: state.taskFilter,
+                    after_due_date: cursor.due_date, after_priority: String(cursor.priority), after_id: String(cursor.id)
+                });
+                const page = await api.request('GET', `/api/tasks?${params}`);
                 if (routeSequence !== state.routeSequence || pageSequence !== taskList.pageSequence) return;
                 const currentIds = new Set(state.tasks.map((task) => Number(task.id)));
                 const incoming = Array.isArray(page?.items) ? page.items : [];
                 state.tasks = state.tasks.concat(incoming.filter((task) => !currentIds.has(Number(task.id))));
-                taskList.nextBeforeId = page?.next_before_id ?? null;
-                taskList.hasMore = taskList.nextBeforeId !== null;
+                taskList.summary = page?.summary ?? taskList.summary;
+                taskList.nextCursor = page?.next_cursor ?? null;
+                taskList.hasMore = taskList.nextCursor !== null;
                 taskList.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
             } catch (error) {
                 failed = true;
