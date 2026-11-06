@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/tasks.php';
 require_once __DIR__ . '/../../includes/comments.php';
 require_once __DIR__ . '/../../includes/notifications.php';
+require_once __DIR__ . '/../../includes/attachments.php';
 
 /** Číta členov iba v projekte, ku ktorému má prihlásený účet prístup. */
 function tasko_project_members(PDO $pdo, int $projectId, int $userId): array
@@ -299,6 +300,10 @@ try {
     if (preg_match('#^/api/tasks/([^/]+)$#D', $route, $taskRoute) === 1) {
         $allowedMethods[$route] = ['GET', 'PATCH', 'DELETE'];
     }
+    if (preg_match('#^/api/tasks/([^/]+)/attachments(?:/([^/]+))?$#D', $route, $attachmentRoute) === 1) {
+        $allowedMethods[$route] = isset($attachmentRoute[2]) && $attachmentRoute[2] !== ''
+            ? ['GET', 'DELETE'] : ['GET', 'POST'];
+    }
     if (preg_match('#^/api/tasks/([^/]+)/(complete|uncomplete)$#D', $route, $taskActionRoute) === 1) {
         $allowedMethods[$route] = ['POST'];
     }
@@ -347,6 +352,22 @@ try {
         $unread = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :user_id AND is_read = 0');
         $unread->execute(['user_id' => (int) $user['id']]);
         tasko_json_response(200, ['updated' => $mark->rowCount(), 'unread_count' => (int) $unread->fetchColumn()]);
+    }
+
+    if (preg_match('#^/api/tasks/([^/]+)/attachments$#D', $route, $attachmentsRoute) === 1 && in_array($method, ['GET', 'POST'], true)) {
+        $user = tasko_authenticated_user();
+        if (!tasko_validate_id($attachmentsRoute[1])) throw new TaskoHttpException(404, 'not_found', 'Úloha sa nenašla.');
+        $taskId = (int) $attachmentsRoute[1];
+        $userId = (int) $user['id'];
+        $pdo = tasko_db();
+        if ($method === 'GET') {
+            tasko_require_task_right($pdo, $taskId, $userId, 'view');
+            tasko_json_response(200, ['items' => tasko_attachments_find($pdo, $taskId)]);
+        }
+        tasko_require_same_origin();
+        $task = tasko_require_task_right($pdo, $taskId, $userId, 'add_comments');
+        tasko_require_project_permission($pdo, (int) $task['project_id'], $userId, 'can_add_tasks');
+        tasko_json_response(201, tasko_attachment_create($pdo, $taskId, $user));
     }
 
     // Globálny audit spája vlastné udalosti účtu s udalosťami projektov, ktoré používateľ ešte smie zobraziť.
