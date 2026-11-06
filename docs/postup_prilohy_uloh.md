@@ -86,3 +86,11 @@ Overiť povolený súbor aj odmietnutie zakázaného typu, falšovanej prípony/
 - Zmazanie prílohy aj nadradenej úlohy nenecháva súbory bez metadát ani metadáta bez súborov bez zdokumentovaného mechanizmu obnovy.
 - Pridávanie súborov funguje pretiahnutím aj cez prístupný výber súborov; rozhranie funguje klávesnicou a na mobilnom zobrazení a nové texty sú dostupné v slovenčine aj češtine.
 - PHP syntax, API tok a používateľský tok sú overené podľa projektových pravidiel; neoverené správanie je výslovne zaznamenané.
+
+## Záznam implementácie a overenia
+
+Kroky 1–6 boli implementované v samostatných commitoch a pushnuté do vzdialenej vetvy. Overená je syntax upravených PHP súborov cez PHP 8.5 aj XAMPP PHP 8.2, syntax `public/assets/js/app.js` a lokálne routovanie: `GET /index.html` vrátil `200`, chránené cesty príloh bez session vrátili `401`.
+
+End-to-end tok nahratia, sťahovania a mazania zatiaľ nie je overený proti MySQL. Predvolená PHP CLI nemá PDO ovládač; XAMPP PHP ho má, ale v jeho zozname modulov chýbajú `zip` a `gd`, ktoré táto implementácia potrebuje pre OOXML a bezpečné dekódovanie obrázkov. Pomocný príkaz na kontrolu lokálneho DB pripojenia bol automatickou kontrolou prostredia odmietnutý s hlásením `blocked by policy`, preto migrácia nebola aplikovaná. Spusti `db/migration_task_attachments.sql` po nakonfigurovaní lokálneho DB prostredia a zapnutí požadovaných PHP rozšírení.
+
+Vizuálnu kontrolu v prehliadači a mobilnom rozložení sa nepodarilo vykonať: nástroj prehliadača nedokázal spoľahlivo určiť aktuálnu URL okna a zastavil ovládanie. Hostingové limity uploadu, kvóta a zálohovanie sú podľa `db/README.md` nasadzovacie predpoklady a v tomto prostredí neboli potvrdené.
