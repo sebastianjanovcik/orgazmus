@@ -18,6 +18,19 @@ prihlasovacie údaje s právami na čítanie a zápis v databáze `tasko`. Súbo
 php db/seed.php
 ```
 
+Pri existujúcej databáze spusti migráciu príloh:
+
+```sh
+mysql -u root -p tasko < db/migration_task_attachments.sql
+```
+
+Konfigurácia `attachments.directory` v `config/config.php` určuje súkromný
+adresár na disku. Predvolená lokálna cesta je `var/attachments/`, mimo
+`public/` a ignorovaná Gitom. V produkcii nastav adresár s minimálnymi
+prístupovými právami, dostupným priestorom podľa prevádzkového limitu a
+zálohovaním; PHP musí mať `upload_max_filesize=32M` a `post_max_size` aspoň
+`34M`.
+
 Seed možno spustiť opakovane: obnoví známe ukážkové záznamy bez zmazania
 ostatných dát. Pri každom spustení obnoví aj heslá oboch demo účtov, preto si
 nové náhodné heslá vypísané v termináli ulož mimo repozitára. Seed vkladá

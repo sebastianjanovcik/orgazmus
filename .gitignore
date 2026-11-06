@@ -1,6 +1,7 @@
 # Lokálna konfigurácia môže obsahovať prihlasovacie údaje.
 /config/config.php
 /config/*.local.php
+/var/attachments/
 
 # Do Gitu nepatria logy, dočasné súbory ani nastavenia editorov.
 *.log
