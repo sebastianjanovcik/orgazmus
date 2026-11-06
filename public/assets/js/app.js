@@ -297,6 +297,7 @@
                 window.location.hash = 'tasks';
                 return;
             }
+            taskList.syncLiveUpdates(route.name === 'tasks' && Boolean(state.user));
             const page = route.name === 'project' ? { title: 'project' } : (this.routes[route.name] || this.routes.tasks);
             const title = i18n.t(page.title);
             document.title = `Tasko – ${title}`;
@@ -1064,6 +1065,71 @@
     /* Hlavný zoznam si drží vlastné číslo požiadavky, aby staré API odpovede neprepísali novší pohľad. */
     const taskList = {
         requestSequence: 0,
+        liveTimer: null,
+        liveRequestPending: false,
+        /** Polling beží iba na hlavnom zozname; dlhý SSE stream by blokoval jednovláknový lokálny PHP server. */
+        syncLiveUpdates(enabled) {
+            if (!enabled) {
+                window.clearTimeout(this.liveTimer);
+                this.liveTimer = null;
+                return;
+            }
+            if (this.liveTimer !== null) return;
+            const schedule = () => {
+                this.liveTimer = window.setTimeout(async () => {
+                    this.liveTimer = null;
+                    await this.refreshVisibleTasks();
+                    if (state.user && router.current().name === 'tasks') schedule();
+                }, 30000);
+            };
+            schedule();
+        },
+        /** Načíta len prvú stranu; stabilné ID zabránia duplikátom a už načítané ďalšie strany ostanú zachované. */
+        async refreshVisibleTasks() {
+            if (!state.user || router.current().name !== 'tasks' || document.visibilityState !== 'visible' || this.liveRequestPending || this.loadingMore) return;
+            this.liveRequestPending = true;
+            const routeSequence = state.routeSequence;
+            const requestSequence = this.requestSequence;
+            try {
+                const page = await api.request('GET', `/api/tasks?limit=10&done=0&visibility=${encodeURIComponent(state.taskFilter)}`);
+                if (routeSequence !== state.routeSequence || requestSequence !== this.requestSequence || router.current().name !== 'tasks' || !state.user) return;
+                const incoming = Array.isArray(page?.items) ? page.items : [];
+                const current = new Map(state.tasks.map((task) => [Number(task.id), task]));
+                let changed = false;
+                incoming.forEach((task) => {
+                    const id = Number(task.id);
+                    const previous = current.get(id);
+                    if (!previous) {
+                        current.set(id, task);
+                        changed = true;
+                    } else if (!this.pendingCompletions.has(String(id)) && JSON.stringify(previous) !== JSON.stringify(task)) {
+                        current.set(id, task);
+                        changed = true;
+                    }
+                });
+                const nextSummary = page?.summary ?? this.summary;
+                const summaryChanged = JSON.stringify(nextSummary) !== JSON.stringify(this.summary);
+                this.summary = nextSummary;
+                if (changed) {
+                    const focusedCard = document.activeElement?.closest('.task-card');
+                    const focusedTaskId = focusedCard?.dataset.taskId;
+                    const focusedAction = document.activeElement?.dataset.action;
+                    state.tasks = Array.from(current.values());
+                    this.render(state.tasks, new Map(state.projects.map((project) => [Number(project.id), project])));
+                    if (focusedTaskId && focusedAction) {
+                        const card = Array.from(document.querySelectorAll('.task-card')).find((item) => item.dataset.taskId === focusedTaskId);
+                        card?.querySelector(`[data-action="${focusedAction}"]`)?.focus();
+                    }
+                    notifications.update();
+                } else if (summaryChanged) {
+                    this.updateCounts(state.tasks);
+                }
+            } catch (_) {
+                // Krátky výpadok pri tichej synchronizácii nesmie skryť aktuálny zoznam ani rušiť používateľa.
+            } finally {
+                this.liveRequestPending = false;
+            }
+        },
         pageSequence: 0,
         nextCursor: null,
         hasMore: false,
@@ -2897,6 +2963,10 @@
     });
 
     window.Tasko = { i18n, api, state, router, ui, views, components, profile, theme, taskList, commentThreads };
+    // Po návrate na viditeľnú kartu zosynchronizujeme zoznam hneď, bez čakania na celý interval.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') taskList.refreshVisibleTasks();
+    });
     i18n.init();
     theme.init();
     // Demo údaje zobraz iba pri lokálnom mocku, aby sa neplietli so skutočným účtom.
