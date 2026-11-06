@@ -58,22 +58,24 @@ function tasko_attachment_detect_mime(string $path, string $extension): ?string
     ];
     if (!isset($allowed[$extension])) return null;
 
-    if (!class_exists(finfo::class)) {
-        throw new TaskoHttpException(500, 'server_error', 'Kontrola typu súboru nie je dostupná.');
+    // Fileinfo je len doplnková kontrola: niektoré hostingy ho nemajú, preto
+    // rozhodujeme aj podľa formátovo špecifických podpisov a dekodérov nižšie.
+    $detected = null;
+    if (class_exists(finfo::class)) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $detected = $finfo->file($path);
+        if (!is_string($detected)) return null;
     }
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $detected = $finfo->file($path);
-    if (!is_string($detected)) return null;
     $head = file_get_contents($path, false, null, 0, 16);
     if (!is_string($head)) return null;
 
     if ($extension === 'pdf') {
-        return str_starts_with($head, '%PDF-') && $detected === 'application/pdf' ? $allowed[$extension] : null;
+        return str_starts_with($head, '%PDF-') && ($detected === null || $detected === 'application/pdf') ? $allowed[$extension] : null;
     }
     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
         $image = @getimagesize($path);
         // Dekódovanie má pevný rozmerový strop, aby komprimovaný obrázok nemohol vyčerpať pamäť PHP.
-        if (!is_array($image) || ($image['mime'] ?? null) !== $allowed[$extension] || $detected !== $allowed[$extension]
+        if (!is_array($image) || ($image['mime'] ?? null) !== $allowed[$extension] || ($detected !== null && $detected !== $allowed[$extension])
             || (int) $image[0] > 8000 || (int) $image[1] > 8000 || (int) $image[0] * (int) $image[1] > 12_000_000) return null;
         if (!function_exists('imagecreatefromstring') || ($extension === 'webp' && !function_exists('imagecreatefromwebp'))) return null;
         $decoded = @imagecreatefromstring((string) file_get_contents($path));

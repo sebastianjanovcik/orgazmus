@@ -229,7 +229,7 @@ Objekt `attachment` obsahuje verejné ID, pôvodný názov iba na zobrazenie, MI
 
 Povolené sú `.doc`, `.docx`, `.pdf`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.xls`, `.xlsx`, `.ppt` a `.pptx`; makrá, SVG, archívy a CSV sú zakázané. Server porovnáva príponu s typom zisteným z obsahu a bezpečne dekóduje obrázky do 8 000 × 8 000 pixelov a najviac 12 megapixelov. Súbor musí mať 1 bajt až 33 554 432 bajtov; súčet príloh úlohy neprekročí 1 073 741 824 bajtov.
 
-PHP nasadenie potrebuje rozšírenia `fileinfo`, `zip` a `gd` s podporou WebP. `upload_max_filesize` musí byť aspoň `32M`, `post_max_size` aspoň `34M` a limit tela webového servera musí presiahnuť `34M`.
+PHP nasadenie potrebuje rozšírenia `zip` a `gd` s podporou WebP. `fileinfo` je voliteľné; ak chýba, server kontroluje typ podľa podpisu a štruktúry formátu. `upload_max_filesize` musí byť aspoň `32M`, `post_max_size` aspoň `34M` a limit tela webového servera musí presiahnuť `34M`.
 
 | Metóda a cesta | Vstup | Úspech | Osobitné chyby |
 | --- | --- | --- | --- |
